@@ -64,7 +64,19 @@ pnpm dev      # web: http://localhost:3000
 pnpm worker   # ayrı terminalde: zamanlanmış işler
 ```
 
-Worker başladığında her dakika `[heartbeat]` satırı loglar.
+Worker başladığında her 30 dakikada bir `[heartbeat]` satırı loglar.
+
+## Veri yükleme
+
+İlk kurulumda son 30 günün ilanlarını yükleyin:
+
+```bash
+pnpm backfill --source=uk_fat --days=30
+```
+
+Gün gün ilerler ve her gün için özet yazar. Find a Tender bazen yavaş yanıt verdiğinden 10-30 dakika, yoğun saatlerde daha uzun sürebilir. Yükleme sırasında worker'ı kapalı tutun. Yarıda kesilirse aynı komutu tekrar çalıştırın: yarım kalan ihaleler tamamlanır, kopya kayıt oluşmaz.
+
+Sonrasında `pnpm worker` açık olduğu sürece yeni ilanlar 2 saatte bir otomatik çekilir. Son senkron zamanı ve varsa son hata /settings sayfasında görünür.
 
 ## Komutlar
 
@@ -72,7 +84,9 @@ Worker başladığında her dakika `[heartbeat]` satırı loglar.
 | --- | --- |
 | `pnpm dev` | Web uygulaması (geliştirme) |
 | `pnpm build` / `pnpm start` | Production build ve çalıştırma |
-| `pnpm worker` | pg-boss worker süreci |
+| `pnpm worker` | pg-boss worker süreci (2 saatte bir Find a Tender senkronu) |
+| `pnpm backfill --source=uk_fat --days=30` | Geriye dönük yükleme |
+| `pnpm renormalize --source=uk_fat` | İhaleleri saklanan ham ilanlardan yeniden hesaplar (API çağırmaz) |
 | `pnpm test` | Vitest (canlı API ve Supabase kullanmaz) |
 | `pnpm typecheck` | Route tiplerini üretir ve `tsc` çalıştırır |
 | `pnpm lint` | ESLint |

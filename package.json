@@ -11,6 +11,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "worker": "tsx src/worker/index.ts",
+    "backfill": "tsx src/worker/backfill.ts",
+    "renormalize": "tsx src/worker/renormalize.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
@@ -35,6 +37,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.9",
+    "@electric-sql/pglite-socket": "^0.2.12",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

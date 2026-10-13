@@ -1,0 +1,409 @@
+{
+  "uri": "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?limit=100&updatedFrom=2026-10-12T00:00:00&updatedTo=2026-10-13T00:00:00",
+  "version": "1.1",
+  "publisher": {
+    "name": "Cabinet Office",
+    "scheme": "GB-GOR",
+    "uid": "D2",
+    "uri": "https://www.gov.uk/government/organisations/cabinet-office"
+  },
+  "license": "http://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+  "links": {
+    "next": "https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages?limit=100&updatedFrom=2026-10-12T00:00:00&updatedTo=2026-10-13T00:00:00&cursor=dXBkYXRlZEZyb209MjAyNi0xMC0xMlQwMDowMDowMHx1cGRhdGVkVG89MjAyNi0xMC0xM1QwMDowMDowMHxuZXh0Q3Vyc29yPTc0ODY5OA=="
+  },
+  "releases": [
+    {
+      "id": "096318-2026",
+      "tag": [
+        "tenderUpdate"
+      ],
+      "date": "2026-10-12T18:52:03+01:00",
+      "initiationType": "tender",
+      "ocid": "ocds-h6vhtk-077c1d",
+      "parties": [
+        {
+          "name": "Milford Haven Port Authority",
+          "id": "GB-PPON-PHJC-6674-PRDN",
+          "identifier": {
+            "scheme": "GB-PPON",
+            "id": "PHJC-6674-PRDN"
+          },
+          "address": {
+            "streetAddress": "Gorsewood Drive",
+            "locality": "Pembrokeshire",
+            "postalCode": "SA73 3EP",
+            "country": "GB",
+            "countryName": "United Kingdom",
+            "region": "UKL14"
+          },
+          "contactPoint": {
+            "name": "Joanne Rogers",
+            "email": "tender@mhpa.co.uk",
+            "telephone": "01646 696100"
+          },
+          "roles": [
+            "buyer"
+          ],
+          "details": {
+            "url": "http://www.mhpa.co.uk",
+            "classifications": [
+              {
+                "scheme": "UK_CA_TYPE",
+                "id": "privateUtility",
+                "description": "Private utility"
+              }
+            ]
+          }
+        }
+      ],
+      "buyer": {
+        "id": "GB-PPON-PHJC-6674-PRDN",
+        "name": "Milford Haven Port Authority"
+      },
+      "tender": {
+        "id": "ocds-h6vhtk-077c1d",
+        "legalBasis": {
+          "id": "2023/54",
+          "scheme": "UKPGA",
+          "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+        },
+        "title": "Public Affairs and Crisis Communication Support",
+        "description": "The Port of Milford Haven is seeking to appoint an experienced agency partner to provide strategic public affairs and crisis communications support.\nThe full suite of Tender documents can be accessed via the link: https://mhpa.sharepoint.com/:f:/s/O365Tenders/IgBN5pSvUGxhTbiYCnAvbmmAAWfZDm3r6veUcMeq0Yber_E?e=1qNlFA",
+        "status": "active",
+        "items": [
+          {
+            "id": "1",
+            "additionalClassifications": [
+              {
+                "scheme": "CPV",
+                "id": "79416000",
+                "description": "Public relations services"
+              }
+            ],
+            "deliveryAddresses": [
+              {
+                "region": "UK",
+                "country": "GB",
+                "countryName": "United Kingdom"
+              }
+            ],
+            "relatedLot": "1"
+          }
+        ],
+        "value": {
+          "amountGross": 350000.00,
+          "amount": 165000.00,
+          "currency": "GBP"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "Competitive flexible procedure",
+        "procedure": {
+          "features": "The procurement will comprise the following stages: \nAssessment of mandatory pass/fail requirements. \nEvaluation of written quality submissions. \nEvaluation of commercial submissions. \nFollowing evaluation of the written quality and commercial submissions, PoMH may shortlist Tenderers to participate in the Presentation Stage. Shortlisting will be based on the interim evaluation scores achieved during the written quality and commercial evaluation stages.\nPresentation interviews with shortlisted Tenderers. "
+        },
+        "mainProcurementCategory": "services",
+        "specialRegime": [
+          "utilities"
+        ],
+        "aboveThreshold": true,
+        "coveredBy": [
+          "GPA",
+          "CPTPP"
+        ],
+        "submissionMethodDetails": "Please submit tenders via Sell2wales post-box\nhttps://www.sell2wales.gov.wales/",
+        "submissionTerms": {
+          "electronicSubmissionPolicy": "allowed",
+          "languages": [
+            "en"
+          ]
+        },
+        "tenderPeriod": {
+          "endDate": "2026-10-26T09:00:00+00:00"
+        },
+        "enquiryPeriod": {
+          "endDate": "2026-10-19T12:00:00+01:00"
+        },
+        "awardPeriod": {
+          "endDate": "2026-12-04T23:59:59+00:00"
+        },
+        "lots": [
+          {
+            "id": "1",
+            "status": "active",
+            "value": {
+              "amountGross": 350000.00,
+              "amount": 165000.00,
+              "currency": "GBP"
+            },
+            "awardCriteria": {
+              "criteria": [
+                {
+                  "type": "quality",
+                  "name": "Written Quality Evaluation",
+                  "description": "Evaluation of the Tenderer's written response to the quality questions, including understanding of the Port's requirements, service delivery approach, relevant experience, crisis communications capability, delivery team, contract management and social value.",
+                  "numbers": [
+                    {
+                      "number": 25.00,
+                      "weight": "percentageExact"
+                    }
+                  ]
+                },
+                {
+                  "type": "price",
+                  "name": "Commercial Submission",
+                  "description": "Evaluation of the Tenderer's Commercial Return, including Essential Services, Optional Call-Off Services and applicable resource rates, in accordance with the Commercial Evaluation Methodology set out in the ITT.",
+                  "numbers": [
+                    {
+                      "number": 50.00,
+                      "weight": "percentageExact"
+                    }
+                  ]
+                },
+                {
+                  "type": "quality",
+                  "name": "Presentation Stage",
+                  "description": "Evaluation of the Tenderer's presentation, including understanding of the Port of Milford Haven, proposed approach, key personnel, strategic thinking, crisis communications capability, cultural fit and responses to questions raised by the evaluation panel.",
+                  "numbers": [
+                    {
+                      "number": 25.00,
+                      "weight": "percentageExact"
+                    }
+                  ]
+                }
+              ]
+            },
+            "selectionCriteria": {
+              "criteria": [
+                {
+                  "type": "economic",
+                  "description": "Included within the tender."
+                },
+                {
+                  "type": "technical",
+                  "description": "Included within the tender."
+                }
+              ]
+            },
+            "suitability": {
+              "sme": true
+            },
+            "contractPeriod": {
+              "startDate": "2026-12-14T00:00:00+00:00",
+              "endDate": "2030-01-01T23:59:59+00:00",
+              "maxExtentDate": "2032-01-01T23:59:59+00:00"
+            },
+            "hasRenewal": true,
+            "renewal": {
+              "description": "Contract duration: \nInitial term: 3 years \nExtension option: 1 year \nExtension option: 1 year "
+            },
+            "hasOptions": true,
+            "options": {
+              "description": "Optional Call-off Services as listed within the Tender."
+            },
+            "description": null
+          }
+        ],
+        "documents": [
+          {
+            "id": "conflictOfInterest",
+            "documentType": "conflictOfInterest",
+            "description": "Not published"
+          },
+          {
+            "id": "096318-2026",
+            "documentType": "tenderNotice",
+            "noticeType": "UK4",
+            "description": "Tender notice on Find a Tender",
+            "url": "https://www.find-tender.service.gov.uk/Notice/096318-2026",
+            "datePublished": "2026-10-12T18:52:03+01:00",
+            "format": "text/html"
+          }
+        ],
+        "amendments": [
+          {
+            "description": "For clarity, the Commercial Return - Call-Off Services tab has been updated to include two new columns: \"Notional Usage Assumption\" and \"Total (Unit Price × Usage Assumption)\". If you have already downloaded the Commercial Return document, please ensure you download the updated version before completing and submitting your tender response.",
+            "id": "096318-2026"
+          }
+        ]
+      },
+      "language": "en"
+    },
+    {
+      "buyerID": [],
+      "id": "096316-2026",
+      "tag": [
+        "tenderUpdate"
+      ],
+      "date": "2026-10-12T18:17:48+01:00",
+      "initiationType": "tender",
+      "ocid": "ocds-h6vhtk-06f69e",
+      "parties": [
+        {
+          "name": "Ministry of Defence",
+          "id": "GB-PPON-PHVX-4316-ZVGZ",
+          "identifier": {
+            "scheme": "GB-PPON",
+            "id": "PHVX-4316-ZVGZ"
+          },
+          "address": {
+            "streetAddress": "Army HQ, Ramillies, Marlborough Lines, Monxton Road",
+            "locality": "Andover",
+            "postalCode": "SP11 8HJ",
+            "country": "GB",
+            "countryName": "United Kingdom",
+            "region": "UKJ36"
+          },
+          "contactPoint": {
+            "name": "Lucy Coulson",
+            "email": "lucy.coulson100@mod.gov.uk"
+          },
+          "roles": [
+            "buyer"
+          ],
+          "details": {
+            "url": "https://www.gov.uk/government/organisations/ministry-of-defence",
+            "classifications": [
+              {
+                "scheme": "UK_CA_TYPE",
+                "id": "publicAuthorityCentralGovernment",
+                "description": "Public authority - central government"
+              }
+            ]
+          }
+        }
+      ],
+      "buyer": {
+        "id": "GB-PPON-PHVX-4316-ZVGZ",
+        "name": "Ministry of Defence"
+      },
+      "tender": {
+        "id": "715943473",
+        "legalBasis": {
+          "id": "2023/54",
+          "scheme": "UKPGA",
+          "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+        },
+        "title": "UBIQUITY FPV Training",
+        "description": "Procurement of a scalable, affordable, non-energetic FPV training capability to deliver increased training mass under the RAPSTONE programme. A competitive procurement will be used to test the market and secure value for money, taking account of current technology, supplier capacity and support solutions. Final quantities will be determined through competition, with lessons identified from FPV Tranches 1 and 2 informing the final User Requirement Document. This represents the final planned FPV training tranche under the current UBIQUITY approach and is distinct from the operational Armed FPV capability requirement.",
+        "status": "active",
+        "items": [
+          {
+            "id": "1",
+            "additionalClassifications": [
+              {
+                "scheme": "CPV",
+                "id": "35613000",
+                "description": "Unmanned aerial vehicles"
+              }
+            ],
+            "deliveryAddresses": [
+              {
+                "region": "UK",
+                "country": "GB",
+                "countryName": "United Kingdom"
+              }
+            ],
+            "relatedLot": "1"
+          }
+        ],
+        "value": {
+          "amountGross": 3750000,
+          "amount": 3125000,
+          "currency": "GBP"
+        },
+        "procurementMethod": "open",
+        "procurementMethodDetails": "Competitive flexible procedure",
+        "procedure": {
+          "features": "Clarification Questions 16 October 2026 at 12:00\nThe Authority issues Final Clarification Answers 20 October 2026 \nTender Return 6 November 2026 at 12:00 GMT \nDemonstration Session 12 November 2026 \nPreferred Bidder Identified 16 November 2026 \nContract Award 27 November 2026 \nContract Start 7 December 2026"
+        },
+        "mainProcurementCategory": "goods",
+        "specialRegime": [
+          "defenceSecurity"
+        ],
+        "aboveThreshold": true,
+        "submissionMethodDetails": "www.contracts.mod.uk",
+        "submissionTerms": {
+          "electronicSubmissionPolicy": "allowed",
+          "languages": [
+            "en"
+          ]
+        },
+        "tenderPeriod": {
+          "endDate": "2026-11-06T12:00:00+00:00"
+        },
+        "enquiryPeriod": {
+          "endDate": "2026-10-16T12:00:00+01:00"
+        },
+        "awardPeriod": {
+          "endDate": "2026-11-30T23:59:59+00:00"
+        },
+        "lots": [
+          {
+            "id": "1",
+            "status": "active",
+            "value": {
+              "amountGross": 3750000,
+              "amount": 3125000,
+              "currency": "GBP"
+            },
+            "awardCriteria": {
+              "criteria": [
+                {
+                  "type": "quality",
+                  "name": "Technical Assessment",
+                  "description": "Tenderers shall provide sufficient information and evidence to enable the Authority to assess their responses against each criterion. Responses will be scored in accordance with the evaluation methodology\nFollowing completion of Stage 1, the three highest-scoring Tenderers will be shortlisted and invited to participate in Stage 2 Demonstration Phase.\nThe Authority reserves the right to invite fewer than three Tenderers where fewer than three acceptable Tender Responses are received.\nShortlisted Tenderers shall be required to provide demonstration equipment and participate in a practical evaluation event.\nThe purpose of the demonstration is to validate the claims made within the written Tender Response and assess the suitability of the proposed FPV training drone solution in a realistic training environment.",
+                  "numbers": [
+                    {
+                      "number": 75,
+                      "weight": "percentageExact"
+                    }
+                  ]
+                },
+                {
+                  "type": "cost",
+                  "name": "Commercial  Assessment",
+                  "description": "The Authority has an available budget of £3,750,000 inclusive of VAT for the initial purchase and delivery of FPV Training Drone systems and associated support requirements under this Contract.\nTenderers shall submit a proposal identifying the maximum number of complete FPV Training Drone sets that can be supplied within this budget.\nIn addition, Tenderers shall provide a firm fixed price for the purchase of additional compliant Sets beyond those offered within the available budget. The Authority will separately assess the cost of additional Sets as part of the commercial evaluation to determine value for money and potential future scalability.",
+                  "numbers": [
+                    {
+                      "number": 25,
+                      "weight": "percentageExact"
+                    }
+                  ]
+                }
+              ]
+            },
+            "suitability": {
+              "sme": true
+            },
+            "contractPeriod": {
+              "startDate": "2026-12-07T00:00:00+00:00",
+              "endDate": "2027-03-31T23:59:59+01:00",
+              "maxExtentDate": "2028-03-31T23:59:59+01:00"
+            },
+            "hasRenewal": true,
+            "renewal": {
+              "description": "The contract may be extended for an addtional 12 Months"
+            },
+            "description": null
+          }
+        ],
+        "documents": [
+          {
+            "id": "conflictOfInterest",
+            "documentType": "conflictOfInterest",
+            "description": "Not published"
+          },
+          {
+            "id": "096316-2026",
+            "documentType": "tenderNotice",
+            "noticeType": "UK4",
+            "description": "Tender notice on Find a Tender",
+            "url": "https://www.find-tender.service.gov.uk/Notice/096316-2026",
+            "datePublished": "2026-10-12T18:17:48+01:00",
+            "format": "text/html"
+          }
+        ]
+      },
+      "language": "en"
+    }
+  ]
+}

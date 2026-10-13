@@ -15,6 +15,20 @@
       "when": 1791896043019,
       "tag": "0001_seed_sources",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791904378655,
+      "tag": "0002_raw_procedure_key_document_meta",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791906083877,
+      "tag": "0003_raw_applied_at",
+      "breakpoints": true
     }
   ]
 }

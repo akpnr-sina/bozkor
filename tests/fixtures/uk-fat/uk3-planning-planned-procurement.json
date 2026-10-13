@@ -1,0 +1,133 @@
+{
+  "ocid": "ocds-h6vhtk-078607",
+  "id": "096290-2026",
+  "tag": [
+    "planning"
+  ],
+  "date": "2026-10-12T17:03:28+01:00",
+  "initiationType": "tender",
+  "planning": {
+    "documents": [
+      {
+        "id": "096290-2026",
+        "documentType": "plannedProcurementNotice",
+        "noticeType": "UK3",
+        "description": "Planned procurement notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096290-2026",
+        "datePublished": "2026-10-12T17:03:28+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "parties": [
+    {
+      "name": "West Yorkshire Combined Authority",
+      "id": "GB-PPON-PHYG-7328-ZLQJ",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PHYG-7328-ZLQJ"
+      },
+      "address": {
+        "streetAddress": "Wellington House, 40-50 Wellington Street",
+        "locality": "Leeds",
+        "postalCode": "LS1 2DE",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKE42"
+      },
+      "contactPoint": {
+        "name": "Zainab Omar",
+        "email": "zainab.omar@westyorks-ca.gov.uk",
+        "telephone": "+44 0113123456"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "https://www.westyorks-ca.gov.uk",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PHYG-7328-ZLQJ",
+    "name": "West Yorkshire Combined Authority"
+  },
+  "tender": {
+    "id": "PPN ONLY",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Aspiring Pathways Project",
+    "description": "West Yorkshire Combined Authority (WYCA) is preparing to commission Aspiring Pathways, a targeted programme designed to increase access to high quality and meaningful experience of the workplace for young people attending Alternative Provision settings across West Yorkshire. The purpose of this early market engagement is to raise awareness among potential providers, share our ambitions for the programme and encourage organisations to consider how their experience, expertise and partnerships could contribute to its successful delivery. Aspiring Pathways is a nationally funded programme designed to improve access to workplace experiences for young people in Alternative Provision, particularly those who may face additional barriers to progression. We are seeking a provider who can work collaboratively with 11 participating AP settings, to deliver a flexible, inclusive and progressive approach to work experience, recognising that young people in Alternative Provision will have different starting points and levels of readiness. Delivery will need include appropriate preparation and workplace-readiness activity for those not yet ready to enter a workplace, supporting young people to build confidence, skills and experience over time. The approach should be informed by the Careers & Enterprise Company’s Equalex framework, shaped around individual needs and interests, and underpinned by strong partnerships with AP settings and employers to create meaningful pathways into the world of work. Please note that this PPN is for prior information only, to inform potential suppliers of an upcoming opportunity and an engagement event for those interested in bidding. Additional Information A pre-market engagement event will be held via Microsoft Teams on Wednesday 21st October from 10:00am – 11:00am. Attending will be members of the Combined Authority’s Careers & Education Team and Commercial Team. This session will give an overview of the Combined Authority’s requirements and procurement process and allow prospective bidders to ask detailed questions. To attend the session, please complete the form linked in the attached PPN document, or via the URL here: https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=_DvpNGbuRUOk_oBbZ-SAwPOPFfNtYt5FmXqWSs2bdjtUNjBWQU1HSU5UV05FQ01IMUcxODdHSlVGSi4u",
+    "status": "planned",
+    "items": [
+      {
+        "id": "LOT-0000",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "80500000",
+            "description": "Training services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "80000000",
+            "description": "Education and training services"
+          }
+        ],
+        "relatedLot": "LOT-0000"
+      }
+    ],
+    "value": {
+      "amountGross": 348000,
+      "amount": 290000,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Open procedure",
+    "mainProcurementCategory": "services",
+    "aboveThreshold": true,
+    "submissionMethodDetails": "https://uk.eu-supply.com/app/rfq/rwlentrance_s.asp?PID=109989&TID100115020&B=",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed"
+    },
+    "tenderPeriod": {
+      "endDate": "2026-12-07T14:00:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-10-20T16:00:00+00:00"
+    },
+    "awardPeriod": {
+      "endDate": "2026-12-14T23:59:59Z"
+    },
+    "lots": [
+      {
+        "id": "LOT-0000",
+        "status": "planned",
+        "value": {
+          "amountGross": 348000,
+          "amount": 290000,
+          "currency": "GBP"
+        },
+        "contractPeriod": {
+          "startDate": "2026-12-14T00:00:00Z",
+          "endDate": "2028-08-31T23:59:59+01:00"
+        },
+        "description": null
+      }
+    ],
+    "communication": {
+      "futureNoticeDate": "2026-11-09T23:59:59Z"
+    }
+  },
+  "language": "en"
+}

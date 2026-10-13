@@ -8,5 +8,8 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
+    // PGlite test databases are CPU heavy; keep the laptop responsive.
+    maxWorkers: 2,
+    hookTimeout: 30_000,
   },
 });

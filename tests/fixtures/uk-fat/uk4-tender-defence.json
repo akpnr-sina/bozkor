@@ -1,0 +1,161 @@
+{
+  "buyerID": [],
+  "id": "096315-2026",
+  "tag": [
+    "tender"
+  ],
+  "date": "2026-10-12T18:17:21+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-066c9e",
+  "parties": [
+    {
+      "name": "Defence Equipment and Support",
+      "id": "GB-PPON-PVRL-5831-GLMM",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PVRL-5831-GLMM"
+      },
+      "address": {
+        "streetAddress": "MOD Abbey Wood",
+        "locality": "Bristol",
+        "postalCode": "BS34 8JH",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKK12"
+      },
+      "contactPoint": {
+        "name": "PPA Commercial",
+        "email": "DESCommercial-PPA@mod.gov.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "https://www.gov.uk/government/organisations/defence-equipment-and-support",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthorityCentralGovernment",
+            "description": "Public authority - central government"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PVRL-5831-GLMM",
+    "name": "Defence Equipment and Support"
+  },
+  "tender": {
+    "id": "PPA/017",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "715794488 - PPA/017 - Naval Firefighting Helmet & Communication System",
+    "description": "National Armaments Director Group, Power, Propulsion and Auxiliaries (PPA), on behalf of the Ministry of Defence, is procuring a replacement Firefighting Helmet & Communication System (FFHCS) for use aboard Royal Navy vessels. The helmets are to integrate with existing personal protective equipment, radio systems, and ancillary equipment.\nPPA supports multiple defence areas by delivering and sustaining systems that generate energy, provide propulsion, and enable cross-cutting auxiliary functions aboard naval vessels, including domestic, fire and rescue, and catering systems.\nThe requirement is for a commercially available firefighting helmet incorporating an integrated communications system comprising a bone-conducting microphone, speaker(s) and push-to-talk functionality, compatible with in-service Motorola R7Ex radios and existing firefighting personal protective equipment. \nThe current firefighting helmet and communication configuration is obsolete. The requirement is intended to provide a replacement system that supports firefighting, search and rescue, incident command and associated training activities aboard Royal Navy vessels.\nThe required solution must be commercially available off the shelf and comprise a firefighting helmet incorporating an integrated communication system. The communication system must include:\n- a bone-conducting microphone;\n- speaker or speakers;\n- a wired push-to-talk unit; and\n- full compatibility with the in-service Motorola R7Ex series radios.\nThe Motorola R7Ex radio will be sourced separately by the Authority and is not included within the scope of this contract. The FFHCS must integrate with existing Royal Navy firefighting personal protective equipment and ancillary equipment, including extended duration breathing apparatus, firefighting hoods and firefighting protective clothing. The solution must be adjustable for the required range of users and must not adversely affect the fit or operation of other firefighting equipment.\nThe solution must meet the mandatory requirements set out in the Cardinal Specification. These include requirements relating to:\n- commercial availability and delivery;\n- continued product availability;\n- Marine Equipment Regulations approval;\n- physical and thermal protection;\n- compatibility with existing firefighting personal protective equipment;\n- user fit and adjustment;\n- durability, maintenance and service life;\n- intrinsically safe and ATEX-rated components;\n- visor protection;\n- communication-system compatibility;\n- effective speech transmission during firefighting activities; and\n- controls that can be operated single-handedly while wearing full firefighting personal protective equipment.\nApplicable technical standards and requirements include:\n- BS EN 443:2008;\n- BS EN 14458:2018;\n- the Marine Equipment Regulations; and\n- applicable ATEX requirements.\nTenderers must provide the certification, compatibility information, product information, test evidence and performance data required by the Tender documents.\nThe contract will cover the supply, packaging and delivery of the complete FFHCS, together with the related technical, maintenance, cleaning, repair, product-life and NATO codification information specified in the contract.\nThe Authority intends to award a single contract through an open procedure in accordance with section 20 of the Procurement Act 2023.\nThe requirement is considered a defence and security contract. The relevant provisions of the Procurement Act 2023 relating to defence and security contracts will apply.\nThe Cyber Risk Profile for this requirement is Level 0 (Basic). Tenderers will be required to complete the Supplier Assurance Questionnaire through the Supplier Cyber Protection Service and provide a Cyber Improvement Plan where applicable.",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "18143000",
+            "description": "Protective gear"
+          },
+          {
+            "scheme": "CPV",
+            "id": "32342300",
+            "description": "Microphones and speaker sets"
+          },
+          {
+            "scheme": "CPV",
+            "id": "35113400",
+            "description": "Protective and safety clothing"
+          },
+          {
+            "scheme": "CPV",
+            "id": "35711000",
+            "description": "Command, control, communication systems"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 600000,
+      "amount": 533333,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Open procedure",
+    "mainProcurementCategory": "goods",
+    "specialRegime": [
+      "defenceSecurity"
+    ],
+    "aboveThreshold": true,
+    "submissionMethodDetails": "Tenders to be submitted via the Defence Sourcing Portal.\nhttps://contracts.mod.uk/go/6167558101A1310A04CC",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed",
+      "languages": [
+        "en"
+      ]
+    },
+    "tenderPeriod": {
+      "endDate": "2026-11-06T23:59:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-10-22T23:59:00+01:00"
+    },
+    "awardPeriod": {
+      "endDate": "2026-11-29T23:59:59+00:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 600000,
+          "amount": 533333,
+          "currency": "GBP"
+        },
+        "awardCriteria": {
+          "weightingDescription": "For this ITT, the solution that represents VfM and therefore be determined as the Most Advantageous Tender will be the solution that:\n1. Complies with the qualification, commercial and technical requirements; and\n2. Proposes the lowest verifiable price per unit.",
+          "criteria": [
+            {
+              "type": "price",
+              "name": "Price"
+            }
+          ]
+        },
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2026-11-30T00:00:00+00:00",
+          "endDate": "2027-05-16T23:59:59+01:00"
+        },
+        "description": null
+      }
+    ],
+    "documents": [
+      {
+        "id": "conflictOfInterest",
+        "documentType": "conflictOfInterest",
+        "description": "Not published"
+      },
+      {
+        "id": "096315-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096315-2026",
+        "datePublished": "2026-10-12T18:17:21+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en"
+}

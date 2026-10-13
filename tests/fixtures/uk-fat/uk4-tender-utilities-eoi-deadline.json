@@ -1,0 +1,219 @@
+{
+  "ocid": "ocds-h6vhtk-078601",
+  "buyerID": [],
+  "id": "096274-2026",
+  "tag": [
+    "tender"
+  ],
+  "date": "2026-10-12T16:40:21+01:00",
+  "initiationType": "tender",
+  "parties": [
+    {
+      "name": "Southern Water Services Limited",
+      "id": "GB-PPON-PBJQ-2231-ZRPG",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PBJQ-2231-ZRPG"
+      },
+      "address": {
+        "streetAddress": "Southern Water, Southern House",
+        "locality": "Worthing",
+        "postalCode": "BN13 3NX",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKJ27"
+      },
+      "contactPoint": {
+        "name": "Lucy Soper",
+        "email": "lucy.soper@southernwater.co.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "http://www.southernwater.co.uk",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "privateUtility",
+            "description": "Private utility"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PBJQ-2231-ZRPG",
+    "name": "Southern Water Services Limited"
+  },
+  "tender": {
+    "id": "22",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "CWQM PSQ Template ",
+    "description": "Continuous Water Quality Monitoring as required by the Environment Act 2021.",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "72300000",
+            "description": "Data services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "38344000",
+            "description": "Pollution-monitoring devices"
+          },
+          {
+            "scheme": "CPV",
+            "id": "38430000",
+            "description": "Detection and analysis apparatus"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKJ22",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          },
+          {
+            "region": "UKJ27",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          },
+          {
+            "region": "UKJ28",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          },
+          {
+            "region": "UKJ3",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          },
+          {
+            "region": "UKJ4",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 156600000.00,
+      "amount": 130500000.00,
+      "currency": "GBP"
+    },
+    "procurementMethod": "selective",
+    "procurementMethodDetails": "Competitive flexible procedure",
+    "procedure": {
+      "features": "Information available with procurement documents \nhttps://supplier.coupahost.com/quotes/public_events?"
+    },
+    "mainProcurementCategory": "services",
+    "specialRegime": [
+      "utilities"
+    ],
+    "aboveThreshold": true,
+    "techniques": {
+      "hasFrameworkAgreement": true,
+      "frameworkAgreement": {
+        "maximumParticipants": 1,
+        "method": "withoutReopeningCompetition",
+        "type": "closed",
+        "description": "Not published"
+      }
+    },
+    "submissionMethodDetails": " View and join this event at: https://supplier.coupahost.com/quotes/public_events?customer=southernwater&company_name=Southern+Water",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed",
+      "languages": [
+        "en"
+      ]
+    },
+    "expressionOfInterestDeadline": "2026-11-09T14:00:00+00:00",
+    "enquiryPeriod": {
+      "endDate": "2026-11-09T14:00:00+00:00"
+    },
+    "awardPeriod": {
+      "endDate": "2027-03-25T23:59:59+00:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 156600000.00,
+          "amount": 130500000.00,
+          "currency": "GBP"
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "type": "quality",
+              "name": "Quality ",
+              "description": "Quality",
+              "numbers": [
+                {
+                  "number": 70,
+                  "weight": "percentageExact"
+                }
+              ]
+            },
+            {
+              "type": "price",
+              "name": "Price",
+              "description": "Price",
+              "numbers": [
+                {
+                  "number": 30,
+                  "weight": "percentageExact"
+                }
+              ]
+            }
+          ]
+        },
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2027-05-04T00:00:00+01:00",
+          "endDate": "2037-05-05T23:59:59+01:00",
+          "maxExtentDate": "2042-05-06T23:59:59+01:00"
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "Additional 5 year option."
+        },
+        "hasOptions": true,
+        "options": {
+          "description": "Additional 5 year option."
+        },
+        "description": null
+      }
+    ],
+    "documents": [
+      {
+        "id": "conflictOfInterest",
+        "documentType": "conflictOfInterest",
+        "description": "Not published"
+      },
+      {
+        "id": "096274-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096274-2026",
+        "datePublished": "2026-10-12T16:40:21+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en"
+}

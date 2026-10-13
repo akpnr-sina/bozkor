@@ -1,0 +1,81 @@
+{
+  "id": "096241-2026",
+  "tag": [
+    "tenderCancellation"
+  ],
+  "date": "2026-10-12T16:08:43+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-07803d",
+  "parties": [
+    {
+      "name": "Natural England",
+      "id": "GB-PPON-PJDG-6588-XDMM",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PJDG-6588-XDMM"
+      },
+      "address": {
+        "streetAddress": "Seacole Building, 2 Marsham Street",
+        "locality": "London",
+        "postalCode": "SW1P 4DF",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKI32"
+      },
+      "contactPoint": {
+        "email": "Isaac.Howarth@naturalengland.org.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthorityCentralGovernment",
+            "description": "Public authority - central government"
+          }
+        ]
+      }
+    }
+  ],
+  "tender": {
+    "id": "ocds-h6vhtk-07803d",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Culvert Crossing and Groundworks",
+    "status": "cancelled",
+    "lots": [
+      {
+        "id": "1",
+        "status": "cancelled"
+      }
+    ],
+    "documents": [
+      {
+        "id": "096241-2026",
+        "documentType": "tenderCancellationNotice",
+        "noticeType": "UK12",
+        "description": "Procurement termination notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096241-2026",
+        "datePublished": "2026-10-12T16:08:43+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "awards": [
+    {
+      "id": "1",
+      "status": "cancelled",
+      "statusDetails": "The Find a Tender Service was not a suitable arrangement for this particular contract, and a different method was found to be more suitable.",
+      "finalStatusDate": "2026-10-12T00:00:00+01:00",
+      "relatedLots": [
+        "1"
+      ]
+    }
+  ],
+  "language": "en"
+}

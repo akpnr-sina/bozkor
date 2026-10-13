@@ -1,0 +1,80 @@
+{
+  "ocid": "ocds-h6vhtk-06e839",
+  "id": "096110-2026",
+  "date": "2026-10-12T13:59:11+01:00",
+  "tag": [
+    "tenderUpdate"
+  ],
+  "initiationType": "tender",
+  "tender": {
+    "id": "ACE-0034-2026-ESX",
+    "legalBasis": {
+      "id": "32014L0024",
+      "scheme": "CELEX"
+    },
+    "title": "Independent public voice, challenge and assurance function in support of NHS Essex ICB's Population Health Improvement Programme (PHIP)",
+    "classification": {
+      "scheme": "CPV",
+      "id": "79315000",
+      "description": "Social research services"
+    },
+    "mainProcurementCategory": "services",
+    "description": "This Corrigendum Notice is published to amend the contract end date that used within the Contract details notice  that was published on the 2 September 2026, 2:23pm at   within the following areas:\nContract(0001)\nContract end date(UK7_94): 01/09/2030 \nshould now read 01/09/2028\nExtension end date(UK7_96)If all extensions are used. 01/09/2032\nshould now read 01/09/2030",
+    "amendments": [
+      {
+        "id": "1",
+        "unstructuredChanges": [
+          {
+            "oldValue": {
+              "text": "Extension end date(UK7_96)If all extensions are used.\n01/09/2032"
+            },
+            "newValue": {
+              "text": "Extension end date(UK7_96)If all extensions are used.\n01/09/2030"
+            },
+            "where": {
+              "section": "Contract(0001)",
+              "label": "(UK7_204)"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "parties": [
+    {
+      "name": "NHS Essex Integrated Care Board",
+      "id": "GB-FTS-182837",
+      "identifier": {
+        "legalName": "NHS Essex Integrated Care Board",
+        "id": "D7T5G"
+      },
+      "address": {
+        "streetAddress": "Seax House Victoria Road South",
+        "locality": "Chelmsford , Essex",
+        "region": "UKH3",
+        "postalCode": "CM1 1QH",
+        "countryName": "United Kingdom"
+      },
+      "contactPoint": {
+        "email": "esther.pettigrew@attain.co.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "https://www.essex.icb.nhs"
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-FTS-182837",
+    "name": "NHS Essex Integrated Care Board"
+  },
+  "links": [
+    {
+      "rel": "canonical",
+      "href": "https://www.essex.icb.nhs.uk/"
+    }
+  ],
+  "language": "en"
+}

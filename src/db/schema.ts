@@ -66,13 +66,21 @@ export const rawNotices = pgTable(
       .notNull()
       .references(() => sources.id),
     externalId: text("external_id").notNull(),
+    /** Same grouping key as tenders.procedure_key; lets a procedure be re-folded from raw. */
+    procedureKey: text("procedure_key"),
     payload: jsonb("payload").$type<unknown>(),
     payloadXml: text("payload_xml"),
     sha256: text("sha256").notNull(),
     fetchedAt: timestamptz("fetched_at").notNull().defaultNow(),
+    /** Set once the row has been folded into its tender; null rows are picked up by the next sync. */
+    appliedAt: timestamptz("applied_at"),
   },
   (t) => [
     uniqueIndex("raw_notices_source_external_id_sha256_idx").on(t.source, t.externalId, t.sha256),
+    index("raw_notices_source_procedure_key_idx").on(t.source, t.procedureKey),
+    index("raw_notices_unapplied_idx")
+      .on(t.source, t.procedureKey)
+      .where(sql`${t.appliedAt} is null`),
     index("raw_notices_fetched_at_idx").on(t.fetchedAt),
     check("raw_notices_payload_present", sql`${t.payload} is not null or ${t.payloadXml} is not null`),
   ],
@@ -150,6 +158,10 @@ export const documents = pgTable(
       .references(() => tenders.id, { onDelete: "cascade" }),
     origin: documentOrigin("origin").notNull(),
     sourceUrl: text("source_url"),
+    /** Description given in the notice, e.g. "Invitation to tender". */
+    title: text("title"),
+    /** Source document type, e.g. OCDS "biddingDocuments", "technicalSpecifications". */
+    documentType: text("document_type"),
     filename: text("filename"),
     mime: text("mime"),
     sizeBytes: integer("size_bytes"),
@@ -166,6 +178,9 @@ export const documents = pgTable(
   (t) => [
     index("documents_tender_id_idx").on(t.tenderId),
     index("documents_sha256_idx").on(t.sha256),
+    uniqueIndex("documents_tender_id_source_url_auto_idx")
+      .on(t.tenderId, t.sourceUrl)
+      .where(sql`${t.origin} = 'auto'`),
   ],
 ).enableRLS();
 

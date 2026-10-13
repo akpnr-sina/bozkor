@@ -1,0 +1,160 @@
+{
+  "buyerID": [],
+  "id": "095981-2026",
+  "tag": [
+    "award",
+    "contract"
+  ],
+  "date": "2026-10-12T11:15:50+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-07783a",
+  "parties": [
+    {
+      "name": "ORE Catapult",
+      "id": "GB-PPON-PYJB-8958-TLYW",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PYJB-8958-TLYW"
+      },
+      "address": {
+        "streetAddress": "121 George Street",
+        "locality": "Glasgow",
+        "postalCode": "G1 1RD",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKM82"
+      },
+      "contactPoint": {
+        "email": "procurement@ore.catapult.org.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicUndertaking",
+            "description": "Public undertaking"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Vaisala France SASU",
+      "id": "GB-PPON-PZLG-8124-TWXV",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PZLG-8124-TWXV"
+      },
+      "address": {
+        "streetAddress": "43 Rue de Liège",
+        "locality": "Paris",
+        "postalCode": "75008",
+        "country": "FR",
+        "countryName": "France",
+        "region": "FR"
+      },
+      "contactPoint": {
+        "email": "adv@vaisala.com"
+      },
+      "roles": [
+        "supplier"
+      ],
+      "details": {
+        "scale": "large",
+        "vcse": false
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PYJB-8958-TLYW",
+    "name": "ORE Catapult"
+  },
+  "tender": {
+    "id": "ORE/26/055",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Supply of WCL21XP WindCube 2.1 XP",
+    "description": "The purpose of this direct award is to appoint Vaisala France SAS to Supply the WCL21XP WindCube 2.1 XP - Vertical profiler Lidar to be installed at NOAH as part of the asset upgrade and development project.",
+    "status": "complete",
+    "procurementMethod": "direct",
+    "procurementMethodDetails": "Below threshold - without competition",
+    "lots": [
+      {
+        "id": "1",
+        "status": "complete",
+        "description": null
+      }
+    ]
+  },
+  "awards": [
+    {
+      "id": "1",
+      "status": "active",
+      "date": "2026-10-12T00:00:00+01:00",
+      "value": {
+        "amountGross": 75474.00,
+        "currency": "EUR"
+      },
+      "mainProcurementCategory": "goods",
+      "aboveThreshold": false,
+      "suppliers": [
+        {
+          "id": "GB-PPON-PZLG-8124-TWXV",
+          "name": "Vaisala France SASU"
+        }
+      ],
+      "items": [
+        {
+          "id": "1",
+          "additionalClassifications": [
+            {
+              "scheme": "CPV",
+              "id": "35125100",
+              "description": "Sensors"
+            }
+          ],
+          "deliveryAddresses": [
+            {
+              "region": "UKC21",
+              "country": "GB",
+              "countryName": "United Kingdom"
+            }
+          ],
+          "relatedLot": "1"
+        }
+      ],
+      "contractPeriod": {
+        "startDate": "2026-10-13T00:00:00+01:00",
+        "endDate": "2031-09-28T23:59:59+01:00"
+      },
+      "relatedLots": [
+        "1"
+      ],
+      "documents": [
+        {
+          "id": "095981-2026",
+          "documentType": "awardNotice",
+          "noticeType": "UK6",
+          "description": "Contract award notice on Find a Tender",
+          "url": "https://www.find-tender.service.gov.uk/Notice/095981-2026",
+          "datePublished": "2026-10-12T11:15:50+01:00",
+          "format": "text/html"
+        }
+      ],
+      "milestones": [
+        {
+          "id": "1",
+          "type": "futureSignatureDate",
+          "dueDate": "2026-10-12T23:59:59+01:00",
+          "status": "scheduled"
+        }
+      ]
+    }
+  ],
+  "language": "en"
+}

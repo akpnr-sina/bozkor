@@ -1,0 +1,142 @@
+{
+  "ocid": "ocds-h6vhtk-078604",
+  "id": "096278-2026",
+  "tag": [
+    "tender"
+  ],
+  "date": "2026-10-12T16:42:50+01:00",
+  "initiationType": "tender",
+  "parties": [
+    {
+      "name": "Suffolk County Council",
+      "id": "GB-PPON-PHVH-1657-HHMV",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PHVH-1657-HHMV"
+      },
+      "address": {
+        "streetAddress": "Endeavour House, 8 Russell Road",
+        "locality": "Ipswich",
+        "postalCode": "IP1 2BX",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKH14"
+      },
+      "contactPoint": {
+        "name": "Clare Lewis",
+        "email": "Procurementbusinesssupport@suffolk.gov.uk",
+        "telephone": "01473263400"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "http://suffolk.gov.uk",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PHVH-1657-HHMV",
+    "name": "Suffolk County Council"
+  },
+  "tender": {
+    "id": "ITS446",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Suffolk County Music Service County Music Groups Concert Tours 2027",
+    "description": "Suffolk County Council is out to tender for a competent, qualified provider to provide music tour services to take place in Europe in Summer 2027 for the Suffolk Youth Wind Band (SYWB) and Suffolk Youth Orchestra (SYO).",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "63510000",
+            "description": "Travel agency and similar services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "63511000",
+            "description": "Organisation of package tours"
+          },
+          {
+            "scheme": "CPV",
+            "id": "63516000",
+            "description": "Travel management services"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 185000.00,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Below threshold - open competition",
+    "mainProcurementCategory": "services",
+    "aboveThreshold": false,
+    "submissionMethodDetails": "www.suffolksourcing.uk",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed"
+    },
+    "tenderPeriod": {
+      "endDate": "2026-11-10T10:00:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-10-27T17:00:00+00:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 185000.00,
+          "currency": "AED"
+        },
+        "contractPeriod": {
+          "startDate": "2026-12-03T00:00:00+00:00",
+          "endDate": "2027-09-30T23:59:59+01:00",
+          "maxExtentDate": "2028-09-30T23:59:59+01:00"
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "12 months optional extension will be subject to satisfactory performance of the appointed supplier as well as confirmation of requirements/funding within Suffolk County Council"
+        },
+        "description": null,
+        "awardCriteria": {
+          "description": "Criteria as described within the tender documentation."
+        }
+      }
+    ],
+    "documents": [
+      {
+        "id": "A-23996",
+        "documentType": "biddingDocuments",
+        "url": "https://www.find-tender.service.gov.uk/Notice/Attachment/A-23996",
+        "format": "application/pdf"
+      },
+      {
+        "id": "096278-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096278-2026",
+        "datePublished": "2026-10-12T16:42:50+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en"
+}

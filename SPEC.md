@@ -47,14 +47,62 @@ Zamanlayıcı (pg-boss)
 
 ### 4.1 Find a Tender (UK)
 
+13 Ekim 2026'da gerçek yanıtlarla doğrulandı. Örnekler: `tests/fixtures/uk-fat/`. Kod: `src/sources/uk-fat/`.
+
 - Endpoint: `GET https://www.find-tender.service.gov.uk/api/1.0/ocdsReleasePackages`
-- Parametreler (doğrulanacak): `updatedFrom`, `updatedTo` (ISO 8601), `stages` (planning, tender, award), `limit` (en fazla 100), sonraki sayfa için yanıttaki `links.next`
-- Tek ilan: `/api/1.0/ocdsReleasePackages/{noticeId}`
-- Format: OCDS 1.1.5 ve uzantılar; Open Government Licence
-- Okuma için API anahtarı gerekmiyor görünüyor (bir test çağrısı 401 değil 429 döndü). 429'a karşı istemci yavaş ve sabırlı çalışmalı.
-- Procurement Act 2023 ilanları (eşik altı ilanlar dahil) ve eski rejim ilanları aynı akışta gelir. İlan tipi ve rejim payload'dan çıkarılır.
-- Doküman linkleri: `tender.documents[].url` (çoğunlukla portal linki)
-- Yedek kaynak: data.gov.uk üzerindeki günlük XML zip dosyaları
+- Parametreler: `updatedFrom`, `updatedTo`, `limit` (en fazla 100). API saatleri İngiltere yerel saati olarak okur, `Z` ya da `+01:00` gibi ofsetleri yok sayar. İstemci bu yüzden Europe/London saatini `YYYY-MM-DDTHH:mm:ss` biçiminde gönderir.
+- Sonuçlar yeniden eskiye gelir. Sonraki sayfa `links.next` ile alınır; link tarih aralığını ve `cursor`'ı korur, son sayfada yoktur.
+- `stages` parametresi güvenilir değil: aynı aralıkta 26 ihale ilanı varken `stages=tender` 6, `stages=planning,tender` 0 sonuç döndürdü. Kullanılmıyor; aşama filtresi kodda `tag` ile yapılıyor.
+- Tek ilan: `/ocdsReleasePackages/{noticeId}`. Bir prosedürün tüm ilanları: `/ocdsRecordPackages/{ocid}` (şimdilik kullanılmıyor).
+- Format: OCDS 1.1 ve uzantılar (`ocds_uk_extension` dahil); Open Government Licence.
+- Okuma için anahtar gerekmiyor; başarılı yanıtlarda rate limit başlığı yok. Tam sayfa (~1 MB) bazen 20-45 sn sürüyor. İstemci: 120 sn zaman aşımı, istekler arası en az 1,5 sn, 429'da `Retry-After`, 429 / 5xx / ağ hatasında üstel bekleme.
+- Procurement Act 2023 (`legalBasis` UKPGA 2023/54) ve eski rejim (`legalBasis` CELEX, AB direktifleri) ilanları aynı akışta gelir.
+- Hacim: iş günü ~450 ilan, bunun ~%60'ı sonuç ve sözleşme bildirimi. Tüm ilanlar `raw_notices`'e yazılır (değişmez kural 2). Sonuç ve sözleşme bildirimleri (`tag` değeri `award` ya da `contract` ile başlayanlar) sadece mevcut bir ihalenin durumunu günceller: başarısız sonuç cancelled, diğerleri awarded. İhale oluşturmazlar; ihalenin kimliğini (external_id, notice_url, published_at) değiştirmezler ve değişiklik sayılmazlar.
+- Yedek kaynak: data.gov.uk üzerindeki günlük XML zip dosyaları (kullanılmıyor).
+
+Alan eşlemesi (`normalize.ts`):
+
+| Platform alanı | Find a Tender alanı |
+| --- | --- |
+| external_id | `id` (ilan numarası, örn. 096253-2026) |
+| procedure_key | `ocid` (aynı prosedürün tüm ilanları) |
+| notice_type | `tag`: `tender*` ise tender, `planning*` ise planning |
+| ilan kodu (saklanmaz) | ilanın kendi dokümanındaki `noticeType` (UK1-UK4, UK12...) |
+| regime | `specialRegime` defenceSecurity: defence, utilities: utilities. `legalBasis` CELEX: covered (32009L0081 defence, 32014L0025 utilities; eski rejim ilanları FaT'ye sadece eşik üstünde gelirdi). `aboveThreshold` true: covered, false: below_threshold. Aksi halde unknown. lightTouch ve concession eşiğe göre covered ya da below_threshold |
+| status | `tag` *Cancellation: `tender.status` active ise sadece bazı lotlar sonlanmıştır, durum değişmez; cancelled ya da complete ise ihale iptal (bu ilanlarda sonuçlar da cancelled). Diğer ilanlarda `tender.status` cancelled / withdrawn / unsuccessful: cancelled, complete: awarded, active / planning / planned: open. `closed` saklanmaz, sorguda son tarihten türetilir |
+| title, description | `tender.title`, `tender.description` (yoksa `planning.milestones[].description`) |
+| buyer_name | `buyer.name` (yoksa `parties[roles=buyer].name`) |
+| buyer_country | alıcının `address.country` (alpha-2) ya da `countryName`; yoksa GB |
+| nuts_code | ilk `items[].deliveryAddresses[].region`, yoksa alıcı adresindeki `region` |
+| cpv_main | `tender.classification` (eski rejim); yoksa kalemlerdeki ilk CPV. PA2023 ilanlarında ana CPV yok, kodlar `items[].additionalClassifications` içinde |
+| cpv_additional | tender ve kalemlerdeki diğer tüm CPV'ler |
+| value_amount, value_currency | `tender.value.amount` (KDV hariç), yoksa `amountGross`; 0 açıklanmamış demek (null). `tender.value` yoksa lot değerlerinin toplamı |
+| submission_deadline | `tender.tenderPeriod.endDate`; yoksa `tender.expressionOfInterestDeadline` (rekabetçi esnek usulde katılım talebi son tarihi) |
+| clarification_deadline | `tender.enquiryPeriod.endDate` |
+| procedure_type | `tender.procurementMethodDetails` (yoksa `procurementMethod`) |
+| notice_language | `language` (büyük harf) |
+| notice_url | ilanın kendi dokümanının linki (`https://www.find-tender.service.gov.uk/Notice/{id}`) |
+| documents_portal_url | `tender.submissionMethodDetails` içindeki ilk URL (çıplak alan adına https eklenir); yoksa ilk `biddingDocuments` linki |
+| lots | `tender.lots[]`: `id` lot_number olur; CPV'ler `items[relatedLot]`'tan, değer `lot.value`'dan |
+| documents | `planning.documents` ve `tender.documents` içinde linki olanlar; ilan sayfaları (`noticeType` olan ya da türü `...Notice` ile biten) hariç. Bir kısmı doğrudan dosya (`/Notice/Attachment/...`), bir kısmı portal giriş sayfası |
+
+Bilinen veri tuhaflıkları:
+
+- Lot para birimi formda varsayılan olarak AED kalıyor (lot tutarı GBP ihale tutarıyla aynı). Lot AED ve ihale başka para birimindeyse ihalenin para birimi kullanılır. İhale düzeyinde AED görülürse (nadir) yayınlandığı gibi saklanır; ECB kurlarında AED olmadığından value_eur boş kalır.
+- Eski rejim düzeltme ilanları (`amendments` dolu, `tender.status` yok) değişiklikleri serbest metin olarak verir (`amendments[].unstructuredChanges`) ve ilanın sadece parçalarını tekrarlar; açıklaması düzeltme metninin kendisidir. Kısmi ilan sayılır: açıklama, CPV, lot ve değer alınmaz, son tarih metinden çıkarılmaz. İhale yine "değişti" olarak işaretlenir.
+- Sonlandırma ilanları (UK12) lotları sadece numara ve durumla listeler. Böyle bir liste hangi lotların var olduğunu değiştirmez.
+- Kimliği olmayan lot atlanır.
+- Tarihler ofsetli gelir (`Z`, `+00:00`, `+01:00`); ofsetsiz gelirse Europe/London kabul edilir.
+
+Birleştirme (`src/sources/fold.ts`): Aynı `ocid`'in tüm ilanları yayın tarihine göre sıralanır ve her alanda o alanı belirten en son ilan geçerli olur. CPV kümesi CPV içeren son ilandan gelir. Lot listesi lot içeren son ilandan gelir, boş lot alanları önceki ilanlardan tamamlanır (iptal ilanları lotları sadece numarayla listeler). Doküman linkleri birikir. published_at ilk ihale ilanının tarihidir, ihale ilanı yoksa ilk ilanın. Önceki bir senkronda var olan ihaleye yeni bir planlama ya da ihale ilanı gelirse (düzeltme, iptal, planlamadan ihaleye geçiş) changed_at set edilir. Bir prosedürde durumu belli en az bir planlama ya da ihale ilanı yoksa ihale oluşturulmaz (sadece sonuç bildirimi olanlar, tek başına eski rejim düzeltmesi); backfill çıktısında "atlanan" olarak sayılır.
+
+Senkron (`src/sources/sync.ts`):
+
+- Artımlı: 2 saatte bir (pg-boss `sync-uk-fat`, `0 */2 * * *`, İstanbul). `sources.cursor`'dan 1 saat geriden başlar (geç indekslenen ilanlar ve yaz saati geçişi için). İlk çalışmada son 24 saat.
+- Backfill: `pnpm backfill --source=uk_fat --days=30`. Günlük pencereler, eskiden yeniye, 1 dakika örtüşmeyle. Tekrar çalıştırmak güvenli.
+- Aynı içerikteki ham ilan (anahtar sırasından bağımsız sha256) tekrar yazılmaz. Sadece yeni ham kayıt alan prosedürler yeniden hesaplanır.
+- Ham satır, ihaleye işlendiğinde ya da atlandığında `applied_at` alır (ihale ile aynı transaction'da, okunan satır kimlikleriyle). Her senkron ve backfill başında `applied_at` boş satırların prosedürleri işlenir; yarıda kesilen bir çalıştırma böylece kendiliğinden tamamlanır.
+- `pnpm renormalize --source=uk_fat` tüm ihaleleri saklanan ham ilanlardan yeniden hesaplar (API çağırmaz, changed_at basmaz).
 
 ### 4.2 TED (AB)
 
@@ -74,10 +122,10 @@ ECB günlük referans kurları. `value_eur` hesaplanır; orijinal tutar ve para 
 ## 5. Veri modeli
 
 - `sources`: id (`uk_fat`, `eu_ted`), cursor, last_synced_at, last_error
-- `raw_notices`: id, source, external_id, payload (jsonb) ya da payload_xml (text), sha256, fetched_at. (source, external_id, sha256) tekil: aynı payload tekrar yazılmaz, değişen payload yeni satır olur.
+- `raw_notices`: id, source, external_id, procedure_key, payload (jsonb) ya da payload_xml (text), sha256, fetched_at, applied_at. (source, external_id, sha256) tekil: aynı payload tekrar yazılmaz, değişen payload yeni satır olur. procedure_key ile bir prosedür ham veriden yeniden hesaplanabilir.
 - `tenders`: id, source, external_id, procedure_key (tekilleştirme), notice_type, regime (`covered` | `below_threshold` | `utilities` | `defence` | `unknown`), status (`open` | `closed` | `awarded` | `cancelled`), title, description, buyer_name, buyer_country, nuts_code, cpv_main, cpv_additional[], value_amount, value_currency, value_eur, published_at, submission_deadline, clarification_deadline, procedure_type, notice_language, notice_url, documents_portal_url, changed_at, created_at, updated_at
 - `lots`: id, tender_id, lot_number, title, description, cpv, value_amount, value_currency, quantity_text
-- `documents`: id, tender_id, origin (`auto` | `manual`), source_url, filename, mime, size_bytes, sha256, storage_path, page_count, text_content (DOCX / XLSX için), fetch_status (`pending` | `fetched` | `needs_manual` | `failed` | `unsupported`), fetch_error
+- `documents`: id, tender_id, origin (`auto` | `manual`), source_url, title, document_type, filename, mime, size_bytes, sha256, storage_path, page_count, text_content (DOCX / XLSX için), fetch_status (`pending` | `fetched` | `needs_manual` | `failed` | `unsupported`), fetch_error. Otomatik dokümanlarda (tender_id, source_url) tekil.
 - `categories`: id, name, cpv_prefixes[], description. Profiller ve ileride üreticiler bu ortak taksonomiyi kullanır.
 - `criteria_profiles`: id, name, active, rules (jsonb, şema bölüm 6), created_at, updated_at
 - `profile_matches`: profile_id, tender_id, matched_at, filter_reasons (jsonb), triage_score, triage_analysis_id, state (`new` | `seen` | `dismissed`)

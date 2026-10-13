@@ -29,7 +29,8 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `pnpm typecheck` route tiplerini üretir ve `tsc --noEmit` çalıştırır
 - `pnpm lint` ESLint
 - `pnpm db:generate --name <ad>` / `pnpm db:migrate` Drizzle migration
-- `pnpm backfill --source=uk_fat --days=30` geriye dönük yükleme (Faz 1'de eklenecek)
+- `pnpm backfill --source=uk_fat --days=30` geriye dönük yükleme (tekrar çalıştırmak güvenli)
+- `pnpm renormalize --source=uk_fat` normalizer ya da fold kuralı değişince tüm ihaleleri ham veriden yeniden hesaplar (API çağırmaz)
 
 ## Klasör yapısı
 
@@ -37,11 +38,13 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `src/db/` Drizzle şema (`schema.ts`), bağlantı (`getDb()`) ve migration'lar (`migrations/`)
 - `src/lib/auth/` allowlist ve `getCurrentUser()` (veri erişen her sayfa, aksiyon ve route'ta çağrılır)
 - `src/lib/supabase/` Supabase SSR istemcisi ve proxy oturum yenileme
-- `src/sources/uk-fat/`, `src/sources/eu-ted/` her kaynak için client + normalizer
+- `src/sources/` kaynaktan bağımsız katman: `types.ts` (SourceAdapter, NormalizedNotice), `http.ts` (timeout, 429, backoff), `fold.ts` (bir prosedürün ilanlarını tek ihaleye birleştirir), `store.ts` (ham kayıt + upsert), `sync.ts` (artımlı senkron, backfill, sources tablosu)
+- `src/sources/uk-fat/`, `src/sources/eu-ted/` her kaynak için client + Zod şeması + normalizer + adapter
 - `src/matching/` kriter motoru (saf fonksiyonlar)
 - `src/documents/` indirme, açma, metne çevirme
 - `src/analysis/` triage, derin analiz, Zod şemaları, alıntı doğrulama
-- `src/worker/` job tanımları ve zamanlama
+- `src/worker/` job tanımları ve zamanlama (`jobs.ts`), backfill komutu (`backfill.ts`)
+- `src/lib/time.ts` saat dilimi dönüşümleri, `src/lib/countries.ts` ülke adı ve kodu çevirisi
 - `prompts/` versiyonlu prompt dosyaları (`triage.v1.md`, `deep.v1.md`)
 - `tests/fixtures/` gerçek API yanıtlarından kaydedilmiş örnekler
 - `tests/helpers/` test yardımcıları (PGlite ile migration uygulanmış test DB'si)
@@ -71,21 +74,29 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0 tamam (13 Ekim 2026). Sıradaki: Faz 1 (UK veri hattı).
+Faz 0 ve Faz 1 tamam (13 Ekim 2026). Sıradaki: Faz 2 (AB veri hattı, TED).
 
-Faz 0'da doğrulananlar:
-- `pnpm build`, `pnpm typecheck`, `pnpm lint`, `pnpm test` geçiyor.
-- Migration'lar Supabase'de uygulandı; testlerde PGlite (Postgres 17) üzerinde de uygulanıyor, her tabloda RLS açık.
-- `pnpm worker` Supabase'e bağlanıyor, heartbeat job'u dakikada bir log yazıyor.
-- Magic link ile giriş çalışıyor; allowlist dışındaki adres reddediliyor.
+Faz 1 kabulü (Supabase üzerinde):
+- `pnpm backfill --source=uk_fat --days=30`: 9.951 ham ilan, 2.705 ihale, 6.273 atlanan prosedür (ihale ilanı 30 günden eski sonuç bildirimleri).
+- İkinci çalıştırma (`--days=3`) kopya üretmedi: 20 yeni ham ilan, bunlar arada yayımlanan ilanlar (6 yeni ihale, 2 düzeltme, 12 sonuç bildirimi); toplam ihale 2.705 + 6 = 2.711.
+- Worker açılınca `sync-uk-fat` hemen bir kez çalıştı (sonra 2 saatte bir); /settings kaynak durumunu ve sayıları doğru gösteriyor.
+- Gerçek eşleme SPEC bölüm 4.1'de; 12 gerçek ilan örneği `tests/fixtures/uk-fat/`; 77 test (PGlite ve postgres-js sürücüsüyle) geçiyor.
 
 Bilinen eksikler:
+- İlk 30 günlük yükleme sırasında 91 ihale "değişti" olarak işaretlendi (ilk talimattan kalan yarım çalıştırmadaki ihalelere sonraki günlerin ilanları geldi). Henüz kimse görmediği için Faz 3 başında changed_at sıfırlanabilir. İkinci çalıştırmadaki 2 işaret gerçek düzeltme ilanı.
+- value_eur boş; Faz 2'de ECB kurlarıyla doldurulacak.
+- Worker sadece bilgisayarda açıkken çalışıyor; production ortamı (Vercel, Railway) henüz kurulmadı.
 - Supabase magic link şablonu düzenlenemedi; varsayılan şablon ve PKCE `code` akışı kullanılıyor. Link, isteğin yapıldığı bilgisayardaki aynı tarayıcıda açılmalı. Resend SMTP bağlanınca `token_hash` şablonuna geçilebilir (README).
 - Supabase'in yerleşik e-posta servisi sadece organizasyon üyelerine ve saatte birkaç e-posta gönderiyor. İkinci kullanıcı için organizasyon daveti ya da Resend SMTP gerekiyor.
-- Production ortamı (Vercel, Railway) henüz kurulmadı.
 
 Kararlar:
 - Next 16.4 Cache Components ve Partial Prefetching açık (sonraki major'da zorunlu). Oturum ve DB okuyan bileşenler `<Suspense>` içinde olmalı.
+  - `getCurrentUser()` `"use cache: private"` kullanır: Supabase token süresini `Date.now()` ile karşılaştırıyor, oturuma özel App Shell ön render'ı buna sadece cache scope içinde izin veriyor.
+  - Server component'te DB'ye dokunmadan önce `await io()` (`next/cache`) çağrılır: postgres-js havuzu kurarken `Math.random()` kullanıyor ve ön render bunu reddediyor. Örnek: `src/app/(app)/settings/source-status.tsx`. `getDb()`'nin içine konmaz, çünkü worker ve komut satırı araçları Next dışında çalışır.
 - Tüm tablolarda RLS açık, politika yok; uygulama `DATABASE_URL` ile tablo sahibi olarak bağlanır.
 - Supabase'de kayıt kapalı, kullanıcılar panelden eklenir (`shouldCreateUser: false`).
 - `analyses` tablosuna maliyet hesabı için `cache_read_tokens` ve `cache_write_tokens` eklendi.
+- Tüm Find a Tender ilanları raw_notices'e yazılır. Sonuç ve sözleşme bildirimleri sadece mevcut ihalenin durumunu günceller, ihale oluşturmaz ve değişiklik sayılmaz (SPEC 4.1).
+- Yarıda kalan senkron, raw_notices.applied_at sayesinde bir sonraki çalıştırmada kendiliğinden tamamlanır.
+- tenders.status `closed` yazılmaz; kapanmış ihale sorguda submission_deadline ile ayıklanır.
+- value_eur Faz 2'de ECB kurlarıyla doldurulacak; Faz 1'de boş.

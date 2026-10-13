@@ -1,0 +1,179 @@
+{
+  "id": "096284-2026",
+  "tag": [
+    "tenderUpdate"
+  ],
+  "date": "2026-10-12T16:55:14+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-078603",
+  "parties": [
+    {
+      "name": "Historic England",
+      "id": "GB-PPON-PXLY-5862-RMML",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PXLY-5862-RMML"
+      },
+      "address": {
+        "streetAddress": "The Engine House",
+        "locality": "Swindon",
+        "postalCode": "SN22EH",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKK14"
+      },
+      "contactPoint": {
+        "name": "Sheena Charrett",
+        "email": "procurement-he@historicengland.org.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthorityCentralGovernment",
+            "description": "Public authority - central government"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PXLY-5862-RMML",
+    "name": "Historic England"
+  },
+  "tender": {
+    "id": "PREF 00000633",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "ITT - Archaeological Services in Relation to Marine Protection 2027-2029 - UID 365",
+    "description": "The UK is a signatory to the European Convention on the Protection of the Archaeological Heritage (revised) 1992. The aim of the Convention is to protect the archaeological heritage as a source of the European collective memory and as an instrument for historical and scientific study, whether on land or underwater.\nIn order to meet this commitment and to provide for the conservation and enhancement of significant marine heritage assets, Historic England is seeking to procure, within a single contract, assessment functions to support marine protection and management for the two-year period April 2027 to March 2029 (inclusive). \nThe project will address those sites and assets most at risk through neglect, decay or other threats within UK territorial waters adjacent to England.",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "71351914",
+            "description": "Archaeological services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "71354500",
+            "description": "Marine survey services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "73110000",
+            "description": "Research services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "73112000",
+            "description": "Marine research services"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 374400,
+      "amount": 312000,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Open procedure",
+    "mainProcurementCategory": "services",
+    "aboveThreshold": true,
+    "submissionMethodDetails": "https://supplier.in-tend.co.uk/historicengland/home",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed",
+      "languages": [
+        "en"
+      ]
+    },
+    "tenderPeriod": {
+      "endDate": "2026-11-13T09:30:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-11-06T17:00:00+00:00"
+    },
+    "awardPeriod": {
+      "endDate": "2026-12-14T23:59:59+00:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 374400,
+          "amount": 312000,
+          "currency": "AED"
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "type": "price",
+              "name": "Price",
+              "numbers": [
+                {
+                  "number": 35,
+                  "weight": "percentageExact"
+                }
+              ]
+            },
+            {
+              "type": "quality",
+              "name": "Quality",
+              "numbers": [
+                {
+                  "number": 65,
+                  "weight": "percentageExact"
+                }
+              ]
+            }
+          ]
+        },
+        "contractPeriod": {
+          "startDate": "2027-04-01T00:00:00+01:00",
+          "endDate": "2029-04-30T23:59:59+01:00",
+          "maxExtentDate": "2030-04-30T23:59:59+01:00"
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "12 month optional extension"
+        },
+        "description": null
+      }
+    ],
+    "documents": [
+      {
+        "id": "conflictOfInterest",
+        "documentType": "conflictOfInterest",
+        "description": "Not published"
+      },
+      {
+        "id": "096284-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096284-2026",
+        "datePublished": "2026-10-12T16:55:14+01:00",
+        "format": "text/html"
+      }
+    ],
+    "amendments": [
+      {
+        "description": "Tender submission deadline had the wrong date as 30/11/26 should be 13/11/26",
+        "id": "096284-2026"
+      }
+    ]
+  },
+  "language": "en"
+}

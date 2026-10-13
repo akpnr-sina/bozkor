@@ -1,0 +1,278 @@
+{
+  "buyerID": [],
+  "id": "096253-2026",
+  "tag": [
+    "tender"
+  ],
+  "date": "2026-10-12T16:26:28+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-060198",
+  "parties": [
+    {
+      "name": "LEIDOS SUPPLY, LIMITED",
+      "id": "GB-COH-09353172",
+      "identifier": {
+        "scheme": "GB-COH",
+        "id": "09353172"
+      },
+      "address": {
+        "streetAddress": "8 Monarch Court The Brooms",
+        "locality": "Bristol",
+        "postalCode": "BS16 7FH",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKK12"
+      },
+      "contactPoint": {
+        "name": "Hannah Collins",
+        "email": "Hannah.Collins-2@uk.leidos.com"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "https://www.leidos-supply.uk/",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthorityCentralGovernment",
+            "description": "Public authority - central government"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TVS SUPPLY CHAIN SOLUTIONS LIMITED",
+      "id": "GB-COH-02748952",
+      "identifier": {
+        "scheme": "GB-COH",
+        "id": "02748952"
+      },
+      "address": {
+        "streetAddress": "Logistics House, Buckshaw Avenue",
+        "locality": "Chorley",
+        "postalCode": "PR6 7AJ",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKD47"
+      },
+      "contactPoint": {
+        "email": "uk.enquiry@tvsscs.com"
+      },
+      "roles": [
+        "procuringEntity"
+      ],
+      "roleDetails": "Conduct various parts of the evaluation",
+      "details": {
+        "url": "https://www.tvsscs.com/"
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-COH-09353172",
+    "name": "LEIDOS SUPPLY, LIMITED"
+  },
+  "tender": {
+    "id": "LSL/MED/0222",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "LSL/MED/0222 - The Supply of Intraosseous Devices and associated spares",
+    "description": "Team Leidos are proud to be delivering the logistics commodities and services transformation (LCS(T)) Delivery partner contracts (LCS (T)/0001 dated 16.4.2015) on behalf of the UK Ministry of Defence (MoD) (the ‘Prime Contract’). Delivery of other parts of the LCS(T) contract are delivered by Leidos Europe Ltd (LEL) and other partners (together ‘Team Leidos’). This requirement is subject to the Public Procurement Regulations and respective advertising action. \nThe Medical Team, which forms part of Leidos Supply Ltd. is considering the potential requirement for the supply of Intraosseous Devices and Associated Spares Requirements on behalf of the UK MoD.\nThe total estimated value for this Framework Agreement will be between £4,000,000 and £6,000,000, with a total length of 4 Years.\nIn addition, please note that as a framework agreement there is no guarantee of business. \nIf this is of further interest, please register on our eProcurement system, Jaggaer: https://leidos-supply.app.jaggaer.com. \nBidders will be able to register on the system, and once registered they can express their interest and complete their bid on there. Should Bidders have any queries regarding the system, please contact the support team on the front page of the Jaggaer website, where it says 'Need assistance?', for help. Anyqueries regarding the tender itself, as opposed to the system, should be directed through Jaggaer's messaging centre.",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33100000",
+            "description": "Medical equipments"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33170000",
+            "description": "Anaesthesia and resuscitation"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33140000",
+            "description": "Medical consumables"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33190000",
+            "description": "Miscellaneous medical devices and products"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UK",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "1"
+      },
+      {
+        "id": "2",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33100000",
+            "description": "Medical equipments"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33170000",
+            "description": "Anaesthesia and resuscitation"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33140000",
+            "description": "Medical consumables"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33190000",
+            "description": "Miscellaneous medical devices and products"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UK",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "2"
+      }
+    ],
+    "value": {
+      "amountGross": 7200000,
+      "amount": 6000000,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Open procedure",
+    "mainProcurementCategory": "goods",
+    "aboveThreshold": true,
+    "coveredBy": [
+      "GPA",
+      "CPTPP"
+    ],
+    "submissionMethodDetails": "https://leidos-supply.app.jaggaer.com/",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed",
+      "languages": [
+        "en"
+      ]
+    },
+    "tenderPeriod": {
+      "endDate": "2026-11-09T17:00:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-11-03T12:00:00+00:00"
+    },
+    "awardPeriod": {
+      "endDate": "2027-02-01T23:59:59+00:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "title": "IO Sternal Access Device",
+        "description": "The system shall comprise of a Sternal Access Device which is simple and easy \nto use, and shall be pocket-sized and robust enough to survive prolonged environmental conditions without failure.",
+        "status": "active",
+        "value": {
+          "amountGross": 3600000,
+          "amount": 3000000,
+          "currency": "GBP"
+        },
+        "awardCriteria": {
+          "weightingDescription": "Bidders must achieve a PASS mark for all PASS/FAIL questions in order to be deemed compliant in the Qualification stage. Failure of any of the questions may result in a Bidder’s Tender not being evaluated further, past the point of failure. \nBidders who have successfully passed the Qualification Envelope will progress to the Technical Envelope evaluation. A benchmark score of 60% or higher is required for the weighted questions within the Question Set in order to be deemed compliant. Where applicable consensus of evaluators will be held, in order to establish an agreed score for responses.\nThe submitted prices of any Bidders whose bids have passed all the previous phases will be assessed. Leidos Supply Limited (LSL) intends to award a minimum of one contract for this requirement. However, LSL reserves the right to award up to four contracts if necessary to ensure full coverage of the Schedule of Requirements (SoR) items and best value for money.",
+          "criteria": [
+            {
+              "type": "quality",
+              "name": "Qualification Stage",
+              "description": "Bidders must achieve a PASS mark for all PASS/FAIL questions in order to be deemed compliant in the Qualification stage. Failure of any of the questions may result in a Bidder’s Tender not being evaluated further, past the point of failure."
+            },
+            {
+              "type": "quality",
+              "name": "Technical Stage",
+              "description": "Bidders who have successfully passed the Qualification Envelope will progress to the Technical Envelope evaluation. A benchmark score of 60% or higher is required for the weighted questions within the Question Set in order to be deemed compliant. Where applicable consensus of evaluators will be held, in order to establish an agreed score for responses. Failure of any of the questions may result in a Bidder’s Tender not being evaluated further, past the point of failure."
+            },
+            {
+              "type": "price",
+              "name": "Commercial Stage",
+              "description": "The submitted prices of any Bidders whose bids have passed all the previous phases will be assessed. Leidos Supply Limited (LSL) intends to award a minimum of one contract for this requirement. However, LSL reserves the right to award up to four contracts if necessary to ensure full coverage of the Schedule of Requirements (SoR) items and best value for money."
+            }
+          ]
+        },
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2027-03-01T00:00:00+00:00",
+          "endDate": "2031-02-28T23:59:59+00:00"
+        }
+      },
+      {
+        "id": "2",
+        "title": "IO Limb Access System",
+        "description": "The system shall comprise of a Limb Access System which is simple and easy to use, and shall be pocket-sized and robust enough to survive prolonged environmental conditions without failure.",
+        "status": "active",
+        "value": {
+          "amountGross": 3600000,
+          "amount": 3000000,
+          "currency": "GBP"
+        },
+        "awardCriteria": {
+          "weightingDescription": "Bidders must achieve a PASS mark for all PASS/FAIL questions in order to be deemed compliant in the Qualification stage. Failure of any of the questions may result in a Bidder’s Tender not being evaluated further, past the point of failure. \nBidders who have successfully passed the Qualification Envelope will progress to the Technical Envelope evaluation. A benchmark score of 60% or higher is required for the weighted questions within the Question Set in order to be deemed compliant. Where applicable consensus of evaluators will be held, in order to establish an agreed score for responses.\nThe submitted prices of any Bidders whose bids have passed all the previous phases will be assessed. Leidos Supply Limited (LSL) intends to award a minimum of one contract for this requirement. However, LSL reserves the right to award up to four contracts if necessary to ensure full coverage of the Schedule of Requirements (SoR) items and best value for money.",
+          "criteria": [
+            {
+              "type": "quality",
+              "name": "Qualification Stage",
+              "description": "Bidders must achieve a PASS mark for all PASS/FAIL questions in order to be deemed compliant in the Qualification stage. Failure of any of the questions may result in a Bidder’s Tender not being evaluated further, past the point of failure."
+            },
+            {
+              "type": "quality",
+              "name": "Technical Stage",
+              "description": "Bidders who have successfully passed the Qualification Envelope will progress to the Technical Envelope evaluation. A benchmark score of 60% or higher is required for the weighted questions within the Question Set in order to be deemed compliant. Where applicable consensus of evaluators will be held, in order to establish an agreed score for responses. Failure of any of the questions may result in a Bidder’s Tender not being evaluated further, past the point of failure."
+            },
+            {
+              "type": "price",
+              "name": "Commercial Stage",
+              "description": "The submitted prices of any Bidders whose bids have passed all the previous phases will be assessed. Leidos Supply Limited (LSL) intends to award a minimum of one contract for this requirement. However, LSL reserves the right to award up to four contracts if necessary to ensure full coverage of the Schedule of Requirements (SoR) items and best value for money."
+            }
+          ]
+        },
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2027-03-01T00:00:00+00:00",
+          "endDate": "2031-02-28T23:59:59+00:00"
+        }
+      }
+    ],
+    "documents": [
+      {
+        "id": "conflictOfInterest",
+        "documentType": "conflictOfInterest",
+        "description": "Not published"
+      },
+      {
+        "id": "096253-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096253-2026",
+        "datePublished": "2026-10-12T16:26:28+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en"
+}

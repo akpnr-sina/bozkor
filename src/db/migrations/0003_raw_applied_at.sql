@@ -1,0 +1,2 @@
+ALTER TABLE "raw_notices" ADD COLUMN "applied_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "raw_notices_unapplied_idx" ON "raw_notices" USING btree ("source","procedure_key") WHERE "raw_notices"."applied_at" is null;

@@ -1,0 +1,186 @@
+{
+  "ocid": "ocds-h6vhtk-07861a",
+  "buyerID": [],
+  "id": "096323-2026",
+  "tag": [
+    "planning"
+  ],
+  "date": "2026-10-12T20:35:03+01:00",
+  "initiationType": "tender",
+  "parties": [
+    {
+      "name": "Transport for Wales Rail Limited (Utility Buyer)",
+      "id": "GB-COH-12619906",
+      "identifier": {
+        "scheme": "GB-COH",
+        "id": "12619906"
+      },
+      "address": {
+        "streetAddress": "3 Llys Cadwyn",
+        "locality": "Pontypridd",
+        "postalCode": "CF37 4TH",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKL15"
+      },
+      "contactPoint": {
+        "email": "supplychain@tfw.wales"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "http://www.tfwrail.wales",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          },
+          {
+            "scheme": "UK_CA_DEVOLVED_REGULATIONS",
+            "id": "GB-WLS",
+            "description": "Welsh devolved regulations apply"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Transport for Wales",
+      "id": "GB-COH-09476013",
+      "identifier": {
+        "scheme": "GB-COH",
+        "id": "09476013"
+      },
+      "address": {
+        "streetAddress": "3 Llys Cadwyn, Taff Street",
+        "locality": "Pontypridd",
+        "postalCode": "CF37 4TH",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKL15"
+      },
+      "contactPoint": {
+        "email": "supplychain@tfw.wales"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "http://www.tfw.wales",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          },
+          {
+            "scheme": "UK_CA_DEVOLVED_REGULATIONS",
+            "id": "GB-WLS",
+            "description": "Welsh devolved regulations apply"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-COH-12619906",
+    "name": "Transport for Wales Rail Limited (Utility Buyer)"
+  },
+  "planning": {
+    "milestones": [
+      {
+        "id": "engagement",
+        "type": "engagement",
+        "description": "Transport for Wales is undertaking a market engagement exercise to inform the re-procurement of its Facilities Management contract and is inviting interested suppliers to participate in a co-design workshop.\nThe purpose of the workshop is to work collaboratively with the market to explore how a future Facilities Management contract should be structured to deliver high-quality, efficient and value-for-money services across the Transport for Wales estate. Transport for Wales is seeking supplier insight and practical experience to help shape the future operating model, service requirements and commercial approach.\nThe workshop will focus on developing a future operating model that provides clarity on how stakeholders request work, approve work, monitor progress and escalate issues throughout the lifecycle of a task. Discussions will also explore the digital solutions and capabilities required to support effective contract management, including helpdesk provision, fault reporting mechanisms, performance dashboards, evidence capture and document control. In addition, suppliers will be invited to share their views on how transparency and value for money can be strengthened through the commercial model, alongside approaches for embedding measurable social value and sustainability outcomes within the future contract.\nTransport for Wales intends to host the market engagement workshops on the following dates:\n•\t16 November 2026 - Chester\n•\t18 November 2026 - Cardiff\nBoth events will cover the same content, and suppliers are only required to attend one session.\nSuppliers wishing to attend should register their interest by completing the registration form via the link below. Please copy and paste the link into your web browser to access the form. If you experience any issues accessing the form, please contact supplychain@tfw.wales and a registration link will be provided.\nhttps://forms.cloud.microsoft/e/xjAXQb1GRj\nThe deadline for registration is 23:45 on Thursday 12 November 2026. Further details will be issued to registered attendees closer to the event date.\nPlease note that Transport for Wales reserves the right to amend, postpone or cancel either event should circumstances require. Any changes will be communicated to registered attendees as soon as reasonably practicable.\nParticipation in this market engagement exercise is voluntary and will not confer any advantage or disadvantage in any subsequent procurement process. Any future procurement opportunity will be advertised separately in accordance with the applicable procurement regulations.",
+        "dueDate": "2026-11-12T23:59:59+00:00",
+        "status": "scheduled"
+      }
+    ],
+    "documents": [
+      {
+        "id": "096323-2026",
+        "documentType": "marketEngagementNotice",
+        "noticeType": "UK2",
+        "description": "Preliminary market engagement notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096323-2026",
+        "datePublished": "2026-10-12T20:35:03+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "tender": {
+    "id": "TFW1051.00",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Facilities Management",
+    "description": "Transport for Wales is preparing to re-procure its Facilities Management contract to support its estate and operational activities across Wales and the Borders.\nAs part of developing the future requirement, Transport for Wales is considering how facilities management services should be structured to support operational delivery, compliance obligations and wider estate objectives. This engagement will help inform the future operating model, contract scope and commercial approach.\nTransport for Wales is seeking market insight on how best to deliver a flexible, efficient and value-for-money service that can support both current operational needs and future estate developments. Feedback received through this engagement will help shape the future procurement strategy, contract requirements and commercial approach ahead of any formal procurement process.",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "79993000",
+            "description": "Building and facilities management services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "50700000",
+            "description": "Repair and maintenance services of building installations"
+          },
+          {
+            "scheme": "CPV",
+            "id": "50000000",
+            "description": "Repair and maintenance services"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UK",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 69000000.00,
+      "amount": 57500000.00,
+      "currency": "GBP"
+    },
+    "mainProcurementCategory": "services",
+    "specialRegime": [
+      "utilities"
+    ],
+    "aboveThreshold": true,
+    "techniques": {
+      "hasFrameworkAgreement": true
+    },
+    "lots": [
+      {
+        "id": "1",
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2028-04-01T00:00:00+01:00",
+          "endDate": "2033-03-31T23:59:59+01:00",
+          "maxExtentDate": "2036-03-31T23:59:59+01:00"
+        },
+        "hasRenewal": true,
+        "description": null,
+        "status": "planning"
+      }
+    ],
+    "communication": {
+      "futureNoticeDate": "2027-01-28T23:59:59+00:00"
+    },
+    "status": "planning"
+  },
+  "language": "en"
+}

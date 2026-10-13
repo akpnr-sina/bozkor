@@ -1,0 +1,537 @@
+{
+  "ocid": "ocds-h6vhtk-0785f4",
+  "id": "096255-2026",
+  "date": "2026-10-12T16:26:40+01:00",
+  "tag": [
+    "tender"
+  ],
+  "description": "The buyer is using PCS-Tender to conduct this ITT exercise. The Project code is 32634. For more information see: http://www.publiccontractsscotland.gov.uk/info/InfoCentre.aspx?ID=2343\nA sub-contract clause has been included in this contract. For more information see: http://www.publiccontractsscotland.gov.uk/info/InfoCentre.aspx?ID=2363\nCommunity benefits are included in this requirement. For more information see: https://www.gov.scot/policies/public-sector-procurement/community-benefits-in-procurement/\nA summary of the expected community benefits has been provided as follows:\nA scored community benefits question can be found in the Technical Questionnaire.\n(SC Ref:842561)",
+  "initiationType": "tender",
+  "tender": {
+    "id": "GGC0679",
+    "legalBasis": {
+      "id": "32014L0024",
+      "scheme": "CELEX"
+    },
+    "title": "Dental Implants, Digital Services & Associated Products",
+    "status": "active",
+    "classification": {
+      "scheme": "CPV",
+      "id": "33132000",
+      "description": "Dental implant"
+    },
+    "mainProcurementCategory": "goods",
+    "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Dental Implants, Digital Services and Associated Products, in order to procure a high quality solution across the Board. The tender opportunity consists of six primary lots. Suppliers successfully appointed to one or more of Lots 1 to 6 shall automatically qualify for participation within Lot 7 (Innovation). No separate appointment process is required for Lot 7.",
+    "lotDetails": {
+      "maximumLotsBidPerSupplier": 1E+9999
+    },
+    "lots": [
+      {
+        "id": "1",
+        "title": "Dental Implants",
+        "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Dental Implants Products, in order to procure a high quality solution for NHS GGC patients.",
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Technical Questionnaire",
+              "type": "quality",
+              "description": "40"
+            },
+            {
+              "type": "price",
+              "description": "60"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "durationInDays": 1440
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "24 month initial terms with two 12 month extension options."
+        },
+        "submissionTerms": {
+          "variantPolicy": "notAllowed"
+        },
+        "hasOptions": false,
+        "status": "active"
+      },
+      {
+        "id": "2",
+        "title": "Prosthodontic Substructures and Superstructures",
+        "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Prosthodontic Substructure and Superstructure Products, in order to procure a high quality solution for NHS GGC patients.",
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Technical Questionnaire",
+              "type": "quality",
+              "description": "40"
+            },
+            {
+              "type": "price",
+              "description": "60"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "durationInDays": 1440
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "24 month initial terms with two 12 month extension options."
+        },
+        "submissionTerms": {
+          "variantPolicy": "notAllowed"
+        },
+        "hasOptions": false,
+        "status": "active"
+      },
+      {
+        "id": "3",
+        "title": "Abutments and Screws",
+        "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Dental Abutment and Dental Screw Products, in order to procure a high quality solution for NHS GGC patients.",
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Technical Questionnaire",
+              "type": "quality",
+              "description": "40"
+            },
+            {
+              "type": "price",
+              "description": "60"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "durationInDays": 1440
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "24 month initial terms with two 12 month extension options."
+        },
+        "submissionTerms": {
+          "variantPolicy": "notAllowed"
+        },
+        "hasOptions": false,
+        "status": "active"
+      },
+      {
+        "id": "4",
+        "title": "Surgical Guides, Impression Components Digital and Analogue",
+        "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Dental Surgical Guides and Impression Component (Digital and Analogue) Products, in order to procure a high quality solution for NHS GGC patients.",
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Technical Questionnaire",
+              "type": "quality",
+              "description": "40"
+            },
+            {
+              "type": "price",
+              "description": "60"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "durationInDays": 1440
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "24 month initial terms with two 12 month extension options."
+        },
+        "submissionTerms": {
+          "variantPolicy": "notAllowed"
+        },
+        "hasOptions": false,
+        "status": "active"
+      },
+      {
+        "id": "5",
+        "title": "Specialist Implant Instruments",
+        "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Specialist Dental Implant Instrument Products, in order to procure a high quality solution for NHS GGC patients.",
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Technical Questionnaire",
+              "type": "quality",
+              "description": "40"
+            },
+            {
+              "type": "price",
+              "description": "60"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "durationInDays": 1440
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "24 month initial terms with two 12 month extension options."
+        },
+        "submissionTerms": {
+          "variantPolicy": "notAllowed"
+        },
+        "hasOptions": false,
+        "status": "active"
+      },
+      {
+        "id": "6",
+        "title": "Digital Implant Solutions",
+        "description": "NHS Greater Glasgow & Clyde (NHS GGC) require suitably qualified, experienced and licensed contractors to undertake the provision of Digital Implant Solutions, in order to procure a high quality solution for NHS GGC patients.",
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Technical Questionnaire",
+              "type": "quality",
+              "description": "40"
+            },
+            {
+              "type": "price",
+              "description": "60"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "durationInDays": 1440
+        },
+        "hasRenewal": true,
+        "renewal": {
+          "description": "24 month initial terms with two 12 month extension options."
+        },
+        "submissionTerms": {
+          "variantPolicy": "notAllowed"
+        },
+        "hasOptions": false,
+        "status": "active"
+      }
+    ],
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33133000",
+            "description": "Dental impression accessories"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33141800",
+            "description": "Dental consumables"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKM82"
+          },
+          {
+            "region": "UKM83"
+          }
+        ],
+        "deliveryLocation": {
+          "description": "Glasgow Dental Hospital"
+        },
+        "relatedLot": "1"
+      },
+      {
+        "id": "2",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33141800",
+            "description": "Dental consumables"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33130000",
+            "description": "Dental and subspecialty instruments and devices"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKM82"
+          },
+          {
+            "region": "UKM83"
+          }
+        ],
+        "deliveryLocation": {
+          "description": "Glasgow Dental Hospital"
+        },
+        "relatedLot": "2"
+      },
+      {
+        "id": "3",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33130000",
+            "description": "Dental and subspecialty instruments and devices"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33141800",
+            "description": "Dental consumables"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKM82"
+          },
+          {
+            "region": "UKM83"
+          }
+        ],
+        "deliveryLocation": {
+          "description": "Glasgow Dental Hospital"
+        },
+        "relatedLot": "3"
+      },
+      {
+        "id": "4",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33130000",
+            "description": "Dental and subspecialty instruments and devices"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33141800",
+            "description": "Dental consumables"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKM82"
+          },
+          {
+            "region": "UKM83"
+          }
+        ],
+        "deliveryLocation": {
+          "description": "Glasgow Dental Hospital"
+        },
+        "relatedLot": "4"
+      },
+      {
+        "id": "5",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33130000",
+            "description": "Dental and subspecialty instruments and devices"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33141800",
+            "description": "Dental consumables"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKM82"
+          },
+          {
+            "region": "UKM83"
+          }
+        ],
+        "deliveryLocation": {
+          "description": "Glasgow Dental Hospital"
+        },
+        "relatedLot": "5"
+      },
+      {
+        "id": "6",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "33130000",
+            "description": "Dental and subspecialty instruments and devices"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33141800",
+            "description": "Dental consumables"
+          },
+          {
+            "scheme": "CPV",
+            "id": "48180000",
+            "description": "Medical software package"
+          },
+          {
+            "scheme": "CPV",
+            "id": "33138000",
+            "description": "Prosthodontic and relining products"
+          },
+          {
+            "scheme": "CPV",
+            "id": "72268000",
+            "description": "Software supply services"
+          },
+          {
+            "scheme": "CPV",
+            "id": "72267100",
+            "description": "Maintenance of information technology software"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKM82"
+          },
+          {
+            "region": "UKM83"
+          }
+        ],
+        "deliveryLocation": {
+          "description": "Glasgow Dental Hospital"
+        },
+        "relatedLot": "6"
+      }
+    ],
+    "submissionMethod": [
+      "electronicSubmission"
+    ],
+    "submissionMethodDetails": "https://www.publictendersscotland.publiccontractsscotland.gov.uk/",
+    "selectionCriteria": {
+      "criteria": [
+        {
+          "type": "suitability",
+          "description": "All bidders must complete the Single Procurement Document (SPD) via the Public Contracts Scotland - Tender (PCS-T) portal. Bidders must read the SPD in conjunction with all of the sections set out. Failure to provide information will exclude bidders from participation in the tender stage.\nWith reference to SPD Question 4A.2a, bidders must confirm that they hold the particular authorisation or memberships:\nBidders must hold, or be capable of demonstrating compliance through an equivalent certification or standard UKAS or Equivalent ISO Certification such as ISO 9001:2015 or ISO 13485:2016 certification accredited by UKAS or an internationally recognized body; which must cover all relevant activities (e.g. manufacturing, distribution)\nAND\nCyber Essentials Plus certification or completion of an Information Security Third Party Questionnaire if handling patient data or supplying software.",
+          "appliesTo": [
+            "supplier"
+          ]
+        },
+        {
+          "type": "economic",
+          "description": "With reference to SPD question 4B.6, NHS Greater Glasgow and Clyde reserves the right to undertake proportionate financial due diligence during the procurement process and throughout the term of any resulting Framework.",
+          "minimum": "With reference to SPD question 4B.5.1b, EO's must hold and evidence Employer’s (Compulsory) Liability Insurance = GBP 5m. If EO's do not currently have this level of insurance, they must agree to put it in place prior to contract commencement. This is a pass/fail question. In failing, EO's will be excluded from participation in the tender stage.\nWith reference to SPD question 4B.5.2, EO's must hold and evidence Public Liability Insurance = GBP 5m; and Professional Indemnity Insurance = GBP 2m. If EO's do not currently have this level of insurance, they must agree to put it in place prior to contract commencement. This is a pass/fail question. In failing, EO's will be excluded from participation in the tender stage.",
+          "appliesTo": [
+            "supplier"
+          ]
+        },
+        {
+          "type": "technical",
+          "description": "With reference to SPD question 4C1.2 bidders are required to provide examples that demonstrate they have the relevant experience to deliver the services. Examples must be from within the last three (3) years. Bidders must provide details of three (3) instances of the organisation’s experience in delivering services similar to those described. If applicable, the Board would prefer these similar services to be related to a contract undertaken by the consortium or the leading company and their sub-contractor(s). Use the template uploaded with this Contract Notice only to respond. If you do not provide three (3) examples of experience or references, this will be a non-compliant request to participate and your tender will be excluded from the tender stage.\nWith reference to SPD question 4C.3, bidders are required to demonstrate that they have (or have access to) the appropriate technical facilities, study and research facilities and quality measures to deliver the types of requirements detailed.\nWith reference to SPD question 4C.9, bidders will be required to demonstrate that they have (or have access to) the relevant tools, equipment, digital systems, software platforms and technical infrastructure necessary.to deliver the types of requirements detailed in the Specification.",
+          "minimum": "With reference to SPD question 4D.1 Tenderers must evidence or commit to obtain ISO9001 or other documented quality management system endorsed by the organisation’s Chief Executive or equivalent.\nWith reference to SPD question 4D.1 EO’s must hold and evidence or commit to obtain, within 6 months of the contract start date, a whistleblowing policy consistent with the National Whistleblowing Standards that can be found at the following link:\nhttps://inwo.spso.org.uk/national-whistleblowing-%20standards\nWith reference to SPD question 4D.2 EO’s must evidence or commit to obtain ISO14001 or other documented quality management system endorsed by the organisation’s Chief Executive or equivalent.",
+          "appliesTo": [
+            "supplier"
+          ]
+        }
+      ]
+    },
+    "contractTerms": {
+      "performanceTerms": "The Contractor shall comply with all mandatory requirements, obligations and performance conditions specified within the Mandatory Requirements Document and associated procurement documentation.",
+      "hasElectronicOrdering": true,
+      "electronicInvoicingPolicy": "allowed",
+      "hasElectronicPayment": true
+    },
+    "otherRequirements": {
+      "requiresStaffNamesAndQualifications": true
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Open procedure",
+    "techniques": {
+      "hasFrameworkAgreement": true,
+      "frameworkAgreement": {
+        "maximumParticipants": 30,
+        "periodRationale": "n/a"
+      }
+    },
+    "coveredBy": [
+      "GPA"
+    ],
+    "tenderPeriod": {
+      "endDate": "2026-11-11T12:00:00Z"
+    },
+    "submissionTerms": {
+      "languages": [
+        "en"
+      ],
+      "bidValidityPeriod": {
+        "durationInDays": 180
+      }
+    },
+    "awardPeriod": {
+      "startDate": "2026-11-11T12:00:00Z"
+    },
+    "bidOpening": {
+      "date": "2026-11-11T12:00:00Z",
+      "address": {
+        "streetAddress": "NHS Greater Glasgow & Clyde Procurement Department"
+      },
+      "description": "Interim Commodity Manager"
+    },
+    "hasRecurrence": false
+  },
+  "parties": [
+    {
+      "name": "NHS Greater Glasgow and Clyde",
+      "id": "GB-FTS-3524",
+      "identifier": {
+        "legalName": "NHS Greater Glasgow and Clyde"
+      },
+      "address": {
+        "streetAddress": "Procurement Department, Glasgow Royal Infirmary, 84 Castle Street",
+        "locality": "Glasgow",
+        "region": "UKM82",
+        "postalCode": "G4 0SF",
+        "countryName": "United Kingdom"
+      },
+      "contactPoint": {
+        "telephone": "+44 1412015388",
+        "email": "jordan.smith2@nhs.scot",
+        "url": "https://www.publictendersscotland.publiccontractsscotland.gov.uk/"
+      },
+      "roles": [
+        "buyer",
+        "centralPurchasingBody"
+      ],
+      "details": {
+        "url": "http://www.nhsggc.scot/about-us/procurement/",
+        "buyerProfile": "https://www.publiccontractsscotland.gov.uk/search/Search_AuthProfile.aspx?ID=AA10722",
+        "classifications": [
+          {
+            "scheme": "TED_CA_TYPE",
+            "id": "BODY_PUBLIC",
+            "description": "Body governed by public law"
+          },
+          {
+            "scheme": "COFOG",
+            "id": "07",
+            "description": "Health"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Glasgow Sheriff Court",
+      "id": "GB-FTS-2553",
+      "identifier": {
+        "legalName": "Glasgow Sheriff Court"
+      },
+      "address": {
+        "streetAddress": "1 Carlton Place",
+        "locality": "Glasgow",
+        "postalCode": "G5 9DA",
+        "countryName": "United Kingdom"
+      },
+      "roles": [
+        "reviewBody"
+      ]
+    }
+  ],
+  "buyer": {
+    "id": "GB-FTS-3524",
+    "name": "NHS Greater Glasgow and Clyde"
+  },
+  "links": [
+    {
+      "rel": "canonical",
+      "href": "https://api.publiccontractsscotland.gov.uk/v1/Notice?id=ocds-r6ebe6-0000842561"
+    }
+  ],
+  "language": "en"
+}
