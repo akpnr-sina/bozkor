@@ -3,9 +3,11 @@ import { parseArgs } from "node:util";
 import { and, asc, eq, isNotNull } from "drizzle-orm";
 import { closeDb, getDb } from "@/db";
 import { rawNotices } from "@/db/schema";
+import { rematch } from "@/matching/apply";
 import { applyProcedures, emptyApplyStats } from "@/sources/store";
 import type { SourceAdapter, SourceId } from "@/sources/types";
 import { createFatAdapter } from "@/sources/uk-fat";
+import { fillValueEur } from "@/sources/value-eur";
 
 // Usage: pnpm renormalize --source=uk_fat
 // Rebuilds every tender of a source from stored raw notices, without calling
@@ -50,10 +52,13 @@ async function main() {
     total.normalizeErrors += stats.normalizeErrors;
     log(`  ${Math.min(i + BATCH, keys.length)} / ${keys.length}`);
   }
+  const value = await fillValueEur(db);
+  const match = await rematch(db, { log });
   log(
     `Bitti. Güncellenen: ${total.updated}, yeni: ${total.inserted}, ` +
       `ihale ilanı olmadığı için atlanan: ${total.skipped}, okunamayan ilan: ${total.normalizeErrors}`,
   );
+  log(`Euro değeri güncellenen: ${value.updated}. Eşleşme: ${match.matched} (${match.created} yeni, ${match.unmatched} artık eşleşmeyen).`);
 }
 
 main()

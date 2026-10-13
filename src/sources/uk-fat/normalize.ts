@@ -141,6 +141,11 @@ export function extractUrl(text: string | null | undefined): string | null {
   return BARE_DOMAIN.test(trimmed) ? `https://${trimmed}` : null;
 }
 
+function httpUrl(text: string | null | undefined): string | null {
+  const url = clean(text);
+  return url && /^https?:\/\//i.test(url) ? url : null;
+}
+
 function documentsOf(r: FatRelease): NormalizedDocument[] {
   const byUrl = new Map<string, NormalizedDocument>();
   for (const d of allDocuments(r)) {
@@ -311,7 +316,8 @@ export function normalizeFatRelease(raw: unknown): NormalizedNotice | null {
     clarificationDeadline: parseTimestamp(t?.enquiryPeriod?.endDate, FAT_TIMEZONE),
     procedureType: clean(t?.procurementMethodDetails) ?? clean(t?.procurementMethod),
     noticeLanguage: clean(r.language)?.toUpperCase() ?? null,
-    noticeUrl: clean(own?.url) ?? `${NOTICE_BASE_URL}${r.id}`,
+    // Only http(s) links reach href attributes and, later, the document fetcher.
+    noticeUrl: httpUrl(own?.url) ?? `${NOTICE_BASE_URL}${r.id}`,
     documentsPortalUrl:
       extractUrl(t?.submissionMethodDetails) ??
       documents.find((d) => d.documentType === "biddingDocuments")?.url ??

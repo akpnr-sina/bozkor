@@ -1,7 +1,10 @@
 import type { PgBoss, Queue } from "pg-boss";
 import { getDb } from "@/db";
+import { syncEcbRates } from "@/fx/sync";
+import { rematch } from "@/matching/apply";
 import { syncIncremental, type SyncStats } from "@/sources/sync";
 import { createFatAdapter } from "@/sources/uk-fat";
+import { fillValueEur } from "@/sources/value-eur";
 import { TIMEZONE } from "./boss";
 
 type JobDefinition = {
@@ -49,13 +52,44 @@ const jobs: JobDefinition[] = [
     runOnStart: true,
     queue: syncQueue,
     handler: async () => {
-      const stats = await syncIncremental(getDb(), createFatAdapter());
+      const db = getDb();
+      const stats = await syncIncremental(db, createFatAdapter());
       console.log(
         `[sync-uk-fat] ${stats.window.from.toISOString()} .. ${stats.window.to.toISOString()} ${formatSyncStats(stats)}`,
       );
+      await afterTenderChanges(db, "sync-uk-fat");
+    },
+  },
+  {
+    // ECB publishes around 16:00 CET; this runs after it, and on worker start.
+    name: "fx-ecb",
+    cron: "30 18 * * *",
+    runOnStart: true,
+    queue: syncQueue,
+    handler: async () => {
+      const db = getDb();
+      const fx = await syncEcbRates(db);
+      console.log(`[fx-ecb] ${fx.source} latest=${fx.latestDate} rows=${fx.rows} new=${fx.inserted} updated=${fx.updated}`);
+      // New rates can turn unknown EUR values into known ones; weekends and
+      // holidays bring none, so there is nothing to recompute.
+      if (fx.inserted + fx.updated > 0) await afterTenderChanges(db, "fx-ecb");
     },
   },
 ];
+
+/**
+ * EUR values first, then matching, so value filters see fresh values. Both
+ * look at everything rather than only this run's changes, so work left by an
+ * earlier run that failed half way is picked up too.
+ */
+async function afterTenderChanges(db: ReturnType<typeof getDb>, job: string): Promise<void> {
+  const value = await fillValueEur(db);
+  const match = await rematch(db, { log: (m) => console.warn(m) });
+  console.log(
+    `[${job}] valueEur checked=${value.checked} updated=${value.updated} unconverted=${value.unconverted}` +
+      ` | matching profiles=${match.profiles} matched=${match.matched} new=${match.created} unmatched=${match.unmatched}`,
+  );
+}
 
 export async function registerJobs(boss: PgBoss): Promise<void> {
   for (const job of jobs) {

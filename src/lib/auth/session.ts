@@ -8,9 +8,26 @@ export type CurrentUser = {
 };
 
 /**
- * Data access layer entry point: verifies the session JWT and the allowlist.
- * Call it in every page, Server Action and Route Handler that touches data;
- * the proxy check alone is not authorization.
+ * Verifies the session JWT and the allowlist on every call; redirects to
+ * /login otherwise. Use it in Server Actions and Route Handlers, which must
+ * authorize themselves rather than trust a cached render.
+ */
+export async function requireUser(): Promise<CurrentUser> {
+  const supabase = await createSupabaseServerClient();
+  const { data } = await supabase.auth.getClaims();
+  const claims = data?.claims;
+
+  if (!claims?.sub || !isEmailAllowed(claims.email)) {
+    redirect("/login");
+  }
+
+  return { id: claims.sub, email: claims.email };
+}
+
+/**
+ * Data access layer entry point for Server Components: the same check as
+ * requireUser. Call it in every page that touches data; the proxy check
+ * alone is not authorization.
  *
  * `use cache: private` lets the per-session App Shell prerender read the
  * session: the Supabase client compares the token expiry with Date.now(),
@@ -21,13 +38,5 @@ export type CurrentUser = {
  */
 export async function getCurrentUser(): Promise<CurrentUser> {
   "use cache: private";
-  const supabase = await createSupabaseServerClient();
-  const { data } = await supabase.auth.getClaims();
-  const claims = data?.claims;
-
-  if (!claims?.sub || !isEmailAllowed(claims.email)) {
-    redirect("/login");
-  }
-
-  return { id: claims.sub, email: claims.email };
+  return requireUser();
 }

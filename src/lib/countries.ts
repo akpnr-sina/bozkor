@@ -73,3 +73,11 @@ export function normalizeAlpha2(code: string | null | undefined): string | null 
   if (upper === "UK") return "GB";
   return /^[A-Z]{2}$/.test(upper) ? upper : null;
 }
+
+let countryCodes: Set<string> | null = null;
+
+/** Whether `code` is a canonical ISO 3166 alpha-2 country code: "GB" is, "UK", "EU" and "EN" are not. */
+export function isCountryCode(code: string): boolean {
+  countryCodes ??= new Set(nameIndex().values());
+  return countryCodes.has(code);
+}

@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   index,
   integer,
   jsonb,
@@ -247,10 +248,18 @@ export const profileMatches = pgTable(
       onDelete: "set null",
     }),
     state: matchState("state").notNull().default("new"),
+    /**
+     * Set when an edited profile no longer wants the tender. The row is kept
+     * so its state, triage and history survive; a later match clears it.
+     */
+    unmatchedAt: timestamptz("unmatched_at"),
   },
   (t) => [
     primaryKey({ columns: [t.profileId, t.tenderId] }),
     index("profile_matches_tender_id_idx").on(t.tenderId),
+    index("profile_matches_current_idx")
+      .on(t.profileId)
+      .where(sql`${t.unmatchedAt} is null`),
     check(
       "profile_matches_triage_score_range",
       sql`${t.triageScore} is null or (${t.triageScore} between 0 and 100)`,
@@ -258,7 +267,10 @@ export const profileMatches = pgTable(
   ],
 ).enableRLS();
 
-/** Human decisions, append-only. The latest row per tender is the current decision. */
+/**
+ * Human decisions, append-only. The latest row per tender is the current
+ * decision; a row with a null decision means the decision was withdrawn.
+ */
 export const tenderReviews = pgTable(
   "tender_reviews",
   {
@@ -266,13 +278,27 @@ export const tenderReviews = pgTable(
     tenderId: uuid("tender_id")
       .notNull()
       .references(() => tenders.id, { onDelete: "cascade" }),
-    decision: reviewDecision("decision").notNull(),
+    decision: reviewDecision("decision"),
     note: text("note"),
     /** Email of the deciding user. */
     decidedBy: text("decided_by").notNull(),
     decidedAt: timestamptz("decided_at").notNull().defaultNow(),
   },
   (t) => [index("tender_reviews_tender_id_decided_at_idx").on(t.tenderId, t.decidedAt)],
+).enableRLS();
+
+/** ECB euro reference rates (SPEC 4.3): units of `currency` per 1 EUR on `date`. */
+export const fxRates = pgTable(
+  "fx_rates",
+  {
+    /** ECB reference date, YYYY-MM-DD. */
+    date: date("date", { mode: "string" }).notNull(),
+    /** ISO 4217, e.g. GBP. */
+    currency: text("currency").notNull(),
+    ratePerEur: numeric("rate_per_eur", { precision: 18, scale: 6, mode: "number" }).notNull(),
+    fetchedAt: timestamptz("fetched_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.date, t.currency] })],
 ).enableRLS();
 
 export type Source = typeof sources.$inferSelect;
@@ -286,3 +312,4 @@ export type CriteriaProfile = typeof criteriaProfiles.$inferSelect;
 export type ProfileMatch = typeof profileMatches.$inferSelect;
 export type Analysis = typeof analyses.$inferSelect;
 export type TenderReview = typeof tenderReviews.$inferSelect;
+export type FxRate = typeof fxRates.$inferSelect;

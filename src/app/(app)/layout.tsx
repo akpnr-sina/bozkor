@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/auth/session";
 import { signOut } from "./actions";
-import { NavLinks } from "./nav-links";
+import { NavLinks, NavList } from "./nav-links";
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -13,7 +13,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <Link href="/inbox" className="font-semibold">
             Bozkor İhale
           </Link>
-          <NavLinks />
+          {/* The active link depends on the URL, which dynamic routes only know at request time. */}
+          <Suspense fallback={<NavList pathname={null} />}>
+            <NavLinks />
+          </Suspense>
           <div className="ml-auto">
             <Suspense>
               <UserMenu />

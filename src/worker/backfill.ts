@@ -3,9 +3,12 @@ import { parseArgs } from "node:util";
 import { count, eq } from "drizzle-orm";
 import { closeDb, getDb, type AppDb } from "@/db";
 import { rawNotices, tenders } from "@/db/schema";
+import { syncEcbRates } from "@/fx/sync";
+import { rematch } from "@/matching/apply";
 import { backfill } from "@/sources/sync";
 import type { SourceAdapter, SourceId } from "@/sources/types";
 import { createFatAdapter } from "@/sources/uk-fat";
+import { fillValueEur } from "@/sources/value-eur";
 
 // Usage: pnpm backfill --source=uk_fat --days=30
 // Output is Turkish because the team runs this by hand.
@@ -64,9 +67,24 @@ async function main() {
     },
   });
 
+  log("Kurlar, euro değerleri ve eşleşmeler güncelleniyor...");
+  try {
+    await syncEcbRates(db);
+  } catch (error) {
+    log(`  ECB kurları alınamadı, mevcut kurlarla devam ediliyor: ${error instanceof Error ? error.message : error}`);
+  }
+  const value = await fillValueEur(db);
+  const match = await rematch(db, { log });
+
   const after = await totals(db, source);
   log("");
   log("Bitti.");
+  log(`  Euro değeri hesaplanan ihale: ${value.updated} (çevrilemeyen para birimi: ${value.unconverted})`);
+  log(
+    match.profiles
+      ? `  Eşleşme: ${match.profiles} profil, teklif verilebilir ${match.matched} eşleşme (${match.created} yeni)`
+      : "  Eşleşme: henüz aktif profil yok",
+  );
   log(`  Yeni ihale: ${stats.inserted}`);
   log(`  Güncellenen ihale: ${stats.updated} (değişti olarak işaretlenen: ${stats.changed})`);
   log(`  İhale ilanı olmadığı için atlanan prosedür: ${stats.skipped} (sonuç bildirimleri, eski düzeltmeler)`);

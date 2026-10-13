@@ -78,6 +78,13 @@ Gün gün ilerler ve her gün için özet yazar. Find a Tender bazen yavaş yan�
 
 Sonrasında `pnpm worker` açık olduğu sürece yeni ilanlar 2 saatte bir otomatik çekilir. Son senkron zamanı ve varsa son hata /settings sayfasında görünür.
 
+## Profiller ve gelen kutusu
+
+- **/profiles**: kriter profillerini oluşturup düzenleyin. Form, kaydetmeden önce "son 30 günde kaç ihale eşleşirdi" önizlemesini gösterir. Kaydedince profil açık ihalelerle hemen eşleştirilir.
+- **/inbox**: eşleşen ihaleler, neden eşleştikleri ve kararlarınız. Varsayılan olarak teklif verilebilir olanlar, son tarihe göre sıralı gösterilir.
+- **/tenders/[id]**: ilan bilgileri, lotlar, eşleşme nedenleri, dokümanlar ve karar (GO / REVIEW / NO_GO / WATCH). Karar geri alınabilir, geçmiş görünür.
+- Worker açıkken yeni ilanlar ve ECB kurları geldikçe eşleşmeler kendiliğinden güncellenir.
+
 ## Komutlar
 
 | Komut | Açıklama |

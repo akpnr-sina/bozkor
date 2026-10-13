@@ -25,7 +25,7 @@ Bu sürümde kapsam içi:
 3. TED ilanları ve dokümanları birçok dilde. Profillerde ilan dili filtresi var; analiz çok dilli çalışır, özet Türkçe üretilir.
 4. Claude API PDF'leri doğrudan okur: istek başına 32 MB ve 100 sayfa sınırı. DOCX ve XLSX önce metne çevrilir. Sınırı aşan paketler belge belge analiz edilip birleştirilir.
 5. Derin analiz ihale başına anlamlı maliyet çıkarır. Varsayılan tetik manuel; profil bazında otomatik açılabilir; aylık bütçe sınırı vardır.
-6. Bu belgedeki API alan adları ve parametreler örnektir. Faz 1 ve Faz 2'nin ilk adımı gerçek yanıtları çekip fixture olarak kaydetmek ve eşlemeyi gerçek veriye göre yapmaktır. Bulunan gerçek eşleme bu belgeye işlenir.
+6. Bu belgedeki API alan adları ve parametreler örnektir. Faz 1'in ve TED fazının (Faz 3) ilk adımı gerçek yanıtları çekip fixture olarak kaydetmek ve eşlemeyi gerçek veriye göre yapmaktır. Bulunan gerçek eşleme bu belgeye işlenir.
 
 ## 3. Mimari akış
 
@@ -117,7 +117,12 @@ Senkron (`src/sources/sync.ts`):
 
 ### 4.3 Kurlar
 
-ECB günlük referans kurları. `value_eur` hesaplanır; orijinal tutar ve para birimi korunur.
+ECB günlük referans kurları. `value_eur` hesaplanır; orijinal tutar ve para birimi korunur. Kod: `src/fx/`, `src/sources/value-eur.ts`. Örnekler: `tests/fixtures/ecb/`.
+
+- Kaynak: `https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml` (son gün) ve `eurofxref-hist-90d.xml` (son 90 gün). Anahtar gerekmez. Tabloda kur yoksa ya da en yeni kur 5 günden eskiyse 90 günlük dosya, aksi halde günlük dosya çekilir. `fx_rates` (date, currency) ile upsert edilir; aynı kur tekrar yazılmaz.
+- Worker işi `fx-ecb`: her gün 18:30 İstanbul (ECB ~16:00 CET'te yayımlar) ve worker açılışında. Ardından `value_eur` doldurulur ve eşleştirme yeniden çalışır.
+- Dönüşüm: ihalenin yayın gününün (Frankfurt takvimi) kuru, yoksa en fazla 10 gün önceki en yakın iş gününün kuru; tutar / 1 EUR karşılığı birim, 2 ondalık. EUR olduğu gibi kalır. Saklanan kur aralığından eski ilanlarda aralığın en eski kuru kullanılır. ECB'nin yayımlamadığı para birimleri (örneğin AED) için `value_eur` boş kalır.
+- `value_eur` her senkronda yeni ya da güncellenen ihaleler ve hâlâ değeri olmayanlar için hesaplanır; `updated_at` değişmez.
 
 ## 5. Veri modeli
 
@@ -128,9 +133,10 @@ ECB günlük referans kurları. `value_eur` hesaplanır; orijinal tutar ve para 
 - `documents`: id, tender_id, origin (`auto` | `manual`), source_url, title, document_type, filename, mime, size_bytes, sha256, storage_path, page_count, text_content (DOCX / XLSX için), fetch_status (`pending` | `fetched` | `needs_manual` | `failed` | `unsupported`), fetch_error. Otomatik dokümanlarda (tender_id, source_url) tekil.
 - `categories`: id, name, cpv_prefixes[], description. Profiller ve ileride üreticiler bu ortak taksonomiyi kullanır.
 - `criteria_profiles`: id, name, active, rules (jsonb, şema bölüm 6), created_at, updated_at
-- `profile_matches`: profile_id, tender_id, matched_at, filter_reasons (jsonb), triage_score, triage_analysis_id, state (`new` | `seen` | `dismissed`)
+- `profile_matches`: profile_id, tender_id, matched_at, filter_reasons (jsonb), triage_score, triage_analysis_id, state (`new` | `seen` | `dismissed`), unmatched_at (profil artık istemiyorsa; satır silinmez)
 - `analyses`: id, tender_id, profile_id (opsiyonel), kind (`triage` | `deep`), model, prompt_version, document_ids[], output (jsonb), valid, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, error, created_at
-- `tender_reviews`: id, tender_id, decision (`GO` | `REVIEW` | `NO_GO` | `WATCH`), note, decided_by, decided_at. Append-only; son kayıt geçerli karardır, geçmiş görünür.
+- `tender_reviews`: id, tender_id, decision (`GO` | `REVIEW` | `NO_GO` | `WATCH` ya da boş), note, decided_by, decided_at. Append-only; son kayıt geçerli karardır, geçmiş görünür. Kararı geri almak, kararı boş yeni bir kayıt eklemektir.
+- `fx_rates`: date, currency, rate_per_eur (1 EUR karşılığı birim), fetched_at. ECB referans kurları.
 
 Tüm tablolarda RLS açık ve politikasızdır; uygulama Postgres'e doğrudan bağlanır, Supabase Data API bu tablolara erişemez.
 
@@ -167,14 +173,21 @@ Tüm tablolarda RLS açık ve politikasızdır; uygulama Postgres'e doğrudan ba
 }
 ```
 
-Eşleştirme kuralları:
+Eşleştirme kuralları (`src/matching/`):
 
-- CPV eşleşmesi önek bazlıdır; ana CPV, ek CPV'ler ve lot CPV'leri birlikte kontrol edilir. `categoryIds` seçilirse kategorinin önekleri `cpvInclude`'a eklenir.
-- Anahtar kelimeler başlık, açıklama ve lot metinlerinde büyük/küçük harf ve aksan duyarsız aranır.
+- Motor saf fonksiyondur: `matchTender(tender, rules, { categories, now }) => { matched, reasons } | { matched: false, rejectedBy }`. Kurallar `profileRulesSchema` (Zod) ile doğrulanır.
+- Boş liste filtre yok demektir (sources, noticeTypes, regimes, countries, noticeLanguages). Profil ayarlamadığı kural sebep eklemez.
+- Sadece durumu `open` olan ihale eşleşir. Son tarihi geçmiş ihale eşleşmez; `minDaysToDeadline` doluysa kalan gün en az bu kadar olmalı. Son tarihi bilinmeyen ihale (planlama ilanları) bu kuraldan geçer.
+- Tutar kuralı `valueMinEur` ya da `valueMaxEur` doluysa çalışır, sınırlar dahildir. Değer bilinmiyorsa `includeUnknownValue` belirler.
 - `keywordsNone` eşleşirse ilan elenir.
-- Değer bilinmiyorsa `includeUnknownValue` belirler.
+- Konu kuralı: CPV eşleşmesi önek bazlıdır; ana CPV, ek CPV'ler ve lot CPV'leri birlikte kontrol edilir. `categoryIds` seçilirse kategorinin önekleri `cpvInclude`'a eklenir. `cpvExclude`'a uyan kodlar dahil etmede yok sayılır. CPV önekleri ve `keywordsAny` arasında VEYA vardır: biri tutması yeterli. İkisi de boşsa konu filtresi yoktur; yalnızca ihalenin bütün kodları hariç tutuluyorsa elenir.
+- `keywordsAll`'daki kelimelerin hepsi geçmelidir.
+- Anahtar kelimeler başlık, açıklama ve lot metinlerinde büyük/küçük harf ve aksan duyarsız, kelime sınırlarında aranır; son kelime çoğul ekiyle (s, es) de eşleşir ("hire", "Hampshire"ı tutmaz).
 - Her eşleşme hangi kuralların tuttuğunu `filter_reasons` içinde saklar ve UI bunu gösterir.
-- Motor saf fonksiyondur: `matchTender(tender, lots, rules) => { matched, reasons }`.
+- Eşleşme kayıtları hiç silinmez. İhale kapanınca, iptal edilince ya da sonuçlanınca eşleşme olduğu gibi kalır (gelen kutusunda varsayılan olarak gizlenir). Profil değişip ihale kriterlere artık uymuyorsa `unmatched_at` ile işaretlenir; durum, triage ve karar bağlantısı korunur, ihale yeniden eşleşirse işaret kalkar.
+- Senkron sonrası eşleştirme sadece açık ihalelere bakar; bir profil kaydedilince o profilin mevcut eşleşmeleri (kapanmışlar dahil) yeniden değerlendirilir. Eşleştirme çalışmaları bir veritabanı kilidiyle sırayla yürür.
+- Gelen kutusu aktif profillerin güncel eşleşmelerini gösterir. Belirli bir karar (GO, REVIEW, NO_GO, WATCH) filtrelenince artık eşleşmeyen ya da pasif profile ait ihaleler de listelenir; karar verilmiş ihale kaybolmaz. "Değişti" etiketi, değişiklik son karardan yeniyse görünür.
+- Canlı önizleme son 30 günde yayımlanan ihaleleri yayımlandıkları andaki durumlarıyla değerlendirir ("o gün bu profil olsaydı kaç ilan eşleşirdi") ve bunlardan bugün hâlâ teklif verilebilir olanların sayısını ayrıca gösterir; gelen kutusunda görünecek olan bu ikinci sayıdır.
 
 Başlangıç kategorileri (seed; CPV önekleri başlangıç önerisidir, kullanıcı düzenler):
 
@@ -263,21 +276,24 @@ Her faz kendi kabul kriterleri sağlanınca kapanır. Faz bitince CLAUDE.md'deki
 - Normalizer: rejim, durum, CPV'ler, değer, son tarihler, doküman URL'leri, lotlar.
 - Kabul: backfill iki kez çalıştırılınca kopya kayıt oluşmuyor; normalizer testleri fixture'larla geçiyor; `sources` tablosunda son senkron zamanı ve hata görünüyor.
 
-### Faz 2: AB veri hattı
+### Faz 2: Profiller, eşleştirme, gelen kutusu
 
-- Faz 1'in aynısı TED için (`tests/fixtures/eu-ted/`, bölüm 4.2'ye gerçek eşleme).
-- Prosedür bazında gruplama, alpha-3'ten alpha-2'ye ülke çevirisi, ECB kurlarıyla `value_eur`.
-- Kabul: Faz 1 ile aynı; ayrıca düzeltme ilanı gelen bir prosedür tek tender olarak kalıyor ve son tarih güncelleniyor.
-
-### Faz 3: Profiller, eşleştirme, gelen kutusu
+13 Ekim 2026'da kullanıcı kararıyla TED fazının önüne alındı: eşleştirme mevcut UK verisiyle denenir, TED sonra aynı gelen kutusuna akar.
 
 - `categories` tablosuna bölüm 6'daki dört başlangıç kategorisi seed edilir.
+- ECB günlük kurları (bölüm 4.3) çekilir ve `value_eur` hesaplanır (TED fazından öne alındı; tutar filtresi buna bağlı).
 - Profil oluşturma ve düzenleme formu (Zod doğrulamalı) ve canlı önizleme.
 - Eşleştirme motoru saf fonksiyon; her kural için en az bir pozitif ve bir negatif birim testi.
 - Yeni ilan geldiğinde ve profil değiştiğinde yeniden eşleştirme.
 - Gelen kutusu ve ihale detay sayfası (analiz alanları boş olsa da iskelet hazır).
 - İnsan kararı ve not, geçmişiyle.
 - Kabul: kullanıcı profil oluşturuyor, gelen kutusunda her eşleşmenin nedeni görünüyor, karar verip geri alabiliyor.
+
+### Faz 3: AB veri hattı
+
+- Faz 1'in aynısı TED için (`tests/fixtures/eu-ted/`, bölüm 4.2'ye gerçek eşleme).
+- Prosedür bazında gruplama, alpha-3'ten alpha-2'ye ülke çevirisi; `value_eur` Faz 2'deki kur modülüyle hesaplanır.
+- Kabul: Faz 1 ile aynı; ayrıca düzeltme ilanı gelen bir prosedür tek tender olarak kalıyor ve son tarih güncelleniyor.
 
 ### Faz 4: Triage
 

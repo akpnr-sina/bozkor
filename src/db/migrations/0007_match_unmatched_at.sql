@@ -1,0 +1,2 @@
+ALTER TABLE "profile_matches" ADD COLUMN "unmatched_at" timestamp with time zone;--> statement-breakpoint
+CREATE INDEX "profile_matches_current_idx" ON "profile_matches" USING btree ("profile_id") WHERE "profile_matches"."unmatched_at" is null;

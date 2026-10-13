@@ -40,11 +40,13 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `src/lib/supabase/` Supabase SSR istemcisi ve proxy oturum yenileme
 - `src/sources/` kaynaktan bağımsız katman: `types.ts` (SourceAdapter, NormalizedNotice), `http.ts` (timeout, 429, backoff), `fold.ts` (bir prosedürün ilanlarını tek ihaleye birleştirir), `store.ts` (ham kayıt + upsert), `sync.ts` (artımlı senkron, backfill, sources tablosu)
 - `src/sources/uk-fat/`, `src/sources/eu-ted/` her kaynak için client + Zod şeması + normalizer + adapter
-- `src/matching/` kriter motoru (saf fonksiyonlar)
+- `src/matching/` kriterler ve eşleştirme: `rules.ts` (profil kuralları, Zod), `types.ts` (sözleşme), `engine.ts` + `text.ts` (saf motor, anahtar kelime araması), `apply.ts` (profile_matches'e yazma, canlı önizleme), `describe.ts` (Türkçe sebep metinleri)
+- `src/fx/` ECB kurları: çekme, ayrıştırma, `toEur`, `syncEcbRates`; `src/sources/value-eur.ts` ihalelerin `value_eur` alanını doldurur
 - `src/documents/` indirme, açma, metne çevirme
 - `src/analysis/` triage, derin analiz, Zod şemaları, alıntı doğrulama
 - `src/worker/` job tanımları ve zamanlama (`jobs.ts`), backfill komutu (`backfill.ts`)
-- `src/lib/time.ts` saat dilimi dönüşümleri, `src/lib/countries.ts` ülke adı ve kodu çevirisi
+- `src/lib/time.ts` saat dilimi dönüşümleri, `src/lib/countries.ts` ülke adı ve kodu çevirisi, `src/lib/format.ts` UI'daki Türkçe etiketler ve tarih/tutar biçimleri
+- `src/lib/auth/session.ts`: Server Component'ler `getCurrentUser()` (`use cache: private`), Server Action ve Route Handler'lar her çağrıda doğrulayan `requireUser()` kullanır
 - `prompts/` versiyonlu prompt dosyaları (`triage.v1.md`, `deep.v1.md`)
 - `tests/fixtures/` gerçek API yanıtlarından kaydedilmiş örnekler
 - `tests/helpers/` test yardımcıları (PGlite ile migration uygulanmış test DB'si)
@@ -74,17 +76,20 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0 ve Faz 1 tamam (13 Ekim 2026). Sıradaki: Faz 2 (AB veri hattı, TED).
+Faz 0, Faz 1 ve Faz 2 tamam (13 Ekim 2026). Sıradaki: Faz 3 (AB veri hattı, TED). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
 
-Faz 1 kabulü (Supabase üzerinde):
-- `pnpm backfill --source=uk_fat --days=30`: 9.951 ham ilan, 2.705 ihale, 6.273 atlanan prosedür (ihale ilanı 30 günden eski sonuç bildirimleri).
-- İkinci çalıştırma (`--days=3`) kopya üretmedi: 20 yeni ham ilan, bunlar arada yayımlanan ilanlar (6 yeni ihale, 2 düzeltme, 12 sonuç bildirimi); toplam ihale 2.705 + 6 = 2.711.
-- Worker açılınca `sync-uk-fat` hemen bir kez çalıştı (sonra 2 saatte bir); /settings kaynak durumunu ve sayıları doğru gösteriyor.
-- Gerçek eşleme SPEC bölüm 4.1'de; 12 gerçek ilan örneği `tests/fixtures/uk-fat/`; 77 test (PGlite ve postgres-js sürücüsüyle) geçiyor.
+Faz 2 kabulü (Supabase üzerinde):
+- Migration 0004-0007 uygulandı. ECB'den 90 günlük kur çekildi (1.856 satır). Tutarı olan 2.159 ihalenin 2.158'inde value_eur dolu; kalan 1'i AED.
+- "Ana kategoriler" profili (4 kategori) oluşturuldu. Gelen kutusunda 25 teklif verilebilir ihale nedenleriyle listeleniyor. Karar verme ve geri alma çalışıyor.
+- 239 test (PGlite ve postgres-js). Eşleştirme motorunu ve ECB modülünü iki ayrı Claude oturumu yazdı; kod iki ayrı incelemeden geçti, bulgular düzeltildi.
+
+Faz 1 kabulü:
+- 30 günlük backfill: 9.951 ham ilan, 2.705 ihale. İkinci çalıştırma kopya üretmedi. Worker senkronu ve /settings doğrulandı.
 
 Bilinen eksikler:
-- İlk 30 günlük yükleme sırasında 91 ihale "değişti" olarak işaretlendi (ilk talimattan kalan yarım çalıştırmadaki ihalelere sonraki günlerin ilanları geldi). Henüz kimse görmediği için Faz 3 başında changed_at sıfırlanabilir. İkinci çalıştırmadaki 2 işaret gerçek düzeltme ilanı.
-- value_eur boş; Faz 2'de ECB kurlarıyla doldurulacak.
+- /settings'te kategori yönetimi ve LLM harcaması yok; kategoriler şimdilik migration 0005'teki seed'den geliyor.
+- Gelen kutusu en fazla 500 ihale gösteriyor, sayfalama yok.
+- Önizleme son 30 günün ihalelerini 2 dakika bellekte tutuyor; yeni gelen ilan önizlemeye en geç 2 dakikada yansır.
 - Worker sadece bilgisayarda açıkken çalışıyor; production ortamı (Vercel, Railway) henüz kurulmadı.
 - Supabase magic link şablonu düzenlenemedi; varsayılan şablon ve PKCE `code` akışı kullanılıyor. Link, isteğin yapıldığı bilgisayardaki aynı tarayıcıda açılmalı. Resend SMTP bağlanınca `token_hash` şablonuna geçilebilir (README).
 - Supabase'in yerleşik e-posta servisi sadece organizasyon üyelerine ve saatte birkaç e-posta gönderiyor. İkinci kullanıcı için organizasyon daveti ya da Resend SMTP gerekiyor.
@@ -100,3 +105,7 @@ Kararlar:
 - Yarıda kalan senkron, raw_notices.applied_at sayesinde bir sonraki çalıştırmada kendiliğinden tamamlanır.
 - tenders.status `closed` yazılmaz; kapanmış ihale sorguda submission_deadline ile ayıklanır.
 - value_eur Faz 2'de ECB kurlarıyla doldurulacak; Faz 1'de boş.
+- Eşleştirmede CPV önekleri ile `keywordsAny` arasında VEYA var (kaçırmak fazladan sonuçtan pahalı; Faz 4'te AI skorlayacak). Ayrıntılar SPEC bölüm 6.
+- Eşleşme kayıtları silinmez: profil artık istemiyorsa `profile_matches.unmatched_at` işaretlenir (durum, triage, karar korunur). Gelen kutusu karar filtresiyle bunları da gösterir.
+- Karar geri alma, `tender_reviews`'e kararı boş yeni bir satır eklemektir (append-only).
+- Worker işleri: `sync-uk-fat` (2 saatte bir), `fx-ecb` (18:30), ikisi de açılışta bir kez; her ikisinin sonunda `fillValueEur` ve `rematch` çalışır.

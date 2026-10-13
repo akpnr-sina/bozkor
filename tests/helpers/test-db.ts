@@ -15,8 +15,9 @@ export async function createTestDb() {
   await migrate(db, { migrationsFolder: "src/db/migrations" });
 
   async function reset() {
+    // sources and categories hold seed data from migrations.
     const { rows } = await client.query<{ tablename: string }>(
-      "select tablename from pg_tables where schemaname = 'public' and tablename <> 'sources'",
+      "select tablename from pg_tables where schemaname = 'public' and tablename not in ('sources', 'categories')",
     );
     if (rows.length) {
       await client.exec(`truncate ${rows.map((r) => `"${r.tablename}"`).join(", ")} restart identity cascade`);

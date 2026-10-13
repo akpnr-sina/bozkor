@@ -47,11 +47,21 @@ function isRetryableStatus(status: number): boolean {
  * GET JSON with a timeout per attempt. 429 honours Retry-After, otherwise
  * 429 / 5xx / network errors back off exponentially with jitter.
  */
-export async function fetchJson(
+export function fetchJson(url: string, init: RequestInit = {}, options: RetryOptions = {}): Promise<unknown> {
+  return fetchWithRetry(url, init, options, (response) => response.json());
+}
+
+/** Same retry behaviour as fetchJson, for text bodies such as XML. */
+export function fetchText(url: string, init: RequestInit = {}, options: RetryOptions = {}): Promise<string> {
+  return fetchWithRetry(url, init, options, (response) => response.text());
+}
+
+async function fetchWithRetry<T>(
   url: string,
-  init: RequestInit = {},
-  options: RetryOptions = {},
-): Promise<unknown> {
+  init: RequestInit,
+  options: RetryOptions,
+  read: (response: Response) => Promise<T>,
+): Promise<T> {
   const {
     fetch: fetchImpl = fetch,
     sleep: sleepImpl = sleep,
@@ -71,12 +81,12 @@ export async function fetchJson(
 
   for (let attempt = 1; ; attempt++) {
     let response: Response;
-    let body: unknown;
+    let body: T | undefined;
     try {
       response = await fetchImpl(url, { ...init, signal: AbortSignal.timeout(timeoutMs) });
       // Reading the body can also time out, drop the socket or end in
       // truncated JSON; those are as transient as a failed connection.
-      if (response.ok) body = await response.json();
+      if (response.ok) body = await read(response);
     } catch (error) {
       if (attempt >= maxAttempts) throw error;
       const delayMs = backoff(attempt);
@@ -85,7 +95,7 @@ export async function fetchJson(
       continue;
     }
 
-    if (response.ok) return body;
+    if (response.ok) return body as T;
 
     const text = await response.text().catch(() => "");
     if (!isRetryableStatus(response.status) || attempt >= maxAttempts) {

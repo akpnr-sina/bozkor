@@ -5,18 +5,27 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const LINKS = [
-  { href: "/inbox", label: "Gelen kutusu" },
-  { href: "/profiles", label: "Profiller" },
-  { href: "/settings", label: "Ayarlar" },
+  // Tender detail pages are opened from the inbox.
+  { href: "/inbox", label: "Gelen kutusu", sections: ["/inbox", "/tenders"] },
+  { href: "/profiles", label: "Profiller", sections: ["/profiles"] },
+  { href: "/settings", label: "Ayarlar", sections: ["/settings"] },
 ] as const;
 
+const isWithin = (pathname: string, section: string) => pathname === section || pathname.startsWith(`${section}/`);
+
+/** Reads the URL, so it suspends on dynamic routes such as /tenders/[id]; render it inside <Suspense>. */
 export function NavLinks() {
   const pathname = usePathname();
 
+  return <NavList pathname={pathname} />;
+}
+
+/** The links without URL access; a null pathname marks none active, for the Suspense fallback. */
+export function NavList({ pathname }: { pathname: string | null }) {
   return (
     <nav className="flex items-center gap-1 text-sm">
-      {LINKS.map(({ href, label }) => {
-        const active = pathname === href || pathname.startsWith(`${href}/`);
+      {LINKS.map(({ href, label, sections }) => {
+        const active = pathname !== null && sections.some((section) => isWithin(pathname, section));
         return (
           <Link
             key={href}
