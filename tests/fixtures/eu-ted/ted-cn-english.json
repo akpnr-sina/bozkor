@@ -1,0 +1,107 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-22+01:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "706353-2026",
+  "main-classification-lot": [
+    "34300000"
+  ],
+  "main-classification-proc": [
+    "34300000"
+  ],
+  "submission-url-lot": [
+    "https://www.etenders.gov.ie/epps/cft/viewTenders.do?resourceId=9268282"
+  ],
+  "procedure-identifier": "b7ad3b41-14fb-4948-84ad-501131955d64",
+  "buyer-country-sub": [
+    "IE062"
+  ],
+  "additional-classification-proc": [
+    "34900000",
+    "34310000",
+    "34320000"
+  ],
+  "place-of-performance-country-proc": [
+    "IRL"
+  ],
+  "additional-classification-lot": [
+    "34900000",
+    "34310000",
+    "34320000"
+  ],
+  "document-url-lot": [
+    "https://www.etenders.gov.ie/epps/cft/listContractDocuments.do?resourceId=9268282"
+  ],
+  "official-language": [
+    "ENG"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "200000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "732d7103-c14e-4dc5-8a64-5d87e2181429",
+  "title-proc": {
+    "eng": "TENDER FOR THE SUPPLY AND DELIVERY OF HYUNDAI SPARE PARTS"
+  },
+  "place-of-performance-subdiv-lot": [
+    "IE061"
+  ],
+  "estimated-value-lot": [
+    "200000"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-11+01:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "IRL"
+  ],
+  "description-lot": {
+    "eng": [
+      "The Supply and Delivery of Hyundai Spare Parts for the Defence Forces."
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "IRL"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "12:00:00+01:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "34300000",
+    "34900000",
+    "34310000",
+    "34320000",
+    "34300000",
+    "34900000",
+    "34310000",
+    "34320000"
+  ],
+  "buyer-name": {
+    "eng": [
+      "Irish Defence Forces_1144"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "IE061"
+  ],
+  "title-lot": {
+    "eng": [
+      "TENDER FOR THE SUPPLY AND DELIVERY OF HYUNDAI SPARE PARTS"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "eng": "The Supply and Delivery of Hyundai Spare Parts for the Defence Forces."
+  }
+}

@@ -1,0 +1,213 @@
+{
+  "notices": [
+    {
+      "deadline-receipt-tender-date-lot": [
+        "2026-11-17+02:00"
+      ],
+      "notice-type": "cn-standard",
+      "publication-number": "704782-2026",
+      "main-classification-lot": [
+        "33693100"
+      ],
+      "main-classification-proc": [
+        "33693100"
+      ],
+      "submission-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/viewTenders.do?resourceId=14176928"
+      ],
+      "procedure-identifier": "09cda6a1-31bd-4e92-83f6-99fcd7b036e3",
+      "buyer-country-sub": [
+        "MT001"
+      ],
+      "place-of-performance-country-proc": [
+        "MLT"
+      ],
+      "document-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/listContractDocuments.do?resourceId=14176928"
+      ],
+      "official-language": [
+        "ENG"
+      ],
+      "publication-date": "2026-10-13+02:00",
+      "estimated-value-proc": "320400",
+      "contract-nature-main-proc": "supplies",
+      "identifier-lot": [
+        "LOT-0001"
+      ],
+      "notice-identifier": "0d843a25-32a8-46a0-a2eb-5e81cd07d26d",
+      "title-proc": {
+        "eng": "CT2371/2026 - Framework Contract for the supply of Molybdenum-99/Technetium-99m Generators (Tc-99m generators)"
+      },
+      "place-of-performance-subdiv-lot": [
+        "MT001"
+      ],
+      "estimated-value-lot": [
+        "320400"
+      ],
+      "legal-basis": [
+        "32014L0024"
+      ],
+      "dispatch-date": "2026-10-10+02:00",
+      "estimated-value-cur-lot": [
+        "EUR"
+      ],
+      "estimated-value-cur-proc": "EUR",
+      "buyer-country": [
+        "MLT"
+      ],
+      "description-lot": {
+        "eng": [
+          "CT2371/2026 - Framework Contract for the the supply of Molybdenum-99/Technetium-99m Generators (Tc-99m generators)"
+        ]
+      },
+      "place-of-performance-country-lot": [
+        "MLT"
+      ],
+      "deadline-receipt-tender-time-lot": [
+        "09:30:00+02:00"
+      ],
+      "procedure-type": "open",
+      "classification-cpv": [
+        "33693100",
+        "33693100"
+      ],
+      "buyer-name": {
+        "eng": [
+          "Department of Contracts"
+        ]
+      },
+      "competition-termination-proc": false,
+      "notice-version": 1,
+      "place-of-performance-subdiv-proc": [
+        "MT001"
+      ],
+      "title-lot": {
+        "eng": [
+          "CT2371/2026 - Framework Contract for the supply of Molybdenum-99/Technetium-99m Generators (Tc-99m generators)"
+        ]
+      },
+      "form-type": "competition",
+      "description-proc": {
+        "eng": "CT2371/2026 - Framework Contract for the the supply of Molybdenum-99/Technetium-99m Generators (Tc-99m generators)"
+      }
+    },
+    {
+      "deadline-receipt-tender-date-lot": [
+        "2026-11-13+02:00"
+      ],
+      "notice-type": "cn-standard",
+      "publication-number": "705376-2026",
+      "main-classification-lot": [
+        "34100000"
+      ],
+      "main-classification-proc": [
+        "34100000"
+      ],
+      "submission-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/viewTenders.do?resourceId=14179786"
+      ],
+      "procedure-identifier": "47598a7b-ac21-4b43-8edd-76572b6af7e9",
+      "buyer-country-sub": [
+        "MT001"
+      ],
+      "additional-classification-proc": [
+        "34110000",
+        "34115000",
+        "34115200",
+        "34136000",
+        "34136100"
+      ],
+      "place-of-performance-country-proc": [
+        "MLT"
+      ],
+      "additional-classification-lot": [
+        "34110000",
+        "34115000",
+        "34115200",
+        "34136000",
+        "34136100"
+      ],
+      "document-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/listContractDocuments.do?resourceId=14179786"
+      ],
+      "official-language": [
+        "ENG"
+      ],
+      "publication-date": "2026-10-13+02:00",
+      "estimated-value-proc": "450681",
+      "contract-nature-main-proc": "supplies",
+      "identifier-lot": [
+        "LOT-0001"
+      ],
+      "notice-identifier": "4b6042ee-f841-411d-8487-d7bbbd3638f5",
+      "title-proc": {
+        "eng": "SPD8/2026/145 - Framework Contract For The Leasing Of Fourteen (14) Fully Electric Crew Vans By The Planning Authority"
+      },
+      "place-of-performance-subdiv-lot": [
+        "MT001"
+      ],
+      "estimated-value-lot": [
+        "450681"
+      ],
+      "legal-basis": [
+        "32014L0024"
+      ],
+      "dispatch-date": "2026-10-12+02:00",
+      "estimated-value-cur-lot": [
+        "EUR"
+      ],
+      "estimated-value-cur-proc": "EUR",
+      "buyer-country": [
+        "MLT"
+      ],
+      "description-lot": {
+        "eng": [
+          "Framework Contract For The Leasing Of Fourteen (14) Fully Electric Crew Vans By The Planning Authority"
+        ]
+      },
+      "place-of-performance-country-lot": [
+        "MLT"
+      ],
+      "deadline-receipt-tender-time-lot": [
+        "09:30:00+02:00"
+      ],
+      "procedure-type": "open",
+      "classification-cpv": [
+        "34100000",
+        "34110000",
+        "34115000",
+        "34115200",
+        "34136000",
+        "34136100",
+        "34100000",
+        "34110000",
+        "34115000",
+        "34115200",
+        "34136000",
+        "34136100"
+      ],
+      "buyer-name": {
+        "eng": [
+          "Sectoral Procurement Directorate"
+        ]
+      },
+      "competition-termination-proc": false,
+      "notice-version": 1,
+      "place-of-performance-subdiv-proc": [
+        "MT001"
+      ],
+      "title-lot": {
+        "eng": [
+          "SPD8/2026/145 - Framework Contract For The Leasing Of Fourteen (14) Fully Electric Crew Vans By The Planning Authority"
+        ]
+      },
+      "form-type": "competition",
+      "description-proc": {
+        "eng": "Framework Contract For The Leasing Of Fourteen (14) Fully Electric Crew Vans By The Planning Authority"
+      }
+    }
+  ],
+  "totalNoticeCount": 4,
+  "iterationNextToken": "AAABoTnbA90ABTsewOX3Wp/YXY9bQ4DWgVex/i1TRaxuuA1HcskyfRgEQgNMu4tCU7aZF0ljtRgYqo9YbKpZxLmRa+c0K7h9mudm6lL8iI2PyqiuZaqvIQ==",
+  "timedOut": false
+}

@@ -1,0 +1,88 @@
+{
+  "notice-type": "cn-standard",
+  "publication-number": "706314-2026",
+  "main-classification-lot": [
+    "09331200"
+  ],
+  "main-classification-proc": [
+    "09331200"
+  ],
+  "submission-url-lot": [
+    "https://www.reko-odpady.pl/dofinansowania/"
+  ],
+  "procedure-identifier": "ca14fa14-a827-4a7e-b389-ee4ce1c07c89",
+  "buyer-country-sub": [
+    "PL224"
+  ],
+  "additional-classification-proc": [
+    "09332000"
+  ],
+  "place-of-performance-country-proc": [
+    "POL"
+  ],
+  "additional-classification-lot": [
+    "09332000"
+  ],
+  "official-language": [
+    "POL"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "deadline-receipt-request-date-lot": [
+    "2026-10-29+01:00"
+  ],
+  "notice-identifier": "fbbcce2f-3459-43f3-b7f4-7bffc89594aa",
+  "title-proc": {
+    "pol": "Zakup i montaż na konstrukcji gruntowej kompletnej instalacji fotowoltaicznej o łącznej mocy ok. 499,8 kWp"
+  },
+  "place-of-performance-subdiv-lot": [
+    "PL224"
+  ],
+  "legal-basis": [
+    "other"
+  ],
+  "dispatch-date": "2026-10-12Z",
+  "buyer-country": [
+    "POL"
+  ],
+  "deadline-receipt-request-time-lot": [
+    "15:00:00+01:00"
+  ],
+  "description-lot": {
+    "pol": [
+      "Zamówienie dotyczy zakupu i montażu na konstrukcji gruntowej kompletnej instalacji fotowoltaicznej o łącznej mocy ok. 499,8 kWp. SPECYFIKACJA Przedmiotowa Instalacja PV musi zostać wykonana zgodnie z dokumentami, którymi dysponuje Zamawiający wskazanymi w Roz. II pkt 6, w tym w szczególności Projektami technicznymi. Dostęp do wskazanych powyżej dokumentów na zasadach opisanych w Rozdziale VIII. Poniżej podstawowe dane dotyczące specyfikacji przedmiotu zamówienia: 1. Instalacja PV - zgodna z WP nr WP/054071/2025/O08R00 z dn. 02.09.2025 r. i projektem technicznym. 2. Rodzaj instalacji- naziemna instalacja fotowoltaiczna pracująca w systemie on-grid, na konstrukcji gruntowej. 3. Moc instalacji - Moc projektowa określona w dokumentacji jako maksymalnie 499,8 kWp. Układ modułów: 768 szt. × 650 Wp, co daje sumę arytmetyczną 499,20 kWp. 4. Tryb pracy - Autokonsumpcja i brak planowego oddawania energii do sieci. Instalacja ma realizować warunek zero-export zgodnie z warunkami przyłączenia i projektem technicznym. 5. Moduły fotowoltaiczne: a) Moc znamionowa 650 Wp; b) Maksymalne napięcie systemu 1500 V DC; c) Napięcie / prąd w punkcie mocy maksymalnej 41,58 V ± 1,5% / 15,64 A ± 1,5%; d) Napięcie jałowe / prąd zwarciowy 50,28 V ± 1,5% / 16,44 A ± 1,5%; e) Sprawność minimum 24%. 6. Falowniki - 5 falowników o łącznej mocy znamionowej 440 kW: 3 szt. po 80 kW oraz 2 szt. po 100 kW, przy napięciu 400 V. 7. Prowadzenie instalacji DC pod modułami w dedykowanych korytkach, a pomiędzy ciągami i falownikami w szczelnych rurach osłonowych; 8. Typ konstrukcji – ziemna – wykonanie zgodnie z projektem technicznym. 9. Parametry projektów technicznych są wiążące dla przygotowania oferty. Nazwy własne urządzeń, systemów i materiałów wskazane w dokumentacji opisują rozwiązania projektowe. Dopuszcza się rozwiązania równoważne, o parametrach nie gorszych, w pełni kompatybilne z instalacją, warunkami przyłączenia, telemechaniką i systemem TAURON Dystrybucja S.A., pod warunkiem uzyskania wymaganych uzgodnień. 10. Sterowanie, pomiary i monitoring - wykonawca zobowiązany jest dostarczyć i uruchomić system realizujący łącznie następujące funkcje: a) automatyczne ograniczanie mocy czynnej instalacji i zabezpieczenie zwrotnomocowe realizujące funkcję zero-export; ustawienia i próby zgodnie z projektem technicznym oraz wymaganiami TAURON Dystrybucja S.A.; b) bieżący pomiar produkcji energii oraz parametrów pracy instalacji; c) rejestrację i przechowywanie danych historycznych pozwalających potwierdzić roczną produkcję energii; d) interaktywny dostęp Zamawiającego do aktualnej i historycznej produkcji energii oraz komunikatów o stanie i awariach instalacji; e) system e2TANGO, regulator parku energii z funkcją strażnika mocy SPV RM, SmartLogger 3000A, połączenia RS485, komunikację z systemem SCADA OSD oraz wyposażenie falowników w moduły WiFi lub LAN - zgodnie z projektem lub rozwiązania równoważne w zakresie funkcjonalności. WYMAGANIA PODSTAWOWE Poniżej wskazujemy wymagania podstawowe określone w stosunku do przedmiotu zamówienia i Oferenta, których brak możliwości spełnienia przez Oferenta, powoduje negatywną ocenę i odrzucenie oferty: 1. Przedmiot oferty musi dotyczyć i być zgodny z przedmiotem zamówienia opisanym w rozdziale II oraz musi uwzględniać specyfikację zawartą w rozdziale III niniejszego zapytania. 2. Minimalne okresy gwarancji, liczone od daty końcowego protokołu odbioru przedmiotu zamówienia: a) na panele – 25 lat; b) na system montażowy – 10 lat; c) na konstrukcje montażową - 15 lat; d) na falownik – 10 lat; e) na wykonanie montażu – 3 lata. 3. Minimalne wymagania dotyczące serwisu gwarancyjnego: a) obsługa zgłoszenia w języku polskim; b) podjęcie działań serwisowych - bezpośrednio po zgłoszeniu tj. nie później niż w ciągu 24 godzin w dni robocze oraz 48 godzin w dni ustawowo wolne, od powiadomienia o wystąpieniu awarii. 4. Maksymalny okres realizacji umowy wynosi 6 miesięcy od daty zawarcia umowy, z zastrzeżeniem że zakres przedmiotu zamówienia określony w rozdziale II pkt. 7 ppkt od a) do l) zostanie wykonany w terminie maksymalnie do 3 miesięcy od daty zawarcia umowy. 5. Warunki udziału/wymagania wobec Oferenta - o udzielenie zamówienia może ubiegać się Oferent spełniający łącznie warunki wskazane szczegółowo w Zapytaniu ofertowym nr 01B/REKO/PV/2026 z dn. 12.10.2026 r. Szczegółowe informacje zawarte są w Zapytaniu ofertowym nr 01B/REKO/PV/2026 z dn. 12.10.2026 r. dostępnym pod adresem https://www.reko-odpady.pl/dofinansowania/"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "POL"
+  ],
+  "procedure-type": "oth-mult",
+  "classification-cpv": [
+    "09331200",
+    "09332000",
+    "09331200",
+    "09332000"
+  ],
+  "buyer-name": {
+    "pol": [
+      "REKO PRIME SPÓŁKA Z OGRANICZONĄ ODPOWIEDZIALNOŚCIĄ"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "PL224"
+  ],
+  "title-lot": {
+    "pol": [
+      "Zakup i montaż na konstrukcji gruntowej kompletnej instalacji fotowoltaicznej o łącznej mocy ok. 499,8 kWp"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "pol": "1. Zapytanie dotyczy zakupu i montażu na konstrukcji gruntowej kompletnej instalacji fotowoltaicznej o łącznej mocy ok. 499,8 kWp. 2. Zamawiający nie dopuszcza zakupu urządzeń używanych. 3. Zamawiający nie dopuszcza składania ofert częściowych oraz ofert wariantowych. 4. Przeznaczenie przedmiotu zamówienia Przedmiotowa instalacja ma zapewnić częściowe zbilansowanie zapotrzebowania na energię elektryczną wynikającego z prowadzonych procesów produkcyjnych Zamawiającego i tym samym zwiększenie efektywności energetycznej oraz ograniczenie emisji zanieczyszczeń do atmosfery. 5. Miejsce posadowienia Instalacje zostaną posadowione na gruncie na terenie będącym w użytkowaniu Zamawiającego na działkach wskazanych w dokumentach formalnych, o których mowa poniżej. 6. Warunki formalno-prawne oraz badania geologiczne gruntu Na potrzeby realizacji przedmiotu zamówienia Zamawiający dysponuje następującymi dokumentami: a) Warunki Przyłączenia: • nr WP/054071/2025/O08R00 b) Projekty techniczne; c) Pozwolenie na budowę – decyzja nr 152/26 z dnia 14.04.2026 r., oraz decyzja nr 326/26 decydująca o częściowej zmianie decyzji 152/26 z dnia 14.04.2026 r. d) Opinia geotechniczna gruntu, na którym ma zostać posadowiona instalacja PV. e) Wytyczne do sposobu posadowienia i kotwienia Instalacji PV w korelacji do wskazanej powyżej opinii geotechnicznej 7. Zakres przedmiotu zamówienia obejmuje: a) Instalacja PV zgodnie ze specyfikacją techniczną zawartą w rozdziale III; b) Wykonanie konstrukcji gruntowej zgodnie ze specyfikacją techniczną zawartą w rozdziale III; c) Wykonanie niezbędnych elementów infrastruktury technicznej wymaganych przez Operatora Sieci Dystrybucyjnej w tym w szczególności: i. okablowanie po stronie DC i AC, trasy kablowe, rozdzielnice oraz komplet zabezpieczeń AC/DC; ii. licznik energii elektrycznej przeznaczony do pomiaru produkcji instalacji; iii. telemechanikę, automatykę zabezpieczeniową, systemy komunikacyjne i elementy wymagane przez Operatora Sieci Dystrybucyjnej; iv. urządzenia zabezpieczające przed wprowadzaniem energii czynnej do sieci TAURON Dystrybucja S.A., v. przygotowane do nadzoru i plombowania przez Operatora; d) Roboty elektryczne i ogólnobudowlane niezbędne do kompletnego wykonania instalacji, w tym dostawę, montaż, podłączenie, konfigurację, próby i uruchomienie; e) Dokumentację potwierdzającą zgodność przedmiotu zamówienia z obowiązującymi przepisami prawa, w tym w szczególności deklaracja zgodności z obowiązującymi normami; f) Instrukcję obsługi w języku polskim; g) Dostawę i montaż elementów instalacji oraz konstrukcji, a także liczników energii elektrycznej; h) Interaktywny informator o aktualnej i historycznej produkcji prądu z instalacji PV; i) wykonanie projektowanego oświetlenia terenu, w tym szafki SSO, linii kablowych oraz pięciu słupów oświetleniowych, zgodnie z projektem. j) Przeprowadzenie szkolenia dla pracowników Zamawiającego; k) Przyłączenie instalacji do instalacji odbiorczej zakładu zgodnie ze schematami projektowymi i zakresem dotyczącym stacji transformatorowych; l) Sporządzenie dokumentacji powykonawczej niezbędnej do uzyskania pozwolenia na użytkowanie; m) Uzgodnienia, zgłoszenia i przeprowadzenie odbiorów z Tauron Dystrybucja - Operatorem Sieci Dystrybucyjnej. Szczegółowe informacje zawarte są w Zapytaniu ofertowym nr 01B/REKO/PV/2026 z dn. 12.10.2026 r. dostępnym pod adresem https://www.reko-odpady.pl/dofinansowania/"
+  }
+}

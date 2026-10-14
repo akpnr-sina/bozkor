@@ -55,7 +55,7 @@ afterAll(async () => {
 describe("sync through postgres-js", () => {
   it("stores and re-reads the same rows as the PGlite driver", async () => {
     const adapter = fakeAdapter([
-      [fixture("uk4-tender-covered-multilot"), fixture("uk6-award"), fixture("uk4-tender-before-change")],
+      [fixture("uk4-tender-covered-multilot"), fixture("uk6-award"), fixture("uk4-goods-before-change")],
     ]);
     const first = await backfill(db, adapter, 1);
     expect(first).toMatchObject({ inserted: 2, skipped: 1, normalizeErrors: 0 });
@@ -78,13 +78,13 @@ describe("sync through postgres-js", () => {
   });
 
   it("marks a later correction as changed", async () => {
-    const stats = await syncWindow(db, fakeAdapter([[fixture("uk4-tender-change")]]), {
+    const stats = await syncWindow(db, fakeAdapter([[fixture("uk4-goods-change")]]), {
       from: new Date("2026-10-12T00:00:00Z"),
       to: new Date("2026-10-13T00:00:00Z"),
     });
     expect(stats).toMatchObject({ updated: 1, changed: 1 });
-    const [tender] = await db.select().from(tenders).where(sql`${tenders.procedureKey} = 'ocds-h6vhtk-078603'`);
-    expect(tender?.submissionDeadline?.toISOString()).toBe("2026-11-13T09:30:00.000Z");
+    const [tender] = await db.select().from(tenders).where(sql`${tenders.procedureKey} = 'ocds-h6vhtk-077f1f'`);
+    expect(tender?.submissionDeadline?.toISOString()).toBe("2026-10-14T14:00:00.000Z");
     expect(tender?.changedAt).toBeInstanceOf(Date);
   });
 });

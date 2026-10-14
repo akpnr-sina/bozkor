@@ -1,0 +1,124 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-25+02:00",
+    "2026-11-25+02:00",
+    "2026-11-25+02:00",
+    "2026-11-25+02:00",
+    "2026-11-25+02:00",
+    "2026-11-20+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "704642-2026",
+  "main-classification-lot": [
+    "32420000",
+    "32420000",
+    "48730000",
+    "48730000",
+    "48210000",
+    "72220000"
+  ],
+  "main-classification-proc": [
+    "32400000"
+  ],
+  "submission-url-lot": [
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c"
+  ],
+  "procedure-identifier": "f442c8c4-813b-49a1-b25a-e10387455a64",
+  "buyer-country-sub": [
+    "FRK26"
+  ],
+  "document-url-lot": [
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c",
+    "https://www.marches-publics.gouv.fr/entreprise/consultation/3083144?orgAcronyme=x7c"
+  ],
+  "official-language": [
+    "FRA"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "415000000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002",
+    "LOT-0003",
+    "LOT-0004",
+    "LOT-0005",
+    "LOT-0006"
+  ],
+  "notice-identifier": "3c81fa9a-52e6-4530-840f-bb9506b09091",
+  "title-proc": {
+    "fra": "Fourniture, intégration et maintenance de matériels et solutions de réseaux informatiques sécurisés pour les adhérents de la CAIH"
+  },
+  "estimated-value-lot": [
+    "415000000"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-12+02:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "FRA"
+  ],
+  "description-lot": {
+    "fra": [
+      "RESEAU ESSENTIEL",
+      "RESEAU AVANCE",
+      "Sécurité Réseau Essentiel",
+      "Sécurité Réseau Avancé",
+      "Supervision et analyse de réseaux",
+      "Expertise technique indépendante et intervention urgente"
+    ]
+  },
+  "deadline-receipt-tender-time-lot": [
+    "10:30:00+02:00",
+    "10:30:00+02:00",
+    "10:30:00+02:00",
+    "10:30:00+02:00",
+    "10:30:00+02:00",
+    "11:30:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "32400000",
+    "32420000",
+    "32420000",
+    "48730000",
+    "48730000",
+    "48210000",
+    "72220000"
+  ],
+  "buyer-name": {
+    "fra": [
+      "CAIH"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "title-lot": {
+    "fra": [
+      "RESEAU ESSENTIEL",
+      "RESEAU AVANCE",
+      "Sécurité Réseau Essentiel",
+      "Sécurité Réseau Avancé",
+      "Supervision et analyse de réseaux",
+      "Expertise technique indépendante et intervention urgente"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "fra": "Fourniture, intégration et maintenance de matériels et solutions de réseaux informatiques sécurisés pour les adhérents de la CAIH"
+  }
+}

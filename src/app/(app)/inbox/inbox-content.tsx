@@ -8,6 +8,7 @@ import { reviewDecision } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import { DECISION_SHORT, daysLeft, formatDaysLeft, formatMoney, SOURCE_LABELS } from "@/lib/format";
 import { sourceIds } from "@/matching/rules";
+import { isProductScope } from "@/sources/scope";
 import { loadInbox, readFilters } from "./data";
 
 export async function InboxContent({ searchParams }: { searchParams: PageProps<"/inbox">["searchParams"] }) {
@@ -104,7 +105,13 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
                         {item.changedAt && (!item.decidedAt || item.changedAt > item.decidedAt) && (
                           <Badge variant="destructive">Değişti</Badge>
                         )}
-                        {!item.current && <Badge variant="outline">Artık eşleşmiyor</Badge>}
+                        {!isProductScope(item.contractNature, item.cpvMain) ? (
+                          <Badge variant="outline" title="Sadece mal alımları takip ediliyor; kararınız olduğu için listede.">
+                            Kapsam dışı
+                          </Badge>
+                        ) : (
+                          !item.current && <Badge variant="outline">Artık eşleşmiyor</Badge>
+                        )}
                       </div>
                       <span className="text-xs text-muted-foreground">
                         {[item.buyerName, SOURCE_LABELS[item.source as keyof typeof SOURCE_LABELS], item.profiles.join(", ")]

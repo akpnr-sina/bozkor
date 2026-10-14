@@ -1,0 +1,91 @@
+{
+  "notice-type": "cn-standard",
+  "publication-number": "705742-2026",
+  "main-classification-lot": [
+    "31121000"
+  ],
+  "main-classification-proc": [
+    "31121000"
+  ],
+  "submission-url-lot": [
+    "https://tarjouspalvelu.fi/pvlogl?id=628794&tpk=055ce695-dc9a-458f-921f-0bd2742465e8"
+  ],
+  "procedure-identifier": "668014a1-b48a-40d8-925f-fe31d605b50e",
+  "buyer-country-sub": [
+    "FI19B"
+  ],
+  "place-of-performance-country-proc": [
+    "FIN"
+  ],
+  "document-url-lot": [
+    "https://tarjouspalvelu.fi/pvlogl?id=628794&tpk=055ce695-dc9a-458f-921f-0bd2742465e8"
+  ],
+  "official-language": [
+    "FIN"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "2650000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0000"
+  ],
+  "deadline-receipt-request-date-lot": [
+    "2026-11-16Z"
+  ],
+  "notice-identifier": "44d397f7-b4bc-409c-9b36-36bcd28229a0",
+  "title-proc": {
+    "fin": "Hinattavat sähkövoimakoneet 12,5 kVa"
+  },
+  "place-of-performance-subdiv-lot": [
+    "FI1C2"
+  ],
+  "estimated-value-lot": [
+    "2650000"
+  ],
+  "legal-basis": [
+    "32009L0081"
+  ],
+  "dispatch-date": "2026-10-12+03:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "FIN"
+  ],
+  "deadline-receipt-request-time-lot": [
+    "12:00:00Z"
+  ],
+  "description-lot": {
+    "fin": [
+      "Puolustusvoimien logistiikkalaitos (jäljempänä Hankintayksikkö) pyytää osallistumishakemustanne Puolustusvoimille tämän osallistumishakemuspyynnön mukaisesti. Hankinnan kohteena on 6kpl hinattavia, teholtaan vähintään 12,5 kVA sähkövoimakoneita. Hankinta sisältää koneistojen valmistuksen, tarvittavat dokumentit ja lopputarkastuksen tarjouspyynnössä ja sen liitteissä esitettyjen vaatimusten mukaisesti. Sähkövoimakoneen tarkempi vaatimusmäärittely kuvataan tarjouspyynnöllä. Hankintaan sisältyy optiot seuraavan erittelyn mukaisesti: *20kpl vuonna 2028 *20kpl vuonna 2029 *20kpl vuonna 2030 Lisäksi hankintaan liittyy optio varaosista ja vaihtoyksiköistä vuodelle 2028. Sähkövoimakoneesta valmistetaan ensin prototyyppi (1kpl) ja sille tehdään tarkastus, jossa todennetaan vaatimusten täyttyminen. Sarjan valmistus aloitetaan, kun prototyyppi on hyväksytty."
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "FIN"
+  ],
+  "procedure-type": "restricted",
+  "classification-cpv": [
+    "31121000",
+    "31121000"
+  ],
+  "buyer-name": {
+    "fin": [
+      "Puolustusvoimien logistiikkalaitos"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "FI1C2"
+  ],
+  "title-lot": {
+    "fin": [
+      "Hinattavat sähkövoimakoneet 12,5 kVa"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "fin": "Puolustusvoimien logistiikkalaitos (jäljempänä Hankintayksikkö) pyytää osallistumishakemustanne Puolustusvoimille tämän osallistumishakemuspyynnön mukaisesti. Hankinnan kohteena on 6kpl hinattavia, teholtaan vähintään 12,5 kVA sähkövoimakoneita. Hankinta sisältää koneistojen valmistuksen, tarvittavat dokumentit ja lopputarkastuksen tarjouspyynnössä ja sen liitteissä esitettyjen vaatimusten mukaisesti. Sähkövoimakoneen tarkempi vaatimusmäärittely kuvataan tarjouspyynnöllä. Hankintaan sisältyy optiot seuraavan erittelyn mukaisesti: *20kpl vuonna 2028 *20kpl vuonna 2029 *20kpl vuonna 2030 Lisäksi hankintaan liittyy optio varaosista ja vaihtoyksiköistä vuodelle 2028. Sähkövoimakoneesta valmistetaan ensin prototyyppi (1kpl) ja sille tehdään tarkastus, jossa todennetaan vaatimusten täyttyminen. Sarjan valmistus aloitetaan, kun prototyyppi on hyväksytty."
+  }
+}

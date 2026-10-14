@@ -1,0 +1,148 @@
+{
+  "id": "096007-2026",
+  "tag": [
+    "tenderUpdate"
+  ],
+  "date": "2026-10-12T11:45:28+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-077f1f",
+  "parties": [
+    {
+      "name": "Sandwell Metropolitan Borough Council",
+      "id": "GB-PPON-PJHD-8764-YRJJ",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PJHD-8764-YRJJ"
+      },
+      "address": {
+        "streetAddress": "Sandwell Council House, Freeth Street",
+        "locality": "Oldbury",
+        "postalCode": "B69 3DE",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKG37"
+      },
+      "contactPoint": {
+        "email": "Procurement_SMBC@sandwell.gov.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PJHD-8764-YRJJ",
+    "name": "Sandwell Metropolitan Borough Council"
+  },
+  "tender": {
+    "id": "SMBC 26061",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Social Media Management Platform.",
+    "description": "TITLE Social Media Management Platform\nRef SMBC 26061\nThe Communications team began using a social media management tool in 2024 as part of broader changes to the way the team works. A social media management tool enables the council to:\n•\tUnderstand what audiences and topics involving the council are trending on social media platforms\n•\tListen proactively to understand reputational issues and risks, and then go on to strategically plan content and campaigns to ensure the council’s communications function supports the delivery of the council’s strategic objectives and helps boost reputation to aid with recruitment of staff and improved customer experience\n•\tUtilise marketing reports and analytics functions that are not available on native platforms to understand engagement across all channels \n•\tMeasure the impact of campaigns and test messaging to understand what resonates with citizens across each channel\n•\tRegularly analyse data to make informed strategic decisions and identify opportunities to drive revenue for the council\nIn the long term, as a part of the council's customer journey planning, a social media management tool will allow for social media data to sit alongside other customer service channels to join up data and provide a holistic view of customer feedback and satisfaction levels. This will support the council’s corporate priorities linked to the Customer Journey programme. \nCan you also register on FTS which is a government website we use for all procurements over the value of £30,000. this give you the opportunity to see opportunities throughout the country also this will in turn help us to award on the website as per Procurement Act 2023. \nsupplier link- https://supplierregistration.cabinetoffice.gov.uk/organisation/register.\nThe Council will be using the In-tend e-Tendering System for this Procurement exercise, please visit https://in-tendhost.co.uk/sandwellmbc to access the Sandwell MBC In-tend Supplier Portal.\nFrom here you will be able to register your company, express an interest in the opportunity, and gain immediate access to Quotation or other related documents.\nTo submit a quotation you will be required to \"Opt In\".\nFor a Step by Step user guide to the Sandwell MBC In-tend Supplier Portal please click on the `Guidance for Suppliers` section of the website. All procurement responses must be carried out via the Sandwell MBC In-tend Supplier Portal.  \nIf you require further assistance in respect of the system please contact the In-tend support team on 0844 272 8810. \nClosing date: 13th October 2026 at 15:00hrs",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "30233000",
+            "description": "Media storage and reader devices"
+          },
+          {
+            "scheme": "CPV",
+            "id": "32412100",
+            "description": "Telecommunications network"
+          },
+          {
+            "scheme": "CPV",
+            "id": "32417000",
+            "description": "Multimedia networks"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 60000,
+      "amount": 50000,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Below threshold - open competition",
+    "mainProcurementCategory": "goods",
+    "aboveThreshold": false,
+    "submissionMethodDetails": "http://in-tendhost.co.uk/sandwell/aspx/Home",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed"
+    },
+    "tenderPeriod": {
+      "endDate": "2026-10-14T15:00:00+01:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-10-08T17:00:00+01:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 60000,
+          "amount": 50000,
+          "currency": "AED"
+        },
+        "contractPeriod": {
+          "startDate": "2026-11-08T00:00:00+00:00",
+          "endDate": "2030-11-07T23:59:59+00:00"
+        },
+        "description": null,
+        "awardCriteria": {
+          "description": "60% Price 40% quality"
+        }
+      }
+    ],
+    "documents": [
+      {
+        "id": "L-1",
+        "documentType": "biddingDocuments",
+        "description": "The Communications team began using a social media management tool in 2024 as part of broader changes to the way the team works. A social media management tool enables the council to:\n•\tUnderstand what audiences and topics involving the council are trending on social media platforms\n•\tListen proactively to understand reputational issues and risks, and then go on to strategically plan content and campaigns to ensure the council’s communications function supports the delivery of the council’s strategic objectives and helps boost reputation to aid with recruitment of staff and improved customer experience\n•\tUtilise marketing reports and analytics functions that are not available on native platforms to understand engagement across all channels \n•\tMeasure the impact of campaigns and test messaging to understand what resonates with citizens across each channel\n•\tRegularly analyse data to make informed strategic decisions and identify opportunities to drive revenue for the council",
+        "url": "https://supplier.in-tend.co.uk/sandwellmbc/home"
+      },
+      {
+        "id": "096007-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096007-2026",
+        "datePublished": "2026-10-12T11:45:28+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en",
+  "extensions": [
+    "https://standard.open-contracting.org/profiles/eu/latest/en/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_amendment_rationale_classifications_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_budget_breakdown_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_contract_completion_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_documentation_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_pagination_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_performance_failures_extension/master/extension.json",
+    "https://raw.githubusercontent.com/open-contracting-extensions/ocds_suitability_extension/master/extension.json",
+    "https://raw.githubusercontent.com/portaledcahn/ocds_Links_extension/main/extension.json",
+    "https://raw.githubusercontent.com/cabinetoffice/ocds_uk_extension/main/extension.json"
+  ]
+}

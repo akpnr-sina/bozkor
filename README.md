@@ -92,8 +92,8 @@ Sonrasında `pnpm worker` açık olduğu sürece yeni ilanlar 2 saatte bir otoma
 | `pnpm dev` | Web uygulaması (geliştirme) |
 | `pnpm build` / `pnpm start` | Production build ve çalıştırma |
 | `pnpm worker` | pg-boss worker süreci (2 saatte bir Find a Tender senkronu) |
-| `pnpm backfill --source=uk_fat --days=30` | Geriye dönük yükleme |
-| `pnpm renormalize --source=uk_fat` | İhaleleri saklanan ham ilanlardan yeniden hesaplar (API çağırmaz) |
+| `pnpm backfill --source=uk_fat --days=30` | Geriye dönük yükleme (`--source=eu_ted` TED için) |
+| `pnpm renormalize --source=uk_fat` | İhaleleri saklanan ham ilanlardan yeniden hesaplar (API çağırmaz). `--dry-run` sadece neyin silineceğini yazar |
 | `pnpm test` | Vitest (canlı API ve Supabase kullanmaz) |
 | `pnpm typecheck` | Route tiplerini üretir ve `tsc` çalıştırır |
 | `pnpm lint` | ESLint |

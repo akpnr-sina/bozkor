@@ -5,21 +5,28 @@ import { closeDb, getDb, type AppDb } from "@/db";
 import { rawNotices, tenders } from "@/db/schema";
 import { syncEcbRates } from "@/fx/sync";
 import { rematch } from "@/matching/apply";
+import { createTedAdapter } from "@/sources/eu-ted";
 import { backfill } from "@/sources/sync";
 import type { SourceAdapter, SourceId } from "@/sources/types";
 import { createFatAdapter } from "@/sources/uk-fat";
 import { fillValueEur } from "@/sources/value-eur";
 
-// Usage: pnpm backfill --source=uk_fat --days=30
+// Usage: pnpm backfill --source=uk_fat --days=30  (or --source=eu_ted)
 // Output is Turkish because the team runs this by hand.
 
 const log = (message: string) => console.log(message);
 
-const ADAPTERS: Partial<Record<SourceId, () => SourceAdapter>> = {
-  uk_fat: () =>
-    createFatAdapter({
-      onRetry: ({ delayMs, reason }) => log(`    ${reason}: ${Math.round(delayMs / 1000)} sn bekleyip tekrar deneniyor`),
-    }),
+const onRetry = ({ delayMs, reason }: { delayMs: number; reason: string }) =>
+  log(`    ${reason}: ${Math.round(delayMs / 1000)} sn bekleyip tekrar deneniyor`);
+
+const ADAPTERS: Record<SourceId, () => SourceAdapter> = {
+  uk_fat: () => createFatAdapter({ onRetry }),
+  eu_ted: () => createTedAdapter({ onRetry }),
+};
+
+const DURATION_HINT: Record<SourceId, string> = {
+  uk_fat: "API bazen yavaş yanıt veriyor; 30 gün genelde 10-30 dakika, yoğun saatlerde daha uzun sürebilir.",
+  eu_ted: "TED'de günde 700 civarı mal alımı ilanı var; 30 gün genelde 15-40 dakika sürer.",
 };
 
 const dayFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: "Europe/Istanbul", dateStyle: "medium" });
@@ -34,11 +41,11 @@ async function main() {
   const { values } = parseArgs({
     options: { source: { type: "string" }, days: { type: "string", default: "30" } },
   });
-  const source = values.source as SourceId | undefined;
+  const source = values.source && Object.hasOwn(ADAPTERS, values.source) ? (values.source as SourceId) : undefined;
   const createAdapter = source ? ADAPTERS[source] : undefined;
   const days = Number(values.days);
   if (!source || !createAdapter || !Number.isInteger(days) || days < 1 || days > 365) {
-    log("Kullanım: pnpm backfill --source=uk_fat --days=30   (gün: 1-365)");
+    log("Kullanım: pnpm backfill --source=uk_fat --days=30   (kaynak: uk_fat ya da eu_ted, gün: 1-365)");
     process.exitCode = 1;
     return;
   }
@@ -46,7 +53,7 @@ async function main() {
   const db = getDb();
   const before = await totals(db, source);
   log(`${source}: son ${days} gün yükleniyor.`);
-  log("API bazen yavaş yanıt veriyor; 30 gün genelde 10-30 dakika, yoğun saatlerde daha uzun sürebilir.");
+  log(DURATION_HINT[source]);
   log("Her sayfa için bir nokta, her gün için bir özet satırı yazılır. Bu sırada worker'ı kapalı tutun.");
 
   let page = 0;
@@ -88,6 +95,8 @@ async function main() {
   log(`  Yeni ihale: ${stats.inserted}`);
   log(`  Güncellenen ihale: ${stats.updated} (değişti olarak işaretlenen: ${stats.changed})`);
   log(`  İhale ilanı olmadığı için atlanan prosedür: ${stats.skipped} (sonuç bildirimleri, eski düzeltmeler)`);
+  log(`  Kapsam dışı (hizmet, yapım, yazılım): ${stats.outOfScope}${stats.removed ? `, silinen eski ihale: ${stats.removed}` : ""}`);
+  if (stats.outOfScopeKept) log(`  Kapsam dışı ama kararı, analizi ya da dokümanı olduğu için tutulan: ${stats.outOfScopeKept}`);
   log(`  Toplam ihale: ${after.tenders} (öncesi: ${before.tenders})`);
   log(`  Toplam ham ilan: ${after.raw} (öncesi: ${before.raw})`);
   if (stats.normalizeErrors) log(`  Okunamayan ilan: ${stats.normalizeErrors} (ayrıntılar yukarıda)`);

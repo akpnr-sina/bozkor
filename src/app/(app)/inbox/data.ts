@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, isNull, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
 import type { AppDb } from "@/db";
 import { criteriaProfiles, documents, profileMatches, reviewDecision, tenderReviews, tenders } from "@/db/schema";
 import type { ReviewDecision } from "@/lib/format";
@@ -36,11 +36,16 @@ export function readFilters(params: Record<string, string | string[] | undefined
 const isConcreteDecision = (decision: Filters["decision"]): decision is ReviewDecision =>
   decision !== "" && decision !== "none";
 
+/** Decisions that mean the team is still working on the tender. */
+const ACTIVE_DECISIONS: ReviewDecision[] = ["GO", "REVIEW", "WATCH"];
+
 /**
  * Tenders for the inbox, one row per tender, nearest deadline first. By
- * default the current matches of active profiles; with a concrete decision
- * filter every tender carrying that decision, matched or not, so a decided
- * tender can always be found again.
+ * default the current matches of active profiles, plus tenders whose latest
+ * decision is GO, REVIEW or WATCH even when no profile matches them any more
+ * (a paused profile, or a tender that fell out of scope). With a concrete
+ * decision filter every tender carrying that decision, matched or not, so a
+ * decided tender can always be found again.
  */
 export async function loadInbox(db: AppDb, filters: Filters, limit = ROW_LIMIT) {
   const [profiles, [{ n: profileCount } = { n: 0 }]] = await Promise.all([
@@ -71,7 +76,7 @@ export async function loadInbox(db: AppDb, filters: Filters, limit = ROW_LIMIT) 
   if (filters.status === "closed") conditions.push(sql`not (${openTender()})`);
   if (filters.decision === "none") conditions.push(isNull(latestReview.decision));
   if (history) conditions.push(eq(latestReview.decision, filters.decision as ReviewDecision));
-  else conditions.push(isNull(profileMatches.unmatchedAt), eq(criteriaProfiles.active, true));
+  else conditions.push(or(isNotNull(profileMatches.profileId), inArray(latestReview.decision, ACTIVE_DECISIONS))!);
 
   const fields = {
     tenderId: tenders.id,
@@ -79,6 +84,8 @@ export async function loadInbox(db: AppDb, filters: Filters, limit = ROW_LIMIT) 
     buyerName: tenders.buyerName,
     buyerCountry: tenders.buyerCountry,
     source: tenders.source,
+    contractNature: tenders.contractNature,
+    cpvMain: tenders.cpvMain,
     valueEur: tenders.valueEur,
     valueAmount: tenders.valueAmount,
     valueCurrency: tenders.valueCurrency,
@@ -108,10 +115,18 @@ export async function loadInbox(db: AppDb, filters: Filters, limit = ROW_LIMIT) 
     : db
         .with(latestReview)
         .select(fields)
-        .from(profileMatches)
-        .innerJoin(tenders, eq(tenders.id, profileMatches.tenderId))
-        .innerJoin(criteriaProfiles, eq(criteriaProfiles.id, profileMatches.profileId))
-        .leftJoin(latestReview, eq(latestReview.tenderId, tenders.id));
+        .from(tenders)
+        .leftJoin(latestReview, eq(latestReview.tenderId, tenders.id))
+        // Only current matches of active profiles take part.
+        .leftJoin(
+          profileMatches,
+          and(
+            eq(profileMatches.tenderId, tenders.id),
+            isNull(profileMatches.unmatchedAt),
+            sql`${profileMatches.profileId} in (select id from ${criteriaProfiles} where active)`,
+          ),
+        )
+        .leftJoin(criteriaProfiles, eq(criteriaProfiles.id, profileMatches.profileId));
 
   const rows = await base
     .where(and(...conditions))

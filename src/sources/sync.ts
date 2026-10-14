@@ -29,6 +29,9 @@ export function addStats(total: SyncStats, part: SyncStats): SyncStats {
     updated: total.updated + part.updated,
     changed: total.changed + part.changed,
     skipped: total.skipped + part.skipped,
+    outOfScope: total.outOfScope + part.outOfScope,
+    removed: total.removed + part.removed,
+    outOfScopeKept: total.outOfScopeKept + part.outOfScopeKept,
     normalizeErrors: total.normalizeErrors + part.normalizeErrors,
   };
 }

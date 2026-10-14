@@ -67,6 +67,7 @@ const tender = z.object({
   value: value.nullish().catch(null),
   procurementMethod: str,
   procurementMethodDetails: str,
+  mainProcurementCategory: str,
   submissionMethodDetails: str,
   tenderPeriod: period.nullish().catch(null),
   enquiryPeriod: period.nullish().catch(null),

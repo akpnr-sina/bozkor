@@ -1,3 +1,4 @@
+import { isProductScope } from "@/sources/scope";
 import type { ProfileRules } from "./rules";
 import { containsKeyword, findKeywords, tenderText } from "./text";
 import type { MatchableTender, MatchContext, MatchReason, MatchResult, RuleKey } from "./types";
@@ -25,6 +26,9 @@ function listed<T extends string>(allowed: readonly string[], value: T | null): 
 export function matchTender(tender: MatchableTender, rules: ProfileRules, context: MatchContext): MatchResult {
   const reasons: MatchReason[] = [];
 
+  // Only goods are in scope; services, works and software tenders that are
+  // still stored (someone decided on them) are never offered again.
+  if (!isProductScope(tender.contractNature, tender.cpvMain)) return rejected("scope");
   if (tender.status !== "open") return rejected("status");
 
   const source = listed(rules.sources, tender.source);

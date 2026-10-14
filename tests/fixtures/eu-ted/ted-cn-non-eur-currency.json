@@ -1,0 +1,103 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-09+01:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "707346-2026",
+  "main-classification-lot": [
+    "18110000"
+  ],
+  "main-classification-proc": [
+    "18110000"
+  ],
+  "submission-url-lot": [
+    "https://www.comdia.com/svendborgkommune/tenderinformationshow.aspx?Id=815881"
+  ],
+  "procedure-identifier": "269d42cd-7083-45a1-a7c7-95d6a0894987",
+  "buyer-country-sub": [
+    "DK031"
+  ],
+  "additional-classification-proc": [
+    "18110000",
+    "18100000"
+  ],
+  "place-of-performance-country-proc": [
+    "DNK"
+  ],
+  "additional-classification-lot": [
+    "18110000",
+    "18100000"
+  ],
+  "document-url-lot": [
+    "https://www.comdia.com/svendborgkommune/tenderinformationshow.aspx?Id=815881"
+  ],
+  "official-language": [
+    "DAN"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "4000000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0000"
+  ],
+  "notice-identifier": "c3763269-bf6a-4940-a930-a65f17ca0cda",
+  "title-proc": {
+    "dan": "EU-UDBUD På indkøb og levering af Arbejdsbeklædning til medarbejdere hos Svendborg Kommune (CETS)"
+  },
+  "place-of-performance-subdiv-lot": [
+    "DK031"
+  ],
+  "estimated-value-lot": [
+    "4000000"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-09+02:00",
+  "estimated-value-cur-lot": [
+    "DKK"
+  ],
+  "estimated-value-cur-proc": "DKK",
+  "buyer-country": [
+    "DNK"
+  ],
+  "description-lot": {
+    "dan": [
+      "Udbuddet vedrører levering af arbejdsbeklædning til Ejendomsservice og i mindre grad til Trafik og Infrastruktur. til Svendborg Kommune (herefter benævnt Ordregiver eller Svendborg Kommune). Svendborg Kommune ønsker at beklædningen til ca. 200 fastansatte. I henhold til overenskomsten for faggrupperne Rengøring og Teknisk Service har hver enkelt medarbejder ret til køb af arbejdsbeklædning for 2.000 kr. ex moms pr. år. Aftalen omfatter dermed køb af arbejdsbeklædning til alle rengøringsassistenter og tekniske servicemedarbejdere samt enkelte medarbejdere i CETS - Trafik og Infrastruktur (sikkerhedsbeklædning til arbejde på vejen). Herudover vil aftalen ad hoc kunne benyttes af andre afdelinger der mere sporadisk kan have behov for levering af arbejdsbeklædning."
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "DNK"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "13:00:00+01:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "18110000",
+    "18110000",
+    "18100000",
+    "18110000",
+    "18110000",
+    "18100000"
+  ],
+  "buyer-name": {
+    "dan": [
+      "Svendborg Kommune"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "DK031"
+  ],
+  "title-lot": {
+    "dan": [
+      "EU-UDBUD På indkøb og levering af Arbejdsbeklædning til medarbejdere hos Svendborg Kommune (CETS)"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "dan": "Udbuddet vedrører levering af arbejdsbeklædning til Ejendomsservice og i mindre grad til Trafik og Infrastruktur. til Svendborg Kommune (herefter benævnt Ordregiver eller Svendborg Kommune). Svendborg Kommune ønsker at beklædningen til ca. 200 fastansatte. I henhold til overenskomsten for faggrupperne Rengøring og Teknisk Service har hver enkelt medarbejder ret til køb af arbejdsbeklædning for 2.000 kr. ex moms pr. år. Aftalen omfatter dermed køb af arbejdsbeklædning til alle rengøringsassistenter og tekniske servicemedarbejdere samt enkelte medarbejdere i CETS - Trafik og Infrastruktur (sikkerhedsbeklædning til arbejde på vejen). Herudover vil aftalen ad hoc kunne benyttes af andre afdelinger der mere sporadisk kan have behov for levering af arbejdsbeklædning."
+  }
+}

@@ -39,7 +39,7 @@ beforeEach(async () => {
       [
         loadFixture("uk-fat", "uk4-tender-defence"),
         loadFixture("uk-fat", "uk4-tender-covered-multilot"),
-        loadFixture("uk-fat", "uk4-tender-below-threshold"),
+        loadFixture("uk-fat", "uk4-goods-below-threshold"),
       ],
     ]),
     { from: new Date("2026-10-12T00:00:00Z"), to: new Date("2026-10-13T00:00:00Z") },
@@ -61,12 +61,12 @@ afterAll(async () => {
 
 describe("loadInbox", () => {
   it("lists each tender once with every profile it matched, nearest deadline first", async () => {
-    await testDb.db.update(tenders).set({ submissionDeadline: sql`now() + interval '5 days'` }).where(eq(tenders.externalId, "096278-2026"));
+    await testDb.db.update(tenders).set({ submissionDeadline: sql`now() + interval '5 days'` }).where(eq(tenders.externalId, "096156-2026"));
     await testDb.db.update(tenders).set({ submissionDeadline: null }).where(eq(tenders.externalId, "096253-2026"));
     const { list, total, profiles } = await loadInbox(testDb.db, all);
     expect(total).toBe(3);
     expect(list.map((row) => row.tenderId.length > 0 && row.title.slice(0, 12))).toEqual([
-      "Suffolk Coun",
+      "High Quality",
       "715794488 - ",
       "LSL/MED/0222",
     ]);
@@ -116,6 +116,23 @@ describe("loadInbox", () => {
     expect(decided.list[0]?.current).toBe(false);
     // The page still offers the filters: there are profiles, just none active.
     expect(decided).toMatchObject({ hasAnyProfile: true, profiles: [] });
+  });
+
+  it("keeps tenders the team is working on in the default view after their match ended", async () => {
+    const { db } = testDb;
+    const [helmet] = await db.select({ id: tenders.id }).from(tenders).where(eq(tenders.externalId, "096315-2026"));
+    const [medical] = await db.select({ id: tenders.id }).from(tenders).where(eq(tenders.externalId, "096253-2026"));
+    await db.insert(tenderReviews).values([
+      { tenderId: helmet!.id, decision: "GO", decidedBy: "a@bozkor.com" },
+      { tenderId: medical!.id, decision: "NO_GO", decidedBy: "a@bozkor.com" },
+    ]);
+    await db.update(profileMatches).set({ unmatchedAt: sql`now()` });
+
+    const { list, total } = await loadInbox(db, all);
+    expect(total).toBe(1);
+    expect(list[0]).toMatchObject({ tenderId: helmet!.id, decision: "GO", current: false, profiles: [] });
+    // A profile filter shows only that profile's current matches.
+    expect((await loadInbox(db, { ...all, profile: narrow })).total).toBe(0);
   });
 
   it("finds a decided tender that never matched any profile", async () => {

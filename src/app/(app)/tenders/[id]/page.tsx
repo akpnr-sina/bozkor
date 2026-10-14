@@ -10,6 +10,7 @@ import { getDb } from "@/db";
 import { criteriaProfiles, documents, documentFetchStatus, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import {
+  CONTRACT_NATURE_LABELS,
   DECISION_LABELS,
   daysLeft,
   formatDate,
@@ -22,6 +23,7 @@ import {
   STATUS_LABELS,
 } from "@/lib/format";
 import { describeReason, parseReasons } from "@/matching/describe";
+import { isProductScope } from "@/sources/scope";
 import { DecisionForm } from "./decision-form";
 
 export const metadata: Metadata = { title: "İhale" };
@@ -97,6 +99,12 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
             <Badge variant={tender.status === "open" ? "default" : "secondary"}>{STATUS_LABELS[tender.status]}</Badge>
             {tender.noticeType && <Badge variant="outline">{NOTICE_TYPE_LABELS[tender.noticeType] ?? tender.noticeType}</Badge>}
             <Badge variant="outline">{REGIME_LABELS[tender.regime]}</Badge>
+            {tender.contractNature && <Badge variant="outline">{CONTRACT_NATURE_LABELS[tender.contractNature]}</Badge>}
+            {!isProductScope(tender.contractNature, tender.cpvMain) && (
+              <Badge variant="destructive" title="Sadece mal alımları takip ediliyor. Bu ihale kararınız olduğu için duruyor, profillerle eşleşmez.">
+                Kapsam dışı
+              </Badge>
+            )}
             <Badge variant="outline">{SOURCE_LABELS[tender.source as keyof typeof SOURCE_LABELS] ?? tender.source}</Badge>
             {changedSinceDecision && <Badge variant="destructive">Değişti: {formatDate(tender.changedAt)}</Badge>}
           </div>

@@ -1,0 +1,103 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-17+01:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "706689-2026",
+  "main-classification-lot": [
+    "31121000"
+  ],
+  "main-classification-proc": [
+    "31121000"
+  ],
+  "submission-url-lot": [
+    "https://marches.maximilien.fr/?page=entreprise.AccueilEntreprise"
+  ],
+  "procedure-identifier": "995e9d05-5c76-401f-aa2c-2adea5c99bcf",
+  "buyer-country-sub": [
+    "FR105"
+  ],
+  "additional-classification-proc": [
+    "45310000",
+    "45331210"
+  ],
+  "place-of-performance-country-proc": [
+    "FRA"
+  ],
+  "additional-classification-lot": [
+    "45310000",
+    "45331210"
+  ],
+  "document-url-lot": [
+    "https://marches.maximilien.fr/?page=entreprise.AccueilEntreprise"
+  ],
+  "official-language": [
+    "FRA"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "600000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "8801693f-8050-436f-bef9-27285978f55c",
+  "title-proc": {
+    "fra": "FOURNITURE ET INSTALLATION DU NOUVEAU GROUPE ELECTROGENE DU CENTRE DRAMATIQUE NATIONAL NANTERRE AMANDIERS"
+  },
+  "place-of-performance-subdiv-lot": [
+    "FR105"
+  ],
+  "estimated-value-lot": [
+    "600000"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-09+02:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "FRA"
+  ],
+  "description-lot": {
+    "fra": [
+      "La présente consultation a pour objet la fourniture et l’installation du nouveau groupe électrogène du Centre Dramatique National Nanterre Amandiers."
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "FRA"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "16:00:00+01:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "31121000",
+    "45310000",
+    "45331210",
+    "31121000",
+    "45310000",
+    "45331210"
+  ],
+  "buyer-name": {
+    "fra": [
+      "Commune de Nanterre"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "FR105"
+  ],
+  "title-lot": {
+    "fra": [
+      "Fourniture et installation du nouveau groupe électrogène du Centre Dramatique National Nanterre Amandiers"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "fra": "La présente consultation a pour objet la fourniture et l’installation du nouveau groupe électrogène du Centre Dramatique National Nanterre Amandiers. Le marché sera passé sous la forme d'un marché ordinaire traité à prix mixtes. A titre indicatif, le montant global du marché ne dépassera pas 750 000,00 € HT"
+  }
+}

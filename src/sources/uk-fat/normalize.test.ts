@@ -130,6 +130,16 @@ describe("normalizeFatRelease", () => {
     expect(n.lots).toBeNull();
   });
 
+  it("reads the main nature of the contract", () => {
+    expect(normalized("uk4-goods-below-threshold").contractNature).toBe("goods");
+    expect(normalized("uk4-tender-below-threshold").contractNature).toBe("services");
+    expect(normalized("uk6-award").contractNature).toBeNull();
+    const raw = fixture("uk4-goods-below-threshold") as { tender: Record<string, unknown> };
+    const other = normalizeFatRelease({ ...raw, tender: { ...raw.tender, mainProcurementCategory: "other" } });
+    expect(other).not.toBeNull();
+    expect(other!.contractNature).toBeNull();
+  });
+
   it("maps award and contract notices to a status-only notice", () => {
     const n = normalized("uk6-award");
     expect(n).toMatchObject({ noticeType: "award", status: "awarded", title: null, noticeUrl: null, lots: null });

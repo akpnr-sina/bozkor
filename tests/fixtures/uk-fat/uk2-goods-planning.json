@@ -1,0 +1,125 @@
+{
+  "ocid": "ocds-h6vhtk-0785bb",
+  "id": "096137-2026",
+  "tag": [
+    "planning"
+  ],
+  "date": "2026-10-12T14:36:34+01:00",
+  "initiationType": "tender",
+  "parties": [
+    {
+      "name": "Transport for London",
+      "id": "GB-PPON-PHMT-6197-NWNZ",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PHMT-6197-NWNZ"
+      },
+      "address": {
+        "streetAddress": "5 Endeavour Square",
+        "locality": "London",
+        "postalCode": "E20 1JN",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKI41"
+      },
+      "contactPoint": {
+        "email": "BSFAribaAdministration@tfl.gov.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicUndertaking",
+            "description": "Public undertaking"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PHMT-6197-NWNZ",
+    "name": "Transport for London"
+  },
+  "planning": {
+    "milestones": [
+      {
+        "id": "engagement",
+        "type": "engagement",
+        "description": "All relevant information will be contained in the EME document.\nTo request please contact your procurement lead:\nArianna Dinelli: ariannadinelli@tfl.gov.uk / Amir Shahzad: amirshahzad@tfl.gov.uk\nThe Expression of Interest deadline is the 20th October 2026 12.00 NOON GMT.\nSuppliers are to complete EME and return by 2nd November 2026 12.00 NOON GMT.\nWhen publishing opportunities on Find a Tender, please include the following wording within your notice under the :\nSuppliers who are unfamiliar with SAP Business Network or participating in TfL sourcing events can access our interactive supplier guidance here:\nSAP Business Network - sourcing event participation",
+        "dueDate": "2026-11-02T23:59:59Z",
+        "status": "scheduled"
+      }
+    ],
+    "documents": [
+      {
+        "id": "096137-2026",
+        "documentType": "marketEngagementNotice",
+        "noticeType": "UK2",
+        "description": "Preliminary market engagement notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096137-2026",
+        "datePublished": "2026-10-12T14:36:34+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "tender": {
+    "id": "WS3280609529 ",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "The Purchase of Spray booth for REW - Acton Works",
+    "description": "The procurement is for the design, supply, installation, testing, commissioning and handover of a new spray booth facility at Acton Works (AC01 REW) under a Design and Build Contract.\nThe appointed Contractor shall act as Principal Designer and Principal Contractor in accordance with the Construction (Design and Management) Regulations 2015 and shall be responsible for the management, coordination and delivery of all design, construction and commissioning activities necessary to provide a fully operational spray booth installation.\nThe scope includes, but is not limited to, site surveys and investigations, detailed design, manufacture, supply, installation, integration, testing, commissioning and handover of the spray booth and all associated civil, structural, architectural, mechanical, electrical, ventilation, fire engineering, control systems and ancillary building works. The Contractor shall be responsible for coordinating all interfaces with existing infrastructure and retained assets and for ensuring that the completed installation operates as a fully integrated system.\nThe Contractor shall provide all labour, plant, materials, equipment and services necessary to deliver the Works, including temporary works, performance demonstration, assurance activities and handover documentation. The Contractor shall also identify and report any deficiencies in the existing conveyor system or related infrastructure that may affect the performance, compliance or integration of the completed installation.\nThe Works shall be delivered as a complete turnkey solution in accordance with Transport for London requirements and all applicable statutory, regulatory and industry standards.",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "34600000",
+            "description": "Railway and tramway locomotives and rolling stock and associated parts"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKI",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 144000,
+      "amount": 120000,
+      "currency": "GBP"
+    },
+    "mainProcurementCategory": "goods",
+    "specialRegime": [
+      "utilities"
+    ],
+    "aboveThreshold": false,
+    "lots": [
+      {
+        "id": "1",
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2026-12-04T00:00:00Z",
+          "endDate": "2027-12-04T23:59:59Z",
+          "maxExtentDate": "2028-06-04T23:59:59Z"
+        },
+        "hasRenewal": true,
+        "status": "planning"
+      }
+    ],
+    "status": "planning"
+  },
+  "language": "en"
+}

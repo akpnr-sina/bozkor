@@ -36,7 +36,7 @@ beforeEach(async () => {
   await syncWindow(
     db,
     fakeAdapter([
-      [fixture("uk4-tender-defence"), fixture("uk4-tender-covered-multilot"), fixture("uk4-tender-below-threshold")],
+      [fixture("uk4-tender-defence"), fixture("uk4-tender-covered-multilot"), fixture("uk4-goods-below-threshold")],
     ]),
     window,
   );
@@ -147,6 +147,15 @@ describe("rematch", () => {
     expect(logs).toHaveLength(1);
   });
 
+  it("ends the match of an open tender that turns out to be out of scope", async () => {
+    const profileId = await createProfile({ categoryIds: ["giyim"] });
+    await rematch(testDb.db);
+    await testDb.db.update(tenders).set({ contractNature: "services" }).where(eq(tenders.procedureKey, helmetTender));
+
+    expect(await rematch(testDb.db)).toMatchObject({ matched: 0, unmatched: 1 });
+    expect(await matchesOf(profileId)).toEqual([expect.objectContaining({ unmatchedAt: expect.any(Date) })]);
+  });
+
   it("leaves the state of an existing match alone", async () => {
     const profileId = await createProfile({ categoryIds: ["giyim"] });
     await rematch(testDb.db);
@@ -163,6 +172,13 @@ describe("previewRules", () => {
     expect(result).toMatchObject({ scanned: 3, matched: 1, openNow: 1 });
     expect(result.examples[0]?.title).toContain("Naval Firefighting Helmet");
     expect(result.rejections).toEqual({ topic: 2 });
+  });
+
+  it("counts out-of-scope tenders as their own rejection", async () => {
+    await testDb.db.update(tenders).set({ contractNature: "services" }).where(eq(tenders.procedureKey, helmetTender));
+    const result = await previewRules(testDb.db, profileRulesSchema.parse({ categoryIds: ["giyim"] }));
+    expect(result).toMatchObject({ scanned: 3, matched: 0 });
+    expect(result.rejections).toEqual({ scope: 1, topic: 2 });
   });
 
   it("judges tenders as on their publication day, when they were open", async () => {

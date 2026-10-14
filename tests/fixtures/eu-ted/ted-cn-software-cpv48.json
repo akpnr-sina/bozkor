@@ -1,0 +1,89 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-24+01:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "704389-2026",
+  "main-classification-lot": [
+    "48000000"
+  ],
+  "main-classification-proc": [
+    "48000000"
+  ],
+  "submission-url-lot": [
+    "https://www.tenderned.nl/aankondigingen/overzicht/443947"
+  ],
+  "procedure-identifier": "173da224-aed7-425f-89f7-e09a1b70b750",
+  "buyer-country-sub": [
+    "NL366"
+  ],
+  "additional-classification-proc": [
+    "48610000",
+    "72000000"
+  ],
+  "place-of-performance-country-proc": [
+    "NLD"
+  ],
+  "additional-classification-lot": [
+    "48610000",
+    "72000000"
+  ],
+  "document-url-lot": [
+    "https://www.tenderned.nl/aankondigingen/overzicht/443947"
+  ],
+  "official-language": [
+    "NLD"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0000"
+  ],
+  "notice-identifier": "cc9e82ca-acc4-4430-971f-72ed5f4f2044",
+  "title-proc": {
+    "nld": "Sociaal Domein"
+  },
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-09+02:00",
+  "buyer-country": [
+    "NLD"
+  ],
+  "description-lot": {
+    "nld": [
+      "Zie aanbestedingsdocumenten Zie aanbestedingsdocumenten"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "NLD"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "09:00:00+01:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "48000000",
+    "48610000",
+    "72000000",
+    "48000000",
+    "48610000",
+    "72000000"
+  ],
+  "buyer-name": {
+    "nld": [
+      "Gemeente Goeree-Overflakkee"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "title-lot": {
+    "nld": [
+      "Sociaal Domein"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "nld": "Zie aanbestedingsdocumenten Zie aanbestedingsdocumenten"
+  }
+}

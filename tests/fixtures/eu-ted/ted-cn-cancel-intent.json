@@ -1,0 +1,153 @@
+{
+  "change-reason-code": "cancel-intent",
+  "deadline-receipt-tender-date-lot": [
+    "2026-10-27+03:00",
+    "2026-10-27+03:00",
+    "2026-10-27+03:00",
+    "2026-10-27+03:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "704307-2026",
+  "main-classification-lot": [
+    "33100000",
+    "33100000",
+    "33100000",
+    "33100000"
+  ],
+  "main-classification-proc": [
+    "33100000"
+  ],
+  "submission-url-lot": [
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9701364",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9701364",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9701364",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9701364"
+  ],
+  "procedure-identifier": "162d72b8-7c2f-4e07-9dd1-966f7a19fb54",
+  "buyer-country-sub": [
+    "LT026"
+  ],
+  "additional-classification-proc": [
+    "31524110",
+    "33192230"
+  ],
+  "place-of-performance-country-proc": [
+    "LTU"
+  ],
+  "additional-classification-lot": [
+    "31524110",
+    "33192230",
+    "31524110",
+    "33192230",
+    "31524110",
+    "33192230",
+    "31524110",
+    "33192230"
+  ],
+  "document-url-lot": [
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9701364",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9701364",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9701364",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9701364"
+  ],
+  "official-language": [
+    "LIT"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "0",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002",
+    "LOT-0003",
+    "LOT-0004"
+  ],
+  "notice-identifier": "badfa0a8-09fb-4c30-84f4-0fb138d126ab",
+  "title-proc": {
+    "lit": "Medicininė įranga (akispūdžio tonometras, ginekologinė kėdė, operacinis stalas, lempa, projektas 09-022-P-0015)"
+  },
+  "place-of-performance-subdiv-lot": [
+    "LT026",
+    "LT026",
+    "LT026",
+    "LT026"
+  ],
+  "estimated-value-lot": [
+    "0",
+    "0",
+    "0",
+    "0"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-12+03:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "change-notice-version-identifier": "e7a24e23-f95c-4956-90eb-66f2594b889a-01",
+  "buyer-country": [
+    "LTU"
+  ],
+  "description-lot": {
+    "lit": [
+      "Medicininė įranga (akispūdžio tonometras, ginekologinė kėdė, operacinis stalas, lempa, projektas 09-022-P-0015) (Atviras konkursas (tarptautinis))",
+      "Medicininė įranga (akispūdžio tonometras, ginekologinė kėdė, operacinis stalas, lempa, projektas 09-022-P-0015) (Atviras konkursas (tarptautinis))",
+      "Medicininė įranga (akispūdžio tonometras, ginekologinė kėdė, operacinis stalas, lempa, projektas 09-022-P-0015) (Atviras konkursas (tarptautinis))",
+      "Medicininė įranga (akispūdžio tonometras, ginekologinė kėdė, operacinis stalas, lempa, projektas 09-022-P-0015) (Atviras konkursas (tarptautinis))"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "LTU",
+    "LTU",
+    "LTU",
+    "LTU"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "13:30:00+03:00",
+    "13:30:00+03:00",
+    "13:30:00+03:00",
+    "13:30:00+03:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "33100000",
+    "31524110",
+    "33192230",
+    "33100000",
+    "33100000",
+    "33100000",
+    "33100000",
+    "31524110",
+    "33192230",
+    "31524110",
+    "33192230",
+    "31524110",
+    "33192230",
+    "31524110",
+    "33192230"
+  ],
+  "buyer-name": {
+    "lit": [
+      "Šiaulių apskaitos centras"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 2,
+  "place-of-performance-subdiv-proc": [
+    "LT026"
+  ],
+  "title-lot": {
+    "lit": [
+      "I pirkimo dalis – Nešiojamas akispūdžio tonometras",
+      "II pirkimo dalis – Ginekologinė kėdė su elektriniu aukščio reguliavimu",
+      "III pirkimo dalis – Operacinis stalas",
+      "IV pirkimo dalis – Operacinės lempos modulis"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "lit": "Medicininė įranga (akispūdžio tonometras, ginekologinė kėdė, operacinis stalas, lempa, projektas 09-022-P-0015) (Atviras konkursas (tarptautinis))"
+  }
+}

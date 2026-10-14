@@ -1,4 +1,4 @@
-import type { regime, tenderStatus } from "@/db/schema";
+import type { contractNature, regime, tenderStatus } from "@/db/schema";
 
 export type SourceId = "uk_fat" | "eu_ted";
 export type Regime = (typeof regime.enumValues)[number];
@@ -12,6 +12,9 @@ export type NoticeCategory = "planning" | "tender";
  * for an existing tender; they never create one.
  */
 export type NoticeStage = NoticeCategory | "award";
+
+/** Main nature of the contract (OCDS mainProcurementCategory, eForms BT-23). */
+export type ContractNature = (typeof contractNature.enumValues)[number];
 
 export type NormalizedLot = {
   lotNumber: string;
@@ -44,6 +47,7 @@ export type NormalizedNotice = {
   /** Source-specific notice form, e.g. "UK4". */
   noticeCode: string | null;
   regime: Regime | null;
+  contractNature: ContractNature | null;
   /** Lifecycle from the payload only; "closed" is derived from the deadline at query time. */
   status: Exclude<TenderStatus, "closed"> | null;
   title: string | null;

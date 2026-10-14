@@ -29,8 +29,8 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `pnpm typecheck` route tiplerini üretir ve `tsc --noEmit` çalıştırır
 - `pnpm lint` ESLint
 - `pnpm db:generate --name <ad>` / `pnpm db:migrate` Drizzle migration
-- `pnpm backfill --source=uk_fat --days=30` geriye dönük yükleme (tekrar çalıştırmak güvenli)
-- `pnpm renormalize --source=uk_fat` normalizer ya da fold kuralı değişince tüm ihaleleri ham veriden yeniden hesaplar (API çağırmaz)
+- `pnpm backfill --source=uk_fat --days=30` geriye dönük yükleme, `--source=eu_ted` TED için (tekrar çalıştırmak güvenli)
+- `pnpm renormalize --source=uk_fat` normalizer, fold ya da kapsam kuralı değişince tüm ihaleleri ham veriden yeniden hesaplar (API çağırmaz). `--dry-run` önce neyin silineceğini yazar
 
 ## Klasör yapısı
 
@@ -76,7 +76,14 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0, Faz 1 ve Faz 2 tamam (13 Ekim 2026). Sıradaki: Faz 3 (AB veri hattı, TED). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0, 1, 2 ve 3 tamam (14 Ekim 2026). Sıradaki: Faz 4 (Triage). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Faz 3 kabulü (Supabase üzerinde):
+- TED istemcisi, normalizer ve senkron (`src/sources/eu-ted/`), worker işi `sync-eu-ted`. 18 gerçek TED örneği ve 4 ilanlık değişiklik zinciri `tests/fixtures/eu-ted/` altında.
+- Ekip kararıyla sadece ürün (mal alımı) ihaleleri; kural iki kaynağa da uygulandı (SPEC bölüm 1). Migration 0008 `tenders.contract_nature` ekler. `renormalize --dry-run` 2.349 silinecek ihale gösterdi; gerçek çalıştırma 2.349 hizmet, yapım ve yazılım ihalesini sildi, 404 UK mal ihalesi kaldı, karar kaybı olmadı.
+- 30 günlük TED backfill: 16.320 ham ilan, 13.078 ihale, 1.232 kapsam dışı (yazılım), 82 atlanan (çoğu yeterlilik sistemi), 6.349 ihalede value_eur. Yaklaşık 85 dakika sürdü (Türkiye'den AB veritabanına ihale başına ~1 sn). İkinci çalıştırma kopya üretmedi.
+- Düzeltme ilanı alan prosedürler (5-7 ilan) tek ihale olarak kaldı; son tarih en son ilandaki tarih (SQL ile doğrulandı). /settings'te TED satırı ve worker'da `sync-eu-ted` görüldü.
+- Veritabanı 63 MB'tan 161 MB'a çıktı. 302 test. TED istemcisini ve dil/ülke dönüşümlerini bir Claude oturumu, fixture'ları ve kapsam denetimini diğeri yaptı; iki tur denetimin bulguları düzeltildi.
 
 Faz 2 kabulü (Supabase üzerinde):
 - Migration 0004-0007 uygulandı. ECB'den 90 günlük kur çekildi (1.856 satır). Tutarı olan 2.159 ihalenin 2.158'inde value_eur dolu; kalan 1'i AED.
@@ -87,6 +94,13 @@ Faz 1 kabulü:
 - 30 günlük backfill: 9.951 ham ilan, 2.705 ihale. İkinci çalıştırma kopya üretmedi. Worker senkronu ve /settings doğrulandı.
 
 Bilinen eksikler:
+- TED sonuç ilanları çekilmiyor: TED ihaleleri "Sonuçlandı" olmaz, son tarih geçince kapalı görünür.
+- TED planlama ilanı (PIN) ile sonraki çağrı ilanı bağlanmıyor; ayrı ihaleler olarak görünür. TED yeterlilik sistemleri (qu-sy) bilerek alınmıyor.
+- TED ilanlarının ~%95'i İngilizce değil: profil anahtar kelimeleri orada pek işlemez, eşleşme CPV'ye dayanır (profil formunda not var).
+- Başlıklar ve açıklamalar ilanın dilinde (İngilizcesi yoksa çevrilmez); Türkçe özet Faz 4 triage ile gelecek.
+- Depolama: 30 günlük TED verisi ~98 MB tuttu; iki kaynakla tahmini büyüme ayda 130-150 MB. Supabase ücretsiz planı 500 MB, aralık civarı dolar. Karar gerekiyor: Supabase Pro ya da kapanmış ihalelerin ve kapsam dışı FaT prosedürlerinin ham verisini silen saklama kuralı.
+- Profil 563 ihaleyle eşleşiyor, gelen kutusu en fazla 500 gösteriyor: sayfalama ya da profili daraltma gerekiyor.
+- TED backfill yavaş (30 gün ~85 dk); `APPLY_CONCURRENCY` ve havuz boyutu artırılarak hızlandırılabilir.
 - /settings'te kategori yönetimi ve LLM harcaması yok; kategoriler şimdilik migration 0005'teki seed'den geliyor.
 - Gelen kutusu en fazla 500 ihale gösteriyor, sayfalama yok.
 - Önizleme son 30 günün ihalelerini 2 dakika bellekte tutuyor; yeni gelen ilan önizlemeye en geç 2 dakikada yansır.
@@ -108,4 +122,7 @@ Kararlar:
 - Eşleştirmede CPV önekleri ile `keywordsAny` arasında VEYA var (kaçırmak fazladan sonuçtan pahalı; Faz 4'te AI skorlayacak). Ayrıntılar SPEC bölüm 6.
 - Eşleşme kayıtları silinmez: profil artık istemiyorsa `profile_matches.unmatched_at` işaretlenir (durum, triage, karar korunur). Gelen kutusu karar filtresiyle bunları da gösterir.
 - Karar geri alma, `tender_reviews`'e kararı boş yeni bir satır eklemektir (append-only).
-- Worker işleri: `sync-uk-fat` (2 saatte bir), `fx-ecb` (18:30), ikisi de açılışta bir kez; her ikisinin sonunda `fillValueEur` ve `rematch` çalışır.
+- Worker işleri: `sync-uk-fat` (2 saatte bir), `sync-eu-ted` (11:30 ve 17:30), `fx-ecb` (18:30), hepsi açılışta bir kez; sonlarında `fillValueEur` ve `rematch` çalışır.
+- Sadece mal alımı (14 Ekim 2026, ekip kararı). Kural `src/sources/scope.ts`'te, eşleştirme motorunun ilk kuralı da odur. Kapsam dışına düşen ihale silinir; kararı, analizi ya da indirilmiş dokümanı olan kalır ama eşleşmez.
+- Gelen kutusunun varsayılan görünümü, eşleşmesi bitmiş olsa da son kararı GO, REVIEW ya da WATCH olan ihaleleri de gösterir.
+- TED ham kaydı XML değil, arama API'sinin JSON alanlarıdır (`links` hariç); eForms XML indirilmez. Hizmet ve yapım ilanları sunucu tarafında elenir (SPEC 4.2).

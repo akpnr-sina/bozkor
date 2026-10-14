@@ -65,6 +65,9 @@ export function foldNotices(notices: readonly NormalizedNotice[]): FoldedTender 
   };
 
   const withCpv = sorted.findLast((n) => n.cpvMain !== null || n.cpvAdditional.length > 0);
+  // TED has no change notice that revokes a cancellation, so a later
+  // correction of the cancelled notice must not reopen the tender.
+  const tedCancelled = sorted.some((n) => n.source === "eu_ted" && n.status === "cancelled");
   // The value and its currency must come from the same notice.
   const withValue = sorted.findLast((n) => n.valueAmount !== null);
   const firstTenderNotice = opportunity.find((n) => n.noticeType === "tender");
@@ -84,7 +87,8 @@ export function foldNotices(notices: readonly NormalizedNotice[]): FoldedTender 
     noticeCode: latestValue("noticeCode"),
     publishedAt: (firstTenderNotice ?? opportunity[0] ?? latest).publishedAt,
     regime: latestValue("regime") ?? "unknown",
-    status: latestValue("status") ?? "open",
+    contractNature: latestValue("contractNature"),
+    status: tedCancelled ? "cancelled" : (latestValue("status") ?? "open"),
     title: latestValue("title") ?? latest.externalId,
     description: latestValue("description"),
     buyerName: latestValue("buyerName"),

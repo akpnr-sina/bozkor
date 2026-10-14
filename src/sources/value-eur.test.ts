@@ -60,7 +60,7 @@ beforeEach(async () => {
   await testDb.reset();
   await syncWindow(
     testDb.db,
-    fakeAdapter([[loadFixture("uk-fat", "uk4-tender-covered-multilot"), loadFixture("uk-fat", "uk4-tender-below-threshold")]]),
+    fakeAdapter([[loadFixture("uk-fat", "uk4-tender-covered-multilot"), loadFixture("uk-fat", "uk4-goods-below-threshold")]]),
     { from: new Date("2026-10-12T00:00:00Z"), to: new Date("2026-10-13T00:00:00Z") },
   );
   await storeRates(testDb.db, rates);
@@ -76,9 +76,9 @@ describe("fillValueEur", () => {
   it("fills every tender with a value and writes nothing on a second run", async () => {
     const first = await fillValueEur(testDb.db);
     expect(first).toMatchObject({ checked: 2, updated: 2, unconverted: 0 });
-    // 6,000,000 GBP / 0.85 and 185,000 GBP / 0.85, published on 12 October.
+    // 6,000,000 GBP / 0.85 and 58,000 GBP / 0.85, published on 12 October.
     expect(await valueOf("096253-2026")).toBe(7_058_823.53);
-    expect(await valueOf("096278-2026")).toBe(217_647.06);
+    expect(await valueOf("096156-2026")).toBe(68_235.29);
 
     expect(await fillValueEur(testDb.db)).toMatchObject({ updated: 0 });
   });
@@ -87,7 +87,7 @@ describe("fillValueEur", () => {
     await fillValueEur(testDb.db);
     const since = new Date(Date.now() + 60_000);
     expect(await fillValueEur(testDb.db, { since })).toMatchObject({ checked: 0 });
-    await testDb.db.update(tenders).set({ valueEur: null }).where(eq(tenders.externalId, "096278-2026"));
+    await testDb.db.update(tenders).set({ valueEur: null }).where(eq(tenders.externalId, "096156-2026"));
     expect(await fillValueEur(testDb.db, { since })).toMatchObject({ checked: 1, updated: 1 });
   });
 
@@ -95,11 +95,11 @@ describe("fillValueEur", () => {
     await fillValueEur(testDb.db);
     const before = await testDb.db.select({ id: tenders.id, updatedAt: tenders.updatedAt }).from(tenders);
     await testDb.db.execute(sql`update tenders set value_amount = null where external_id = '096253-2026'`);
-    await testDb.db.execute(sql`update tenders set value_currency = 'AED' where external_id = '096278-2026'`);
+    await testDb.db.execute(sql`update tenders set value_currency = 'AED' where external_id = '096156-2026'`);
     const stats = await fillValueEur(testDb.db);
     expect(stats).toMatchObject({ updated: 2, unconverted: 1 });
     expect(await valueOf("096253-2026")).toBeNull();
-    expect(await valueOf("096278-2026")).toBeNull();
+    expect(await valueOf("096156-2026")).toBeNull();
     // The fill itself leaves updated_at alone (the raw updates above avoid Drizzle's $onUpdate too).
     const after = await testDb.db.select({ id: tenders.id, updatedAt: tenders.updatedAt }).from(tenders);
     expect(after.map((r) => [r.id, r.updatedAt.getTime()]).sort()).toEqual(before.map((r) => [r.id, r.updatedAt.getTime()]).sort());

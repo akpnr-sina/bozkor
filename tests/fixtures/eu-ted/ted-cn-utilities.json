@@ -1,0 +1,82 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-19+01:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "704298-2026",
+  "main-classification-lot": [
+    "34622100"
+  ],
+  "main-classification-proc": [
+    "34622100"
+  ],
+  "submission-url-lot": [
+    "https://josephine.proebiz.com/cs/"
+  ],
+  "procedure-identifier": "3ec6509a-e73b-421c-84ea-f8d137a0f1fe",
+  "buyer-country-sub": [
+    "CZ064"
+  ],
+  "place-of-performance-country-proc": [
+    "CZE"
+  ],
+  "official-language": [
+    "CES"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "3600000000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "60765d4a-7a33-44f0-afdc-7fea30dd5b5a",
+  "title-proc": {
+    "ces": "Dodávka až 40 ks obousměrných velkokapacitních tramvají"
+  },
+  "place-of-performance-subdiv-lot": [
+    "CZ064"
+  ],
+  "legal-basis": [
+    "32014L0025"
+  ],
+  "dispatch-date": "2026-10-12+02:00",
+  "estimated-value-cur-proc": "CZK",
+  "buyer-country": [
+    "CZE"
+  ],
+  "description-lot": {
+    "ces": [
+      "Předmětem plnění veřejné zakázky „Dodávka až 40 ks obousměrných velkokapacitních tramvají“ je dodávka až 40 ks obousměrných velkokapacitních tramvají. Všechny tramvaje musí mít technické vlastnosti stanovené v technické specifikaci uvedené v příloze č. 1 ZD – Soupis požadavků na dodávku obousměrných velkokapacitních tramvají."
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "CZE"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "10:00:00+01:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "34622100",
+    "34622100"
+  ],
+  "buyer-name": {
+    "ces": [
+      "Dopravní podnik města Brna, a.s."
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "CZ064"
+  ],
+  "title-lot": {
+    "ces": [
+      "Dodávka až 40 ks obousměrných velkokapacitních tramvají"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "ces": "Předmětem plnění veřejné zakázky „Dodávka až 40 ks obousměrných velkokapacitních tramvají“ je dodávka až 40 ks obousměrných velkokapacitních tramvají. Všechny tramvaje musí mít technické vlastnosti stanovené v technické specifikaci uvedené v příloze č. 1 ZD – Soupis požadavků na dodávku obousměrných velkokapacitních tramvají."
+  }
+}

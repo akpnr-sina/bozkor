@@ -1,10 +1,11 @@
-import type { Regime, SourceId, TenderStatus } from "@/sources/types";
+import type { ContractNature, Regime, SourceId, TenderStatus } from "@/sources/types";
 
 /** Tender fields the matcher reads: a subset of the tenders row plus its lots. */
 export type MatchableTender = {
   source: SourceId;
   noticeType: string | null;
   regime: Regime;
+  contractNature: ContractNature | null;
   status: TenderStatus;
   title: string;
   description: string | null;
@@ -26,6 +27,7 @@ export type MatchContext = {
 };
 
 export type RuleKey =
+  | "scope"
   | "status"
   | "source"
   | "noticeType"

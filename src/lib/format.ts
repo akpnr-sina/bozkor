@@ -1,5 +1,5 @@
 import type { reviewDecision } from "@/db/schema";
-import type { Regime, SourceId, TenderStatus } from "@/sources/types";
+import type { ContractNature, Regime, SourceId, TenderStatus } from "@/sources/types";
 
 // Turkish labels and formatting shared by the UI. Times are shown in Istanbul.
 
@@ -54,6 +54,12 @@ export const REGIME_LABELS: Record<Regime, string> = {
   utilities: "Kamu hizmetleri (utilities)",
   defence: "Savunma ve güvenlik",
   unknown: "Bilinmiyor",
+};
+
+export const CONTRACT_NATURE_LABELS: Record<ContractNature, string> = {
+  goods: "Mal alımı",
+  services: "Hizmet",
+  works: "Yapım işi",
 };
 
 export const NOTICE_TYPE_LABELS: Record<string, string> = {

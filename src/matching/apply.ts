@@ -50,6 +50,7 @@ async function loadCandidates(db: Executor, where: SQL): Promise<Candidate[]> {
       source: tenders.source,
       noticeType: tenders.noticeType,
       regime: tenders.regime,
+      contractNature: tenders.contractNature,
       status: tenders.status,
       title: tenders.title,
       description: tenders.description,
@@ -99,7 +100,8 @@ export type RematchStats = { profiles: number; tenders: number; matched: number;
  * Re-evaluates active profiles and syncs profile_matches. Without profileIds
  * (after a sync) only open tenders are considered; for a changed profile its
  * existing matches are re-judged too, closed tenders included. A match the
- * profile no longer wants is marked with unmatched_at, never deleted.
+ * profile no longer wants is marked with unmatched_at, never deleted. Matches
+ * of a tender that falls out of scope end when it is stored (see store.ts).
  */
 export async function rematch(
   db: AppDb,

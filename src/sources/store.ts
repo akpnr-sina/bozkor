@@ -2,8 +2,9 @@ import { createHash } from "node:crypto";
 import { and, asc, eq, inArray, isNull, notInArray, sql, type SQL } from "drizzle-orm";
 import type { PgColumn } from "drizzle-orm/pg-core";
 import type { AppDb } from "@/db";
-import { documents, lots, rawNotices, tenders } from "@/db/schema";
+import { analyses, documents, lots, profileMatches, rawNotices, tenderReviews, tenders } from "@/db/schema";
 import { foldNotices, type FoldedTender } from "./fold";
+import { isProductScope } from "./scope";
 import { isFullNotice, type NormalizedNotice, type RawNoticeKeys, type SourceId } from "./types";
 
 /** JSON with object keys sorted, so the hash ignores key order. */
@@ -79,6 +80,7 @@ export async function upsertTender(
         procedureKey: f.procedureKey,
         noticeType: f.noticeType,
         regime: f.regime,
+        contractNature: f.contractNature,
         status: f.status,
         title: f.title,
         description: f.description,
@@ -103,6 +105,7 @@ export async function upsertTender(
           externalId: excluded(tenders.externalId),
           noticeType: excluded(tenders.noticeType),
           regime: excluded(tenders.regime),
+          contractNature: excluded(tenders.contractNature),
           status: excluded(tenders.status),
           title: excluded(tenders.title),
           description: excluded(tenders.description),
@@ -195,6 +198,56 @@ async function markApplied(db: Pick<AppDb, "update">, rawIds: readonly string[])
     .where(inArray(rawNotices.id, [...rawIds]));
 }
 
+/**
+ * Work someone has put into a tender: a decision, an AI analysis or a
+ * downloaded document. Such a tender is never deleted for being out of scope.
+ */
+const hasWork = (): SQL => sql`(
+  exists (select 1 from ${tenderReviews} where ${tenderReviews.tenderId} = ${tenders.id})
+  or exists (select 1 from ${analyses} where ${analyses.tenderId} = ${tenders.id})
+  or exists (select 1 from ${documents} where ${documents.tenderId} = ${tenders.id} and ${documents.storagePath} is not null)
+)`;
+
+/**
+ * Deletes the tender of an out-of-scope procedure, which exists when it was
+ * stored before the scope rule or a correction changed its nature. "kept"
+ * means the tender has work on it (see hasWork): it stays, its current
+ * profile matches end, and the caller keeps it up to date.
+ */
+async function removeOutOfScope(
+  db: AppDb,
+  source: SourceId,
+  procedureKey: string,
+  rawIds: readonly string[],
+): Promise<"deleted" | "kept" | "absent"> {
+  return db.transaction(async (tx) => {
+    // Lock first and check in a later statement: its snapshot then sees a
+    // decision saved while we waited, which the cascade would otherwise delete.
+    const [tender] = await tx
+      .select({ id: tenders.id })
+      .from(tenders)
+      .where(and(eq(tenders.source, source), eq(tenders.procedureKey, procedureKey)))
+      .for("update");
+    if (!tender) {
+      await markApplied(tx, rawIds);
+      return "absent";
+    }
+    const deleted = await tx
+      .delete(tenders)
+      .where(and(eq(tenders.id, tender.id), sql`not ${hasWork()}`))
+      .returning({ id: tenders.id });
+    if (deleted.length) {
+      await markApplied(tx, rawIds);
+      return "deleted";
+    }
+    await tx
+      .update(profileMatches)
+      .set({ unmatchedAt: sql`now()` })
+      .where(and(eq(profileMatches.tenderId, tender.id), isNull(profileMatches.unmatchedAt)));
+    return "kept";
+  });
+}
+
 /** Procedures with raw rows that were stored but never applied, e.g. after an interrupted run. */
 export async function pendingProcedureKeys(db: AppDb, source: SourceId): Promise<string[]> {
   const rows = await db
@@ -211,6 +264,12 @@ export type ApplyStats = {
   changed: number;
   /** Procedures with only partial notices (award stage, old-regime corrections) and no tender notice. */
   skipped: number;
+  /** Services, works and software procedures, which are out of scope (see scope.ts). */
+  outOfScope: number;
+  /** Tenders deleted because their procedure turned out to be out of scope. */
+  removed: number;
+  /** Out-of-scope tenders kept and updated because someone worked on them (see hasWork). */
+  outOfScopeKept: number;
   normalizeErrors: number;
 };
 
@@ -220,6 +279,9 @@ export const emptyApplyStats = (): ApplyStats => ({
   updated: 0,
   changed: 0,
   skipped: 0,
+  outOfScope: 0,
+  removed: 0,
+  outOfScopeKept: 0,
   normalizeErrors: 0,
 });
 
@@ -248,21 +310,31 @@ async function forEachConcurrent<T>(items: readonly T[], limit: number, fn: (ite
 // app's pool size of 5.
 const APPLY_CONCURRENCY = 4;
 
+/** What the stored raw notices of one procedure fold into. */
+export type ProcedurePlan = {
+  procedureKey: string;
+  /** Every raw row read, so exactly these get marked as applied. */
+  rawIds: string[];
+  /** Null when the procedure has no full notice yet (see isFullNotice). */
+  folded: FoldedTender | null;
+  inScope: boolean;
+  /** Payloads of this procedure that failed to normalize. */
+  unreadable: number;
+};
+
 /**
- * Re-folds each procedure from all of its stored raw notices and upserts the
- * result. Safe to repeat: the same raw rows always produce the same tender.
+ * Loads the raw notices of the given procedures and folds each procedure,
+ * without writing anything. Payloads that fail to normalize are logged and
+ * left out.
  */
-export async function applyProcedures(
+export async function planProcedures(
   db: AppDb,
   source: SourceId,
   procedureKeys: readonly string[],
   normalize: (raw: unknown) => NormalizedNotice | null,
-  runStartedAt: Date,
   log: (message: string) => void = console.warn,
-): Promise<ApplyStats> {
-  const stats = emptyApplyStats();
-  if (!procedureKeys.length) return stats;
-
+): Promise<{ plans: ProcedurePlan[]; normalizeErrors: number }> {
+  if (!procedureKeys.length) return { plans: [], normalizeErrors: 0 };
   const rows = await db
     .select({
       id: rawNotices.id,
@@ -285,33 +357,133 @@ export async function applyProcedures(
     group.rawIds.push(row.id);
   }
 
-  await forEachConcurrent([...byProcedure.values()], APPLY_CONCURRENCY, async ({ payloads, rawIds }) => {
+  let normalizeErrors = 0;
+  const plans: ProcedurePlan[] = [];
+  for (const [procedureKey, { payloads, rawIds }] of byProcedure) {
     const notices: NormalizedNotice[] = [];
+    let unreadable = 0;
     for (const [externalId, payload] of payloads) {
       try {
         const notice = normalize(payload);
         if (notice) notices.push(notice);
       } catch (error) {
-        stats.normalizeErrors++;
+        unreadable++;
         log(`[${source}] could not normalize ${externalId}: ${error instanceof Error ? error.message : error}`);
       }
     }
+    normalizeErrors += unreadable;
+    const folded = notices.some(isFullNotice) ? foldNotices(notices) : null;
+    plans.push({
+      procedureKey,
+      rawIds,
+      folded,
+      inScope: folded !== null && isProductScope(folded.contractNature, folded.cpvMain),
+      unreadable,
+    });
+  }
+  return { plans, normalizeErrors };
+}
 
+/**
+ * Re-folds each procedure from all of its stored raw notices and upserts the
+ * result. Safe to repeat: the same raw rows always produce the same tender.
+ */
+export async function applyProcedures(
+  db: AppDb,
+  source: SourceId,
+  procedureKeys: readonly string[],
+  normalize: (raw: unknown) => NormalizedNotice | null,
+  runStartedAt: Date,
+  log: (message: string) => void = console.warn,
+): Promise<ApplyStats> {
+  const stats = emptyApplyStats();
+  const { plans, normalizeErrors } = await planProcedures(db, source, procedureKeys, normalize, log);
+  stats.normalizeErrors = normalizeErrors;
+
+  await forEachConcurrent(plans, APPLY_CONCURRENCY, async ({ procedureKey, rawIds, folded, inScope, unreadable }) => {
     // Award-only procedures (their tender notice predates our data) and lone
     // old-regime corrections would become tenders without a deadline or
     // status. Mark the rows anyway so they are not retried on every run;
     // renormalize picks them up again if the rules change.
-    if (!notices.some(isFullNotice)) {
+    if (!folded) {
       stats.skipped++;
       await markApplied(db, rawIds);
       return;
     }
 
-    const result = await upsertTender(db, foldNotices(notices), runStartedAt, rawIds);
+    if (!inScope) {
+      stats.outOfScope++;
+      // The unreadable notice may be the one that states the nature (a
+      // cancellation alone does not): never delete on half the evidence.
+      if (unreadable) {
+        await markApplied(db, rawIds);
+        return;
+      }
+      const outcome = await removeOutOfScope(db, source, procedureKey, rawIds);
+      if (outcome === "deleted") stats.removed++;
+      if (outcome !== "kept") return;
+      // Someone worked on it: keep its deadline and status current.
+      stats.outOfScopeKept++;
+    }
+
+    const result = await upsertTender(db, folded, runStartedAt, rawIds);
     stats.procedures++;
     if (result.inserted) stats.inserted++;
     else stats.updated++;
     if (result.changed) stats.changed++;
   });
   return stats;
+}
+
+export type ScopeReport = {
+  procedures: number;
+  /** Stored tenders that a run would delete, and how many of them have current profile matches. */
+  wouldRemove: number;
+  wouldRemoveMatched: number;
+  /** Stored out-of-scope tenders that stay because someone worked on them, and how many lose current matches. */
+  wouldKeep: number;
+  wouldKeepMatched: number;
+  /** Out-of-scope procedures without a stored tender. */
+  outOfScopeAbsent: number;
+};
+
+/** What applying these procedures would delete or keep for being out of scope, without writing. */
+export async function scopeReport(
+  db: AppDb,
+  source: SourceId,
+  procedureKeys: readonly string[],
+  normalize: (raw: unknown) => NormalizedNotice | null,
+  log?: (message: string) => void,
+): Promise<ScopeReport & { normalizeErrors: number }> {
+  const { plans, normalizeErrors } = await planProcedures(db, source, procedureKeys, normalize, log);
+  const report = {
+    procedures: plans.length,
+    wouldRemove: 0,
+    wouldRemoveMatched: 0,
+    wouldKeep: 0,
+    wouldKeepMatched: 0,
+    outOfScopeAbsent: 0,
+  };
+  // Same selection as applyProcedures: procedures with unreadable notices are left alone.
+  const outKeys = plans.filter((p) => p.folded && !p.inScope && !p.unreadable).map((p) => p.procedureKey);
+  if (!outKeys.length) return { ...report, normalizeErrors };
+
+  const stored = await db
+    .select({
+      worked: sql<boolean>`${hasWork()}`,
+      matched: sql<boolean>`exists (select 1 from ${profileMatches} where ${profileMatches.tenderId} = ${tenders.id} and ${profileMatches.unmatchedAt} is null)`,
+    })
+    .from(tenders)
+    .where(and(eq(tenders.source, source), inArray(tenders.procedureKey, outKeys)));
+  for (const row of stored) {
+    if (row.worked) {
+      report.wouldKeep++;
+      if (row.matched) report.wouldKeepMatched++;
+    } else {
+      report.wouldRemove++;
+      if (row.matched) report.wouldRemoveMatched++;
+    }
+  }
+  report.outOfScopeAbsent = outKeys.length - stored.length;
+  return { ...report, normalizeErrors };
 }

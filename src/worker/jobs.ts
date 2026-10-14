@@ -2,6 +2,7 @@ import type { PgBoss, Queue } from "pg-boss";
 import { getDb } from "@/db";
 import { syncEcbRates } from "@/fx/sync";
 import { rematch } from "@/matching/apply";
+import { createTedAdapter } from "@/sources/eu-ted";
 import { syncIncremental, type SyncStats } from "@/sources/sync";
 import { createFatAdapter } from "@/sources/uk-fat";
 import { fillValueEur } from "@/sources/value-eur";
@@ -25,6 +26,9 @@ export function formatSyncStats(stats: SyncStats): string {
     `tendersUpdated=${stats.updated}`,
     `changed=${stats.changed}`,
     `skipped=${stats.skipped}`,
+    `outOfScope=${stats.outOfScope}`,
+    `removed=${stats.removed}`,
+    `outOfScopeKept=${stats.outOfScopeKept}`,
     `normalizeErrors=${stats.normalizeErrors}`,
   ].join(" ");
 }
@@ -58,6 +62,22 @@ const jobs: JobDefinition[] = [
         `[sync-uk-fat] ${stats.window.from.toISOString()} .. ${stats.window.to.toISOString()} ${formatSyncStats(stats)}`,
       );
       await afterTenderChanges(db, "sync-uk-fat");
+    },
+  },
+  {
+    // TED publishes one edition per working day, in the morning Luxembourg
+    // time; the afternoon run catches a late edition.
+    name: "sync-eu-ted",
+    cron: "30 11,17 * * *",
+    runOnStart: true,
+    queue: syncQueue,
+    handler: async () => {
+      const db = getDb();
+      const stats = await syncIncremental(db, createTedAdapter());
+      console.log(
+        `[sync-eu-ted] ${stats.window.from.toISOString()} .. ${stats.window.to.toISOString()} ${formatSyncStats(stats)}`,
+      );
+      await afterTenderChanges(db, "sync-eu-ted");
     },
   },
   {

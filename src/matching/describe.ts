@@ -40,6 +40,7 @@ export function describeReason(reason: MatchReason): string {
 
 /** Turkish explanation of why a tender did not match, for the profile preview. */
 export const REJECTION_LABELS: Record<RuleKey, string> = {
+  scope: "Kapsam dışı (hizmet, yapım ya da yazılım)",
   status: "İhale açık değil",
   source: "Kaynak uymuyor",
   noticeType: "İlan türü uymuyor",

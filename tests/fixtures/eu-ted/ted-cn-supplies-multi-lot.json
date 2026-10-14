@@ -1,0 +1,133 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-12+02:00",
+    "2026-11-12+02:00",
+    "2026-11-12+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "704169-2026",
+  "main-classification-lot": [
+    "38000000",
+    "38000000",
+    "38000000"
+  ],
+  "main-classification-proc": [
+    "38000000"
+  ],
+  "submission-url-lot": [
+    "https://www.eis.gov.lv/EKEIS/Supplier/Procurement/183715",
+    "https://www.eis.gov.lv/EKEIS/Supplier/Procurement/183715",
+    "https://www.eis.gov.lv/EKEIS/Supplier/Procurement/183715"
+  ],
+  "procedure-identifier": "9168c74f-3d61-4b28-8a91-65707905ea5e",
+  "buyer-country-sub": [
+    "LV00A"
+  ],
+  "additional-classification-proc": [
+    "38311100",
+    "38436320"
+  ],
+  "place-of-performance-country-proc": [
+    "LVA"
+  ],
+  "additional-classification-lot": [
+    "38311100",
+    "38436320",
+    "38311100",
+    "38436320",
+    "38311100",
+    "38436320"
+  ],
+  "document-url-lot": [
+    "https://www.eis.gov.lv/EKEIS/Supplier/Procurement/183715",
+    "https://www.eis.gov.lv/EKEIS/Supplier/Procurement/183715",
+    "https://www.eis.gov.lv/EKEIS/Supplier/Procurement/183715"
+  ],
+  "official-language": [
+    "LAV"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002",
+    "LOT-0003"
+  ],
+  "notice-identifier": "853a0129-9560-47fd-8726-ca39539defcd",
+  "title-proc": {
+    "lav": "Analītisko svaru un apaļkolbu sildītāju iegāde laboratoriju vajadzībām"
+  },
+  "place-of-performance-subdiv-lot": [
+    "LV00A",
+    "LV00A",
+    "LV00A"
+  ],
+  "estimated-value-lot": [
+    "2000.00",
+    "3500.00",
+    "1700.00"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-12Z",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "buyer-country": [
+    "LVA"
+  ],
+  "description-lot": {
+    "lav": [
+      "Analītisko svaru un apaļkolbu sildītāju iegāde laboratoriju vajadzībām",
+      "Analītisko svaru un apaļkolbu sildītāju iegāde laboratoriju vajadzībām",
+      "Analītisko svaru un apaļkolbu sildītāju iegāde laboratoriju vajadzībām"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "LVA",
+    "LVA",
+    "LVA"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "10:00:00+02:00",
+    "10:00:00+02:00",
+    "10:00:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "38000000",
+    "38311100",
+    "38436320",
+    "38000000",
+    "38000000",
+    "38000000",
+    "38311100",
+    "38436320",
+    "38311100",
+    "38436320",
+    "38311100",
+    "38436320"
+  ],
+  "buyer-name": {
+    "lav": [
+      "Atvasināta publiska persona \"Latvijas Valsts koksnes ķīmijas institūts\""
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "LV00A"
+  ],
+  "title-lot": {
+    "lav": [
+      "Analītiskie svari Lignīna ķīmijas laboratorijai",
+      "Analītiskie svari Bioinženierijas laboratorijai",
+      "Apaļkolbu sildītāji Bioinženierijas laboratorijai"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "lav": "Analītisko svaru un apaļkolbu sildītāju iegāde laboratoriju vajadzībām"
+  }
+}

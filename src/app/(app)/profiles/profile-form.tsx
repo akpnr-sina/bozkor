@@ -160,7 +160,10 @@ export function ProfileForm({
           </Field>
         </Group>
 
-        <Group title="Konu" hint="CPV önekleri ve anahtar kelimelerden biri tutması yeterli.">
+        <Group
+          title="Konu"
+          hint="CPV önekleri ve anahtar kelimelerden biri tutması yeterli. Kelimeler ilanın kendi dilinde aranır; TED ilanlarının çoğu İngilizce olmadığından orada kategori ve CPV daha güvenilir."
+        >
           <Field label="Kategoriler" error={errors.categoryIds}>
             <div className="flex flex-col gap-1.5">
               {categories.map((c) => (

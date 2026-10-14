@@ -24,6 +24,7 @@ function tender(overrides: Partial<MatchableTender> = {}): MatchableTender {
     source: "uk_fat",
     noticeType: "tender",
     regime: "covered",
+    contractNature: "goods",
     status: "open",
     title: "Supply of diesel generating sets",
     description: "Supply and delivery of three 500 kVA diesel generating sets with acoustic enclosures.",
@@ -58,6 +59,7 @@ function fromFixture(name: string, valueEur: number | null): MatchableTender {
     source: t.source,
     noticeType: t.noticeType,
     regime: t.regime,
+    contractNature: t.contractNature,
     status: t.status,
     title: t.title,
     description: t.description,
@@ -74,6 +76,15 @@ function fromFixture(name: string, valueEur: number | null): MatchableTender {
 describe("matchTender", () => {
   it("matches an open tender against an empty profile; only the default notice type adds a reason", () => {
     expect(match(tender())).toEqual({ matched: true, reasons: [{ rule: "noticeType", value: "tender" }] });
+  });
+
+  it("rejects services, works and software before any profile rule", () => {
+    expect(match(tender({ contractNature: "services" }))).toEqual(rejectedBy("scope"));
+    expect(match(tender({ contractNature: "works" }))).toEqual(rejectedBy("scope"));
+    expect(match(tender({ cpvMain: "48000000" }))).toEqual(rejectedBy("scope"));
+    // Without a stated nature the main CPV decides.
+    expect(match(tender({ contractNature: null, cpvMain: "79000000" }))).toEqual(rejectedBy("scope"));
+    expect(match(tender({ contractNature: null }))).toMatchObject({ matched: true });
   });
 
   describe("status", () => {
@@ -305,7 +316,8 @@ describe("matchTender", () => {
       keywordsAll: ["solar"],
     };
     const steps: [Partial<MatchableTender>, RuleKey][] = [
-      [{ status: "cancelled", noticeLanguage: "DE" }, "status"],
+      [{ contractNature: "services" }, "scope"],
+      [{ contractNature: "goods", status: "cancelled", noticeLanguage: "DE" }, "status"],
       [{ status: "open" }, "source"],
       [{ source: "eu_ted" }, "noticeType"],
       [{ noticeType: "planning" }, "regime"],

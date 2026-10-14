@@ -1,0 +1,223 @@
+{
+  "notices": [
+    {
+      "deadline-receipt-tender-date-lot": [
+        "2026-11-11+02:00",
+        "2026-11-11+02:00"
+      ],
+      "notice-type": "cn-standard",
+      "publication-number": "706732-2026",
+      "main-classification-lot": [
+        "42131280",
+        "42131280"
+      ],
+      "main-classification-proc": [
+        "42131280"
+      ],
+      "submission-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/viewTenders.do?resourceId=14175647",
+        "https://www.etenders.gov.mt/epps/cft/viewTenders.do?resourceId=14175647"
+      ],
+      "procedure-identifier": "f6e6c6c9-aaf1-4385-9963-3de67f986d7c",
+      "buyer-country-sub": [
+        "MT001"
+      ],
+      "additional-classification-proc": [
+        "44167100",
+        "44167111",
+        "42131230"
+      ],
+      "place-of-performance-country-proc": [
+        "MLT"
+      ],
+      "additional-classification-lot": [
+        "44167100",
+        "44167111",
+        "42131230",
+        "44167100",
+        "44167111",
+        "42131230"
+      ],
+      "document-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/listContractDocuments.do?resourceId=14175647",
+        "https://www.etenders.gov.mt/epps/cft/listContractDocuments.do?resourceId=14175647"
+      ],
+      "official-language": [
+        "ENG"
+      ],
+      "publication-date": "2026-10-13+02:00",
+      "estimated-value-proc": "109438",
+      "contract-nature-main-proc": "supplies",
+      "identifier-lot": [
+        "LOT-0001",
+        "LOT-0002"
+      ],
+      "notice-identifier": "9f7d1c92-73c5-4511-a848-2e2f943253c5",
+      "title-proc": {
+        "eng": "WSC/T/072/2026 - SUPPLIES - SUPPLY AND DELIVERY OF VALVES, COUPLINGS AND FLANGE ADAPTORS FOR THE FIDDIEN TRUNK MAINS UPGRADE PROJECT TO THE WATER SERVICES CORPORATION"
+      },
+      "place-of-performance-subdiv-lot": [
+        "MT001",
+        "MT001"
+      ],
+      "estimated-value-lot": [
+        "109438",
+        "109438"
+      ],
+      "legal-basis": [
+        "32014L0025"
+      ],
+      "dispatch-date": "2026-10-09+02:00",
+      "estimated-value-cur-lot": [
+        "EUR"
+      ],
+      "estimated-value-cur-proc": "EUR",
+      "buyer-country": [
+        "MLT"
+      ],
+      "description-lot": {
+        "eng": [
+          "The subject of this tender is the supply and delivery of valves, couplings and flange adaptors for the Fiddien Trunk Mains Upgrade Project to the Water Services Corporation.",
+          "The subject of this tender is the supply and delivery of valves, couplings and flange adaptors for the Fiddien Trunk Mains Upgrade Project to the Water Services Corporation."
+        ]
+      },
+      "place-of-performance-country-lot": [
+        "MLT",
+        "MLT"
+      ],
+      "deadline-receipt-tender-time-lot": [
+        "09:30:00+02:00",
+        "09:30:00+02:00"
+      ],
+      "procedure-type": "open",
+      "classification-cpv": [
+        "42131280",
+        "44167100",
+        "44167111",
+        "42131230",
+        "42131280",
+        "42131280",
+        "44167100",
+        "44167111",
+        "42131230",
+        "44167100",
+        "44167111",
+        "42131230"
+      ],
+      "buyer-name": {
+        "eng": [
+          "Water Services Corporation"
+        ]
+      },
+      "competition-termination-proc": false,
+      "notice-version": 1,
+      "place-of-performance-subdiv-proc": [
+        "MT001"
+      ],
+      "title-lot": {
+        "eng": [
+          "Lot 1 - Valves",
+          "Lot 2 - Couplings and Flange Adaptors"
+        ]
+      },
+      "form-type": "competition",
+      "description-proc": {
+        "eng": "The subject of this tender is the supply and delivery of valves, couplings and flange adaptors for the Fiddien Trunk Mains Upgrade Project to the Water Services Corporation."
+      }
+    },
+    {
+      "deadline-receipt-tender-date-lot": [
+        "2026-11-17+02:00"
+      ],
+      "notice-type": "cn-standard",
+      "publication-number": "706799-2026",
+      "main-classification-lot": [
+        "33690000"
+      ],
+      "main-classification-proc": [
+        "33690000"
+      ],
+      "submission-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/viewTenders.do?resourceId=14176763"
+      ],
+      "procedure-identifier": "72587eb7-b717-418d-bd2a-75d135bdb32e",
+      "buyer-country-sub": [
+        "MT001"
+      ],
+      "place-of-performance-country-proc": [
+        "MLT"
+      ],
+      "document-url-lot": [
+        "https://www.etenders.gov.mt/epps/cft/listContractDocuments.do?resourceId=14176763"
+      ],
+      "official-language": [
+        "ENG"
+      ],
+      "publication-date": "2026-10-13+02:00",
+      "estimated-value-proc": "126640.8",
+      "contract-nature-main-proc": "supplies",
+      "identifier-lot": [
+        "LOT-0001"
+      ],
+      "notice-identifier": "06806780-a096-4f69-aa71-6524f4ef44a8",
+      "title-proc": {
+        "eng": "CT2293/2026 - Framework contract for the supply of Oxycodone hydrochloride 1 mg/mL Oral Liquid"
+      },
+      "place-of-performance-subdiv-lot": [
+        "MT001"
+      ],
+      "estimated-value-lot": [
+        "126640.8"
+      ],
+      "legal-basis": [
+        "32014L0024"
+      ],
+      "dispatch-date": "2026-10-10+02:00",
+      "estimated-value-cur-lot": [
+        "EUR"
+      ],
+      "estimated-value-cur-proc": "EUR",
+      "buyer-country": [
+        "MLT"
+      ],
+      "description-lot": {
+        "eng": [
+          "CT2293/2026 - Framework contract for the supply of Oxycodone hydrochloride 1 mg/mL Oral Liquid"
+        ]
+      },
+      "place-of-performance-country-lot": [
+        "MLT"
+      ],
+      "deadline-receipt-tender-time-lot": [
+        "09:30:00+02:00"
+      ],
+      "procedure-type": "open",
+      "classification-cpv": [
+        "33690000",
+        "33690000"
+      ],
+      "buyer-name": {
+        "eng": [
+          "Department of Contracts"
+        ]
+      },
+      "competition-termination-proc": false,
+      "notice-version": 1,
+      "place-of-performance-subdiv-proc": [
+        "MT001"
+      ],
+      "title-lot": {
+        "eng": [
+          "CT2293/2026 - Framework contract for the supply of Oxycodone hydrochloride 1 mg/mL Oral Liquid"
+        ]
+      },
+      "form-type": "competition",
+      "description-proc": {
+        "eng": "CT2293/2026 - Framework contract for the supply of Oxycodone hydrochloride 1 mg/mL Oral Liquid"
+      }
+    }
+  ],
+  "totalNoticeCount": 4,
+  "iterationNextToken": "AAABoTnbFWAABTs4PFkM6INJuaB59dVZO2ruOZN5+cXd3LfmrGyAhCnRdQJ0yN34739Y1dWwa9lbqPcYNeXWueUKbp1+EP//Iylt2w7pE2vpauepyBOukw==",
+  "timedOut": false
+}

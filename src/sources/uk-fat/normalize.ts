@@ -3,6 +3,7 @@ import { parseTimestamp } from "@/lib/time";
 import type {
   NormalizedDocument,
   NormalizedLot,
+  ContractNature,
   NormalizedNotice,
   NoticeStage,
   RawNoticeKeys,
@@ -87,6 +88,11 @@ function regimeOf(t: Tender | null): Regime | null {
   if (t.aboveThreshold === true) return "covered";
   if (t.aboveThreshold === false) return "below_threshold";
   return null;
+}
+
+function natureOf(t: Tender | null): ContractNature | null {
+  const category = t?.mainProcurementCategory;
+  return category === "goods" || category === "services" || category === "works" ? category : null;
 }
 
 function statusOf(tags: readonly string[], t: Tender | null): NormalizedNotice["status"] {
@@ -233,6 +239,7 @@ function statusOnlyNotice(r: FatRelease, publishedAt: Date): NormalizedNotice {
     noticeType: "award",
     noticeCode: null,
     regime: null,
+    contractNature: null,
     status: awardStageStatus(r.tag, r.tender ?? null),
     title: null,
     description: null,
@@ -296,6 +303,7 @@ export function normalizeFatRelease(raw: unknown): NormalizedNotice | null {
     noticeType,
     noticeCode: clean(own?.noticeType),
     regime: regimeOf(t),
+    contractNature: natureOf(t),
     status: statusOf(r.tag, t),
     title: clean(t?.title),
     description: partial ? null : (clean(t?.description) ?? milestoneText(r)),

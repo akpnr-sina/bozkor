@@ -1,0 +1,95 @@
+{
+  "notice-type": "cn-standard",
+  "publication-number": "705457-2026",
+  "main-classification-lot": [
+    "39100000",
+    "39100000"
+  ],
+  "main-classification-proc": [
+    "39100000"
+  ],
+  "submission-url-lot": [
+    "https://ejn.gov.si/ponudba/pages/aktualno/aktualno_jnc_podrobno.xhtml?zadevaId=80809",
+    "https://ejn.gov.si/ponudba/pages/aktualno/aktualno_jnc_podrobno.xhtml?zadevaId=80809"
+  ],
+  "procedure-identifier": "af25e3e4-77e0-4ee4-a27d-516ff6b0c6a1",
+  "buyer-country-sub": [
+    "SI032"
+  ],
+  "place-of-performance-country-proc": [
+    "SVN"
+  ],
+  "additional-classification-lot": [
+    "39180000",
+    "39130000",
+    "39120000"
+  ],
+  "document-url-lot": [
+    "https://www.enarocanje.si/api/datoteka/get?id=NjM5NjI5O1JELnppcA",
+    "https://www.enarocanje.si/api/datoteka/get?id=NjM5NjI5O1JELnppcA"
+  ],
+  "official-language": [
+    "SLV"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002"
+  ],
+  "deadline-receipt-request-date-lot": [
+    "2026-11-13+02:00",
+    "2026-11-13+02:00"
+  ],
+  "notice-identifier": "465face3-be64-4b01-a315-5fdefd174e95",
+  "title-proc": {
+    "slv": "Dobava laboratorijskega in pisarniškega pohištva"
+  },
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-12+02:00",
+  "buyer-country": [
+    "SVN"
+  ],
+  "deadline-receipt-request-time-lot": [
+    "10:00:00+02:00",
+    "10:00:00+02:00"
+  ],
+  "description-lot": {
+    "slv": [
+      "Laboratorijsko pohištvo",
+      "Pisarniško pohištvo"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "SVN",
+    "SVN"
+  ],
+  "procedure-type": "restricted",
+  "classification-cpv": [
+    "39100000",
+    "39100000",
+    "39100000",
+    "39180000",
+    "39130000",
+    "39120000"
+  ],
+  "buyer-name": {
+    "slv": [
+      "NACIONALNI LABORATORIJ ZA ZDRAVJE, OKOLJE IN HRANO"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 1,
+  "title-lot": {
+    "slv": [
+      "Laboratorijsko pohištvo",
+      "Pisarniško pohištvo"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "slv": "Dobava laboratorijskega in pisarniškega pohištva 2 kategoriji: - laboratorijsko pohištvo - pisarniško pohištvo"
+  }
+}

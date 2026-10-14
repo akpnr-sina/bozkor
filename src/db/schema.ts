@@ -38,6 +38,8 @@ export const regime = pgEnum("regime", [
   "unknown",
 ]);
 export const tenderStatus = pgEnum("tender_status", ["open", "closed", "awarded", "cancelled"]);
+/** Main nature of the contract; only goods are in scope (see src/sources/scope.ts). */
+export const contractNature = pgEnum("contract_nature", ["goods", "services", "works"]);
 export const documentOrigin = pgEnum("document_origin", ["auto", "manual"]);
 export const documentFetchStatus = pgEnum("document_fetch_status", [
   "pending",
@@ -100,6 +102,8 @@ export const tenders = pgTable(
     procedureKey: text("procedure_key").notNull(),
     noticeType: text("notice_type"),
     regime: regime("regime").notNull().default("unknown"),
+    /** Null when no notice states it; scope then falls back to the main CPV. */
+    contractNature: contractNature("contract_nature"),
     status: tenderStatus("status").notNull().default("open"),
     title: text("title").notNull(),
     description: text("description"),

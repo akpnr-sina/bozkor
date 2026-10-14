@@ -1,0 +1,123 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-10-06+02:00",
+    "2026-10-06+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "617868-2026",
+  "main-classification-lot": [
+    "31000000",
+    "31000000"
+  ],
+  "main-classification-proc": [
+    "31000000"
+  ],
+  "submission-url-lot": [
+    "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-5ded06d7-b73d-4b1d-b15c-ca5d65896235",
+    "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-5ded06d7-b73d-4b1d-b15c-ca5d65896235"
+  ],
+  "procedure-identifier": "5ded06d7-b73d-4b1d-b15c-ca5d65896235",
+  "buyer-country-sub": [
+    "PL913"
+  ],
+  "additional-classification-proc": [
+    "31121100",
+    "31122000",
+    "31120000",
+    "42912330"
+  ],
+  "place-of-performance-country-proc": [
+    "POL"
+  ],
+  "additional-classification-lot": [
+    "31121100",
+    "31122000",
+    "31120000",
+    "42912330"
+  ],
+  "document-url-lot": [
+    "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-5ded06d7-b73d-4b1d-b15c-ca5d65896235",
+    "https://ezamowienia.gov.pl/mp-client/search/list/ocds-148610-5ded06d7-b73d-4b1d-b15c-ca5d65896235"
+  ],
+  "official-language": [
+    "POL"
+  ],
+  "publication-date": "2026-09-08+02:00",
+  "estimated-value-proc": "1255629.89",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002"
+  ],
+  "notice-identifier": "3f3c32fd-8d34-4904-a313-d05a19ee6e5b",
+  "title-proc": {
+    "pol": "Dostawa sprzętu niezbędnego do realizacji zadań Ochrony Ludności i Obrony Cywilnej w Gminie Ożarów Mazowiecki"
+  },
+  "place-of-performance-subdiv-lot": [
+    "PL913",
+    "PL913"
+  ],
+  "estimated-value-lot": [
+    "578684.89",
+    "676945.00"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-09-04+02:00",
+  "estimated-value-cur-lot": [
+    "PLN"
+  ],
+  "estimated-value-cur-proc": "PLN",
+  "buyer-country": [
+    "POL"
+  ],
+  "description-lot": {
+    "pol": [
+      "1. Przedmiot zamówienia obejmuje dostawę sprzętu niezbędnego do realizacji zadań Ochrony Ludności i Obrony Cywilnej w Gminie Ożarów Mazowiecki : Dostawa agregatów w ilości szt. 10: a) w ramach realizacji tej części przedmiotu zamówienia Wykonawca będzie zobowiązany do dostarczenia: - 1 szt. agregat prądotwórczy o mocy min. 125 kVa - 2 szt. agregat prądotwórczy o mocy min. 30 kVa - 4 szt. agregatów prądotwórczych o mocy min. 5 kVa - 3 szt. agregatów prądotwórczych o mocy min. 50 kVa wraz z osprzętem do miejsca wskazanego przez Zamawiającego zlokalizowanego na terenie gminy Ożarów Mazowiecki b) dostarczone agregaty wraz z osprzętem muszą być fabrycznie nowe, wyprodukowane nie wcześniej niż 12 miesięcy przed terminem składania ofert. Wykonawca zobowiązany jest udzielić Zamawiającemu gwarancji na dostarczony przedmiot zamówienia na okres minimum 24 miesięcy od daty podpisania Protokołu odbioru (okres gwarancji stanowi kryterium oceny ofert), c) przez dostawę agregatów rozumie się: ich dostarczenie i przeprowadzenie szkolenia dla min. 2 osób wskazanych przez Zamawiającego z zakresu użytkowania dostarczanego sprzętu (dotyczy agregatów prądotwórczych o mocy min. 5 kVa oraz agregatów prądotwórczych o mocy min. 50 kVa) d) przez dostawę agregatów rozumie się: ich dostarczenie, montaż i przeprowadzenie szkolenia dla min. 2 osób wskazanych przez Zamawiającego z zakresu użytkowania dostarczanego sprzętu (dotyczy agregatu prądotwórczego o mocy min. 125 kVa oraz agregatów prądotwórczych o mocy min. 30 kVa) e) dla agregatu o mocy min. 125 kVa oraz dla agregatów o mocy min. 30 kVa wymagane jest ponadto: wykonanie wszystkich niezbędnych połączeń kablowych, wykonanie układu samoczynnego załączania rezerwy (SZR), wykonanie niezbędnych pomiarów elektrycznych, uruchomienie instalacji, przeprowadzenie prób funkcjonalnych pracy z zasilaniem podstawowym i rezerwowym, opracowanie dokumentacji technicznej zasilania awaryjnego agregatem prądotwórczym zgodnie z pkt 6.2 Opisu przedmiotu zamówienia dot. w/w agregatów f) wykonawca zobligowany jest dostarczyć agregaty wraz z instrukcją obsługi oraz przekazać najpóźniej na 3 dni przed planowanym zawarciem umowy w sprawie zamówienia publicznego szczegółową specyfikację dostarczonego produktu 2. Szczegółowy opis zakresu przedmiotu zamówienia zawarty został w załączniku Nr 1 do SWZ. 3. Przedsięwzięcie realizowane w ramach Programu Ochrony Ludności i Obrony Cywilnej (Program OLiOC)",
+      "1. Przedmiot zamówienia obejmuje dostawę sprzętu niezbędnego do realizacji zadań Ochrony Ludności i Obrony Cywilnej w Gminie Ożarów Mazowiecki : 1) Dostawa mobilnej stacji uzdatniania wody w ilości szt. 1: a) ramach realizacji tej części przedmiotu zamówienia Wykonawca będzie zobowiązany do dostarczenia: - 1 szt. mobilnej stacji uzdatniania wody o wydajności od 30 m³/h do 45 m³/h do wód głębinowych wraz z wyposażeniem do miejsca wskazanego przez Zamawiającego zlokalizowanego na terenie gminy Ożarów Mazowiecki b) dostarczona mobilna stacja uzdatniania wody wraz z wyposażeniem muszą być fabrycznie nowe, Wykonawca zobowiązany jest udzielić Zamawiającemu gwarancji na dostarczony przedmiot zamówienia na okres minimum 48 miesięcy od daty podpisania Protokołu odbioru (okres gwarancji stanowi kryterium oceny ofert), c) przez dostawę mobilnej stacji uzdatniania wody rozumie się jej dostarczenie, przeprowadzenie rozruchu technologicznego i przeprowadzenie szkolenia dla min. 4 osób wskazanych przez Zamawiającego z zakresu użytkowania dostarczanego sprzętu d) wykonawca zobligowany jest dostarczyć mobilną stację uzdatniania wody wraz z instrukcją obsługi oraz przekazać najpóźniej na 3 dni przed planowanym zawarciem umowy w sprawie zamówienia publicznego szczegółową specyfikację dostarczonego produktu 2. Szczegółowy opis zakresu przedmiotu zamówienia zawarty został w załączniku Nr 1 do SWZ. 3. Przedsięwzięcie realizowane w ramach Programu Ochrony Ludności i Obrony Cywilnej (Program OLiOC)"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "POL",
+    "POL"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "11:00:00+02:00",
+    "11:00:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "31000000",
+    "31121100",
+    "31122000",
+    "31120000",
+    "42912330",
+    "31000000",
+    "31000000",
+    "31121100",
+    "31122000",
+    "31120000",
+    "42912330"
+  ],
+  "buyer-name": {
+    "pol": [
+      "Gmina Ożarów Mazowiecki"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 3,
+  "place-of-performance-subdiv-proc": [
+    "PL913"
+  ],
+  "title-lot": {
+    "pol": [
+      "Dostawa sprzętu niezbędnego do realizacji zadań Ochrony Ludności i Obrony Cywilnej w Gminie Ożarów Mazowiecki w zakresie dostawy: Cz. A – agregatów prądotwórczych",
+      "Dostawa sprzętu niezbędnego do realizacji zadań Ochrony Ludności i Obrony Cywilnej w Gminie Ożarów Mazowiecki w zakresie dostawy: Cz. B – mobilnej stacji uzdatniania wody"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "pol": "1. Przedmiot zamówienia obejmuje dostawę sprzętu niezbędnego do realizacji zadań Ochrony Ludności i Obrony Cywilnej w Gminie Ożarów Mazowiecki w podziale na 2 części: 1) Dostawa agregatów w ilości szt. 10: a) w ramach realizacji tej części przedmiotu zamówienia Wykonawca będzie zobowiązany do dostarczenia: - 1 szt. agregat prądotwórczy o mocy min. 125 kVa - 2 szt. agregat prądotwórczy o mocy min. 30 kVa - 4 szt. agregatów prądotwórczych o mocy min. 5 kVa - 3 szt. agregatów prądotwórczych o mocy min. 50 kVa wraz z osprzętem do miejsca wskazanego przez Zamawiającego zlokalizowanego na terenie gminy Ożarów Mazowiecki b) dostarczone agregaty wraz z osprzętem muszą być fabrycznie nowe, wyprodukowane nie wcześniej niż 12 miesięcy przed terminem składania ofert. Wykonawca zobowiązany jest udzielić Zamawiającemu gwarancji na dostarczony przedmiot zamówienia na okres minimum 24 miesięcy od daty podpisania Protokołu odbioru (okres gwarancji stanowi kryterium oceny ofert), c) przez dostawę agregatów rozumie się: ich dostarczenie i przeprowadzenie szkolenia dla min. 2 osób wskazanych przez Zamawiającego z zakresu użytkowania dostarczanego sprzętu (dotyczy agregatów prądotwórczych o mocy min. 5 kVa oraz agregatów prądotwórczych o mocy min. 50 kVa) d) przez dostawę agregatów rozumie się: ich dostarczenie, montaż i przeprowadzenie szkolenia dla min. 2 osób wskazanych przez Zamawiającego z zakresu użytkowania dostarczanego sprzętu (dotyczy agregatu prądotwórczego o mocy min. 125 kVa oraz agregatów prądotwórczych o mocy min. 30 kVa) e) dla agregatu o mocy min. 125 kVa oraz dla agregatów o mocy min. 30 kVa wymagane jest ponadto: wykonanie wszystkich niezbędnych połączeń kablowych, wykonanie układu samoczynnego załączania rezerwy (SZR), wykonanie niezbędnych pomiarów elektrycznych, uruchomienie instalacji, przeprowadzenie prób funkcjonalnych pracy z zasilaniem podstawowym i rezerwowym, opracowanie dokumentacji technicznej zasilania awaryjnego agregatem prądotwórczym zgodnie z pkt 6.2 Opisu przedmiotu zamówienia dot. w/w agregatów f) wykonawca zobligowany jest dostarczyć agregaty wraz z instrukcją obsługi oraz przekazać najpóźniej na 3 dni przed planowanym zawarciem umowy w sprawie zamówienia publicznego szczegółową specyfikację dostarczonego produktu 2) Dostawa mobilnej stacji uzdatniania wody w ilości szt. 1: a) ramach realizacji tej części przedmiotu zamówienia Wykonawca będzie zobowiązany do dostarczenia: - 1 szt. mobilnej stacji uzdatniania wody o wydajności od 30 m³/h do 45 m³/h do wód głębinowych wraz z wyposażeniem do miejsca wskazanego przez Zamawiającego zlokalizowanego na terenie gminy Ożarów Mazowiecki b) dostarczona mobilna stacja uzdatniania wody wraz z wyposażeniem muszą być fabrycznie nowe, Wykonawca zobowiązany jest udzielić Zamawiającemu gwarancji na dostarczony przedmiot zamówienia na okres minimum 48 miesięcy od daty podpisania Protokołu odbioru (okres gwarancji stanowi kryterium oceny ofert), c) przez dostawę mobilnej stacji uzdatniania wody rozumie się jej dostarczenie, przeprowadzenie rozruchu technologicznego i przeprowadzenie szkolenia dla min. 4 osób wskazanych przez Zamawiającego z zakresu użytkowania dostarczanego sprzętu d) wykonawca zobligowany jest dostarczyć mobilną stację uzdatniania wody wraz z instrukcją obsługi oraz przekazać najpóźniej na 3 dni przed planowanym zawarciem umowy w sprawie zamówienia publicznego szczegółową specyfikację dostarczonego produktu 2. Szczegółowy opis zakresu przedmiotu zamówienia na cz. A oraz cz. B zawarty został w załączniku Nr 1 do SWZ. 3. Przedsięwzięcie realizowane w ramach Programu Ochrony Ludności i Obrony Cywilnej (Program OLiOC)"
+  }
+}

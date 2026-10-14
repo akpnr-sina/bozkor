@@ -1,0 +1,93 @@
+{
+  "change-reason-code": "update-add",
+  "deadline-receipt-tender-date-lot": [
+    "2026-10-28+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "704935-2026",
+  "main-classification-lot": [
+    "34144000"
+  ],
+  "main-classification-proc": [
+    "34144000"
+  ],
+  "submission-url-lot": [
+    "https://isepvo.sk"
+  ],
+  "procedure-identifier": "ee66f3ac-3344-4d4e-8247-d5982508bf96",
+  "buyer-country-sub": [
+    "SK010"
+  ],
+  "place-of-performance-country-proc": [
+    "SVK"
+  ],
+  "document-url-lot": [
+    "https://www.uvo.gov.sk/vyhladavanie/vyhladavanie-zakaziek/dokumenty/565367"
+  ],
+  "official-language": [
+    "SLK"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "109758.12",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "94afd331-d007-48c7-9eee-65fc2612faeb",
+  "title-proc": {
+    "slk": "Technické zabezpečenie letnej a zimnej údržby – Komunálny stroj do 2,5 t univerzálny nosič"
+  },
+  "place-of-performance-subdiv-lot": [
+    "SK010"
+  ],
+  "estimated-value-lot": [
+    "109758.12"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-10-12+02:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "change-notice-version-identifier": "e5b637c8-43a5-4b76-a53b-efe90d7f85b5-01",
+  "buyer-country": [
+    "SVK"
+  ],
+  "description-lot": {
+    "slk": [
+      "Predmetom zákazky je dodanie komunálneho stroja do 2,5 t – univerzálneho nosiča vrátane pracovných nadstavieb určených na zabezpečenie letnej a zimnej údržby, v rozsahu a podľa technickej špecifikácie uvedenej v súťažných podkladoch"
+    ]
+  },
+  "place-of-performance-country-lot": [
+    "SVK"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "09:00:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "34144000",
+    "34144000"
+  ],
+  "buyer-name": {
+    "slk": [
+      "Komunálny podnik Bratislavy, skrátene KPB"
+    ]
+  },
+  "competition-termination-proc": false,
+  "notice-version": 2,
+  "place-of-performance-subdiv-proc": [
+    "SK010"
+  ],
+  "title-lot": {
+    "slk": [
+      "Technické zabezpečenie letnej a zimnej údržby – Komunálny stroj do 2,5 t univerzálny nosič"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "slk": "Predmetom zákazky je dodanie komunálneho stroja do 2,5 t – univerzálneho nosiča vrátane pracovných nadstavieb určených na zabezpečenie letnej a zimnej údržby, v rozsahu a podľa technickej špecifikácie uvedenej v súťažných podkladoch"
+  }
+}
