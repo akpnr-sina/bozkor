@@ -1,0 +1,143 @@
+{
+  "ocid": "ocds-h6vhtk-07867f",
+  "id": "096535-2026",
+  "tag": [
+    "tender"
+  ],
+  "date": "2026-10-13T13:09:14+01:00",
+  "initiationType": "tender",
+  "parties": [
+    {
+      "name": "CORSERV SOLUTIONS LIMITED",
+      "id": "GB-COH-07737430",
+      "identifier": {
+        "scheme": "GB-COH",
+        "id": "07737430"
+      },
+      "additionalIdentifiers": [
+        {
+          "scheme": "GB-PPON",
+          "id": "PQMR-9471-JTYZ"
+        }
+      ],
+      "address": {
+        "streetAddress": "Western Group Centre Radnor Road",
+        "locality": "Redruth",
+        "postalCode": "TR16 5EH",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKK30"
+      },
+      "contactPoint": {
+        "email": "procuremement@corservltd.co.uk"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "https://www.corservltd.co.uk/",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-COH-07737430",
+    "name": "CORSERV SOLUTIONS LIMITED"
+  },
+  "tender": {
+    "id": "KRCD102026",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "Procurement of Replacement BA Compressor for Cornwall Airport Ltd",
+    "description": "Corserv Solutions Ltd on behalf of Airport Ltd is undertaking the procurement of Replacement BA Compressor\nCAL invites suitably qualified suppliers to submit a quotation for the supply of the equipment in accordance with the requirements set out below. This procurement is being conducted in accordance with the principles of the Procurement Act 2023, including transparency, equal treatment of suppliers, and securing value for money.",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "35111100",
+            "description": "Breathing apparatus for firefighting"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UKK3",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 30000,
+      "amount": 25000,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Below threshold - open competition",
+    "mainProcurementCategory": "goods",
+    "aboveThreshold": false,
+    "submissionMethodDetails": "Please send you submission or questions to procurement@corservltd.co.uk\nwww.corservltd.co.uk",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "allowed"
+    },
+    "tenderPeriod": {
+      "endDate": "2026-10-20T12:00:00+01:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-10-16T12:00:00+01:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 30000,
+          "amount": 25000,
+          "currency": "GBP"
+        },
+        "suitability": {
+          "sme": true,
+          "vcse": true
+        },
+        "contractPeriod": {
+          "startDate": "2026-11-01T00:00:00Z",
+          "endDate": "2027-10-31T23:59:59Z"
+        },
+        "awardCriteria": {
+          "description": "Most Advantegous Tender"
+        }
+      }
+    ],
+    "documents": [
+      {
+        "id": "L-1",
+        "documentType": "technicalSpecifications",
+        "description": "Capability to remotely charge BA cylinders within an adjacent dedicated charging room.\nMaximum charging pressure of 300 Bar.\nMinimum free air delivery rate of 320 litres per minute.\nBreathing air quality compliant with BS EN 12021 (latest version).\nThree-phase 400V, 50Hz electrical supply.\nMaximum motor rating of 7.5kW.\nAutomatic condensate drain.\nAutomatic pressure switch to stop compressor at final pressure.\nHigh temperature and overpressure safety shutdown.\nEmergency stop facility.\nUKCA marked.\nSupplier to provide commissioning, testing and operator training.\nSupplier to provide operation and maintenance manuals.\nMinimum 12-month warranty from commissioning.\nUK-based servicing and technical support available.\nOr equalivlent",
+        "url": "www.corservltd.co.uk"
+      },
+      {
+        "id": "096535-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096535-2026",
+        "datePublished": "2026-10-13T13:09:14+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en"
+}

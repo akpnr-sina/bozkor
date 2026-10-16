@@ -155,7 +155,7 @@ export function ProfileForm({
             <Input value={state.name} onChange={(e) => set("name", e.target.value)} required maxLength={100} />
           </Field>
           <Check label="Aktif (yeni ihaleler bu profille eşleştirilir)" checked={state.active} onChange={(v) => set("active", v)} />
-          <Field label="Ne arıyoruz?" hint="Serbest metin. AI ön değerlendirmesi bunu kullanacak." error={errors.description}>
+          <Field label="Ne arıyoruz?" hint="Serbest metin. Derin analiz bunu kullanacak; ilan değerlendirmesi profilden bağımsız, Bozkor'un yeterlilik politikasıyla yapılır." error={errors.description}>
             <Textarea value={state.description} onChange={(e) => set("description", e.target.value)} rows={3} />
           </Field>
         </Group>
@@ -244,7 +244,7 @@ export function ProfileForm({
         </Group>
 
         <Group title="AI ve bildirim" hint="Bu ayarlar ilerleyen aşamalarda devreye girecek.">
-          <Field label="Triage eşiği (0-100)" error={errors.triageThreshold}>
+          <Field label="Uyum eşiği (0-100)" hint="Doküman indirme aşamasında fırsat uyumuyla karşılaştırılacak." error={errors.triageThreshold}>
             <Input inputMode="numeric" value={state.triageThreshold} onChange={(e) => set("triageThreshold", e.target.value)} />
           </Field>
           <Check label="Eşiği geçenleri otomatik derin analize gönder" checked={state.autoAnalyze} onChange={(v) => set("autoAnalyze", v)} />

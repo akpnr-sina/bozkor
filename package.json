@@ -13,11 +13,17 @@
     "worker": "tsx src/worker/index.ts",
     "backfill": "tsx src/worker/backfill.ts",
     "renormalize": "tsx src/worker/renormalize.ts",
+    "triage": "tsx src/worker/triage.ts",
+    "translate": "tsx src/worker/translate.ts",
+    "facts": "tsx src/worker/facts.ts",
+    "assess": "tsx src/worker/assess.ts",
+    "enrich-ted": "tsx src/worker/enrich-ted.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.131.0",
     "@base-ui/react": "^1.9.0",
     "@next/env": "16.4.0",
     "@supabase/ssr": "^0.12.7",

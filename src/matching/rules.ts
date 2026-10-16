@@ -87,14 +87,14 @@ const amountEur = z
   )
   .default(null);
 const DAYS_MESSAGE = "Gün sayısı 0 ile 365 arasında tam sayı olmalı, örn. 10";
-const THRESHOLD_MESSAGE = "Triage eşiği 0 ile 100 arasında tam sayı olmalı";
+const THRESHOLD_MESSAGE = "Uyum eşiği 0 ile 100 arasında tam sayı olmalı";
 
 export const sourceIds = ["uk_fat", "eu_ted"] as const;
 export const noticeTypes = ["planning", "tender"] as const;
 
 export const profileRulesSchema = z
   .object({
-    /** Plain-language description of what the team wants; used by AI triage (Faz 4). */
+    /** Plain-language description of what the team wants; for deep analysis (Faz 6). Notice assessment does not depend on the profile. */
     description: z.string().trim().max(2_000, "Açıklama en fazla 2.000 karakter olabilir").default(""),
     sources: list(z.enum(sourceIds)),
     noticeTypes: z

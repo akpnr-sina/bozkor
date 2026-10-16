@@ -64,6 +64,34 @@
       "when": 1791972774636,
       "tag": "0008_tender_contract_nature",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792010652788,
+      "tag": "0009_profile_triage_inputs_changed_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792012887974,
+      "tag": "0010_analysis_kind_translation",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792079727380,
+      "tag": "0011_tender_details",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792097806213,
+      "tag": "0012_tender_assessments",
+      "breakpoints": true
     }
   ]
 }

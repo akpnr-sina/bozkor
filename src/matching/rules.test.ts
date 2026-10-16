@@ -5,7 +5,7 @@ const firstIssue = (input: Record<string, unknown>) => profileRulesSchema.safePa
 
 const AMOUNT_MESSAGE = "Tutar sayı olmalı, örn. 20.000 ya da 1,5";
 const DAYS_MESSAGE = "Gün sayısı 0 ile 365 arasında tam sayı olmalı, örn. 10";
-const THRESHOLD_MESSAGE = "Triage eşiği 0 ile 100 arasında tam sayı olmalı";
+const THRESHOLD_MESSAGE = "Uyum eşiği 0 ile 100 arasında tam sayı olmalı";
 
 describe("parseNumberInput", () => {
   it.each([

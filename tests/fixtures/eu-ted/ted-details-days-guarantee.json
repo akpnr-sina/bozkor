@@ -1,0 +1,129 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-02+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "award-criterion-description-lot": {
+    "ita": [
+      "Offerta tecnica max 80 punti",
+      "offerta economica max 20 punti"
+    ]
+  },
+  "publication-number": "704424-2026",
+  "main-classification-lot": [
+    "39150000"
+  ],
+  "main-classification-proc": [
+    "39150000"
+  ],
+  "submission-url-lot": [
+    "https://app.albofornitori.it/alboeproc/albo_comunecisternalatina"
+  ],
+  "procedure-identifier": "a85c9171-1953-451e-a24a-38271890d58e",
+  "buyer-country-sub": [
+    "ITI44"
+  ],
+  "place-of-performance-country-proc": [
+    "ITA"
+  ],
+  "document-url-lot": [
+    "https://cisterna-di-latina.halleyweb.it/zf/index.php/bandi-gara/bandi-gara/bandi"
+  ],
+  "award-criterion-number-lot": [
+    "80",
+    "20"
+  ],
+  "official-language": [
+    "ITA"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "337016.58",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "9c5db4e4-c860-4d7a-a078-e68a2003b1e8",
+  "title-proc": {
+    "ita": "Fornitura di arredi didattici innovativi funzionali al potenziamento e rafforzamento dell’offerta educativa dei servizi per la prima infanzia nella fascia di eta zero – sei anni CUP C54D26001020007"
+  },
+  "place-of-performance-subdiv-lot": [
+    "ITI44"
+  ],
+  "estimated-value-lot": [
+    "337016.58"
+  ],
+  "electronic-ordering-lot": [
+    true
+  ],
+  "award-criterion-type-lot": [
+    "quality",
+    "price"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "duration-period-value-lot": [
+    "45"
+  ],
+  "dispatch-date": "2026-10-12Z",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "framework-agreement-lot": [
+    "none"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "ITA"
+  ],
+  "duration-period-unit-lot": [
+    "DAY"
+  ],
+  "award-criterion-number-weight-lot": [
+    "poi-exa",
+    "poi-exa"
+  ],
+  "guarantee-required-lot": [
+    "true"
+  ],
+  "description-lot": {
+    "ita": [
+      "Fornitura di arredi didattici innovativi funzionali al potenziamento e rafforzamento dell’offerta educativa dei servizi per la prima infanzia nella fascia di età zero – sei anni. CUP C54D26001020007"
+    ]
+  },
+  "gpa-lot": [
+    true
+  ],
+  "place-of-performance-country-lot": [
+    "ITA"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "18:00:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "39150000",
+    "39150000"
+  ],
+  "buyer-name": {
+    "ita": [
+      "COMUNE DI CISTERNA DI LATINA"
+    ]
+  },
+  "notice-version": 1,
+  "submission-language": [
+    "ITA"
+  ],
+  "place-of-performance-subdiv-proc": [
+    "ITI44"
+  ],
+  "title-lot": {
+    "ita": [
+      "Fornitura di arredi didattici innovativi funzionali al potenziamento e rafforzamento dell’offerta educativa dei servizi per la prima infanzia nella fascia di età zero – sei anni. CUP C54D26001020007"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "ita": "Fornitura di arredi didattici innovativi funzionali al potenziamento e rafforzamento dell’offerta educativa dei servizi per la prima infanzia nella fascia di eta zero – sei anni CUP C54D26001020007"
+  }
+}

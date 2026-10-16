@@ -1,22 +1,25 @@
 import { io } from "next/cache";
 import Link from "next/link";
+import { AssessmentBadge } from "@/components/assessment-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db";
+import { retryRead } from "@/db/retry";
 import { reviewDecision } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import { DECISION_SHORT, daysLeft, formatDaysLeft, formatMoney, SOURCE_LABELS } from "@/lib/format";
 import { sourceIds } from "@/matching/rules";
+import { STATUS_GROUP_LABELS, STATUS_GROUPS, type StatusGroup } from "@/policy/labels";
 import { isProductScope } from "@/sources/scope";
-import { loadInbox, readFilters } from "./data";
+import { inboxQuery, loadInbox, PAGE_SIZE, readFilters, type Filters } from "./data";
 
 export async function InboxContent({ searchParams }: { searchParams: PageProps<"/inbox">["searchParams"] }) {
   await getCurrentUser();
   const filters = readFilters(await searchParams);
   // postgres-js calls Math.random() while it builds its pool; keep it out of the prerender.
   await io();
-  const { profiles, hasAnyProfile, list, total } = await loadInbox(getDb(), filters);
+  const { profiles, hasAnyProfile, list, total } = await retryRead(() => loadInbox(getDb(), filters));
   const now = new Date();
 
   if (!hasAnyProfile) {
@@ -55,6 +58,19 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
           <option value="closed">Kapanmış, iptal ya da sonuçlanmış</option>
           <option value="all">Tümü</option>
         </Select>
+        <Select name="assessment" label="Değerlendirme" value={filters.assessment}>
+          <option value="">Tümü</option>
+          {(Object.keys(STATUS_GROUPS) as StatusGroup[]).map((group) => (
+            <option key={group} value={group}>
+              {STATUS_GROUP_LABELS[group]}
+            </option>
+          ))}
+          <option value="none">Henüz değerlendirilmemiş</option>
+        </Select>
+        <Select name="sort" label="Sıralama" value={filters.sort}>
+          <option value="deadline">Son tarih</option>
+          <option value="assessment">Değerlendirme</option>
+        </Select>
         <Select name="decision" label="Karar" value={filters.decision}>
           <option value="">Tümü</option>
           <option value="none">Karar verilmemiş</option>
@@ -75,7 +91,11 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
         </p>
       )}
       <p className="text-sm text-muted-foreground">
-        {total} ihale{total > list.length ? `, ilk ${list.length} tanesi gösteriliyor` : ""}. Son tarihe göre sıralı.
+        {total} ihale
+        {total > PAGE_SIZE && list.length
+          ? `, ${(filters.page - 1) * PAGE_SIZE + 1}-${(filters.page - 1) * PAGE_SIZE + list.length} arası gösteriliyor`
+          : ""}
+        . {filters.sort === "assessment" ? "En umut verici değerlendirme önce, değerlendirilmeyenler sonda." : "Son tarihe göre sıralı."}
       </p>
 
       {list.length ? (
@@ -87,7 +107,7 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
                 <TableHead>Ülke</TableHead>
                 <TableHead className="text-right">Değer (EUR)</TableHead>
                 <TableHead className="text-right">Kalan</TableHead>
-                <TableHead className="text-right">Triage</TableHead>
+                <TableHead>Değerlendirme</TableHead>
                 <TableHead>Doküman</TableHead>
                 <TableHead>Karar</TableHead>
               </TableRow>
@@ -99,7 +119,7 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
                     <div className="flex flex-col gap-1">
                       <div className="flex flex-wrap items-center gap-2">
                         <Link href={`/tenders/${item.tenderId}`} className="font-medium hover:underline">
-                          {item.title}
+                          {item.titleTr ?? item.title}
                         </Link>
                         {item.isNew && <Badge>Yeni</Badge>}
                         {item.changedAt && (!item.decidedAt || item.changedAt > item.decidedAt) && (
@@ -113,6 +133,8 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
                           !item.current && <Badge variant="outline">Artık eşleşmiyor</Badge>
                         )}
                       </div>
+                      {item.titleTr && <span className="text-xs text-muted-foreground">{item.title}</span>}
+                      {item.assessmentExplanation && <span className="line-clamp-2 text-sm">{item.assessmentExplanation}</span>}
                       <span className="text-xs text-muted-foreground">
                         {[item.buyerName, SOURCE_LABELS[item.source as keyof typeof SOURCE_LABELS], item.profiles.join(", ")]
                           .filter(Boolean)
@@ -131,7 +153,23 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
                     )}
                   </TableCell>
                   <TableCell className="text-right tabular-nums">{formatDaysLeft(daysLeft(item.submissionDeadline, now))}</TableCell>
-                  <TableCell className="text-right tabular-nums">{item.bestScore ?? <span className="text-muted-foreground">-</span>}</TableCell>
+                  <TableCell>
+                    {item.assessmentStatus ? (
+                      <div className="flex flex-col items-start gap-1">
+                        <AssessmentBadge status={item.assessmentStatus} />
+                        {item.fitLow !== null && item.fitHigh !== null && (
+                          <span
+                            className="text-xs text-muted-foreground tabular-nums"
+                            title={`Fırsat uyumu. İlanda bilinmeyen ölçütlerle aralık ${item.fitLow}-${item.fitHigh}; gösterilen ortası.`}
+                          >
+                            uyum {Math.round((item.fitLow + item.fitHigh) / 2)}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground">Sırada</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     {item.documentCount ? `${item.documentCount} link` : item.documentsPortalUrl ? "Portal" : "Yok"}
                   </TableCell>
@@ -141,9 +179,17 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
             </TableBody>
           </Table>
         </div>
+      ) : filters.page > 1 ? (
+        <p className="text-sm text-muted-foreground">
+          Bu sayfada ihale yok.{" "}
+          <Link href={`/inbox${inboxQuery(filters, 1)}`} className="underline underline-offset-4">
+            İlk sayfaya dön
+          </Link>
+        </p>
       ) : (
         <p className="text-sm text-muted-foreground">Bu filtrelerle eşleşen ihale yok.</p>
       )}
+      <Pager filters={filters} total={total} />
     </div>
   );
 }
@@ -160,5 +206,24 @@ function Select({ name, label, value, children }: { name: string; label: string;
         {children}
       </select>
     </label>
+  );
+}
+
+function Pager({ filters, total }: { filters: Filters; total: number }) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return null;
+  const link = (page: number, label: string) => (
+    <Link href={`/inbox${inboxQuery(filters, page)}`} className="underline underline-offset-4">
+      {label}
+    </Link>
+  );
+  return (
+    <nav className="flex items-center gap-4 text-sm" aria-label="Sayfalar">
+      {filters.page > 1 ? link(filters.page - 1, "Önceki sayfa") : <span className="text-muted-foreground">Önceki sayfa</span>}
+      <span className="text-muted-foreground">
+        Sayfa {Math.min(filters.page, pages)} / {pages}
+      </span>
+      {filters.page < pages ? link(filters.page + 1, "Sonraki sayfa") : <span className="text-muted-foreground">Sonraki sayfa</span>}
+    </nav>
   );
 }

@@ -152,6 +152,65 @@ describe("normalizeFatRelease", () => {
   });
 });
 
+describe("normalizeFatRelease details", () => {
+  const details = (name: string) => {
+    const result = normalized(name).details;
+    if (!result) throw new Error(`${name} has no details`);
+    return result;
+  };
+
+  it("reads an old-regime framework: days to months, weights from the descriptions, terms and staff requirement", () => {
+    const framework = details("celex-tender-old-regime");
+    expect(framework).toMatchObject({
+      durationMonths: 47.3, // 1,440 days
+      framework: true,
+      electronicOrdering: true,
+      gpaCovered: true,
+      guaranteeRequired: null,
+      submissionLanguages: ["EN"],
+    });
+    // Every lot repeats the same two criteria; they are listed once.
+    expect(framework.awardCriteria).toEqual([
+      { type: "quality", name: "Technical Questionnaire", weight: 40, description: null },
+      { type: "price", name: null, weight: 60, description: null },
+    ]);
+    expect(framework.selectionCriteria.map((c) => c.type)).toEqual(["suitability", "economic", "technical", "staffNamesAndQualifications"]);
+    expect(framework.performanceTerms).toMatch(/^The Contractor shall comply with all mandatory requirements/);
+  });
+
+  it("reads percentage weights and the longest contract period from start and end dates", () => {
+    expect(details("uk4-tender-utilities-eoi-deadline")).toMatchObject({
+      durationMonths: 120.1, // 4 May 2027 to 5 May 2037, extensions to 2042 not counted
+      framework: true,
+      awardCriteria: [
+        { type: "quality", name: "Quality", weight: 70 },
+        { type: "price", name: "Price", weight: 30 },
+      ],
+    });
+    expect(details("uk4-goods-below-threshold").awardCriteria.map((c) => [c.type, c.weight])).toEqual([
+      ["cost", 60],
+      ["quality", 40],
+    ]);
+  });
+
+  it("keeps a lot's weighting text and reads GPA cover", () => {
+    const covered = details("uk4-tender-covered-multilot");
+    expect(covered).toMatchObject({ durationMonths: 48, gpaCovered: true, framework: null });
+    expect(covered.awardCriteria.at(-1)).toEqual({
+      type: null,
+      name: null,
+      weight: null,
+      description: expect.stringMatching(/^Bidders must achieve a PASS mark/),
+    });
+  });
+
+  it("has no details for award notices, partial corrections and lot-only cancellations", () => {
+    expect(normalized("uk6-award").details).toBeNull();
+    expect(normalized("celex-tender-update").details).toBeNull();
+    expect(normalized("uk12-tender-cancellation").details).toBeNull();
+  });
+});
+
 describe("fatNoticeKeys", () => {
   it("returns keys for every stage, so every raw payload is stored", () => {
     expect(fatNoticeKeys(fixture("uk4-tender-change"))).toEqual({

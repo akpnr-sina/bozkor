@@ -1,0 +1,189 @@
+{
+  "change-reason-code": "update-add",
+  "deadline-receipt-tender-date-lot": [
+    "2026-10-20+03:00",
+    "2026-10-20+03:00",
+    "2026-10-20+03:00",
+    "2026-10-20+03:00",
+    "2026-10-20+03:00",
+    "2026-10-20+03:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "711554-2026",
+  "main-classification-lot": [
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000"
+  ],
+  "main-classification-proc": [
+    "31120000"
+  ],
+  "submission-url-lot": [
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/viewTenders.do?resourceId=9500449"
+  ],
+  "procedure-identifier": "6d651219-160a-4062-adbe-ee0d24513b69",
+  "buyer-country-sub": [
+    "LT011"
+  ],
+  "place-of-performance-country-proc": [
+    "LTU",
+    "MDA"
+  ],
+  "document-url-lot": [
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9500449",
+    "https://viesiejipirkimai.lt/epps/cft/listContractDocuments.do?resourceId=9500449"
+  ],
+  "official-language": [
+    "LIT"
+  ],
+  "publication-date": "2026-10-15+02:00",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002",
+    "LOT-0003",
+    "LOT-0004",
+    "LOT-0005",
+    "LOT-0006"
+  ],
+  "notice-identifier": "1c27831f-982e-4d2a-a1f0-edbfb95fd4d7",
+  "title-proc": {
+    "lit": "Elektros generatoriai"
+  },
+  "place-of-performance-subdiv-lot": [
+    "LT022",
+    "LT022",
+    "LT022",
+    "LT022",
+    "LT022",
+    "LT022"
+  ],
+  "electronic-ordering-lot": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "duration-period-value-lot": [
+    "36",
+    "36",
+    "36",
+    "36",
+    "36",
+    "36"
+  ],
+  "dispatch-date": "2026-10-14+03:00",
+  "framework-agreement-lot": [
+    "none",
+    "none",
+    "none",
+    "none",
+    "none",
+    "none"
+  ],
+  "change-notice-version-identifier": "150563d9-ad73-40c4-a907-a164f4e8d6a0-02",
+  "buyer-country": [
+    "LTU"
+  ],
+  "duration-period-unit-lot": [
+    "MONTH",
+    "MONTH",
+    "MONTH",
+    "MONTH",
+    "MONTH",
+    "MONTH"
+  ],
+  "description-lot": {
+    "lit": [
+      "Elektros generatoriai",
+      "Elektros generatoriai",
+      "Elektros generatoriai",
+      "Elektros generatoriai",
+      "Elektros generatoriai",
+      "Elektros generatoriai"
+    ]
+  },
+  "gpa-lot": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+  ],
+  "place-of-performance-country-lot": [
+    "LTU",
+    "LTU",
+    "MDA",
+    "LTU",
+    "LTU",
+    "LTU",
+    "LTU"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "10:00:00+03:00",
+    "10:00:00+03:00",
+    "10:00:00+03:00",
+    "10:00:00+03:00",
+    "10:00:00+03:00",
+    "10:00:00+03:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000",
+    "31120000"
+  ],
+  "buyer-name": {
+    "lit": [
+      "GYNYBOS RESURSŲ AGENTŪRA PRIE KAM"
+    ]
+  },
+  "notice-version": 3,
+  "submission-language": [
+    "LIT",
+    "LIT",
+    "LIT",
+    "LIT",
+    "LIT",
+    "LIT"
+  ],
+  "place-of-performance-subdiv-proc": [
+    "LT022"
+  ],
+  "title-lot": {
+    "lit": [
+      "Nešiojamas 6 kW elektros generatorius",
+      "Nešiojamas 10 kW elektros generatorius",
+      "Mobilus 20 kW elektros generatorius su priekaba",
+      "Mobilus 50 kW elektros generatorius su priekaba",
+      "Mobilus 100 kW elektros generatorius su priekaba",
+      "Mobilus 200 kW elektros generatorius su priekaba"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "lit": "Elektros generatoriai"
+  }
+}

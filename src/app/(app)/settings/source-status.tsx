@@ -2,6 +2,7 @@ import { count } from "drizzle-orm";
 import { io } from "next/cache";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db";
+import { retryRead } from "@/db/retry";
 import { rawNotices, sources, tenders } from "@/db/schema";
 import { getCurrentUser } from "@/lib/auth/session";
 import type { SourceId } from "@/sources/types";
@@ -58,7 +59,7 @@ function sourceRank(id: string): number {
 /** Sync status per data source. Reads the session, so render it inside <Suspense>. */
 export async function SourceStatus() {
   await getCurrentUser();
-  const rows = await loadSourceStatus();
+  const rows = await retryRead(loadSourceStatus);
 
   if (rows.length === 0) {
     return <p className="text-sm text-muted-foreground">Kayıtlı kaynak yok.</p>;

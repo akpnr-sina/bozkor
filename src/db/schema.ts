@@ -15,6 +15,8 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import type { GateId, Status } from "@/policy/engine";
+import type { NoticeDetails } from "@/sources/types";
 
 // Every table has RLS enabled with no policies. The app talks to Postgres
 // directly as the table owner (bypasses RLS); this only closes the Supabase
@@ -49,7 +51,7 @@ export const documentFetchStatus = pgEnum("document_fetch_status", [
   "unsupported",
 ]);
 export const matchState = pgEnum("match_state", ["new", "seen", "dismissed"]);
-export const analysisKind = pgEnum("analysis_kind", ["triage", "deep"]);
+export const analysisKind = pgEnum("analysis_kind", ["triage", "deep", "translation", "facts"]);
 export const reviewDecision = pgEnum("review_decision", ["GO", "REVIEW", "NO_GO", "WATCH"]);
 
 /** One row per data source (`uk_fat`, `eu_ted`), seeded by migration. */
@@ -123,6 +125,8 @@ export const tenders = pgTable(
     noticeLanguage: text("notice_language"),
     noticeUrl: text("notice_url"),
     documentsPortalUrl: text("documents_portal_url"),
+    /** Contract details from the notices (duration, framework, criteria...); null when none states them. */
+    details: jsonb("details").$type<NoticeDetails>(),
     /** Set when a later notice changes the tender; drives the "değişti" badge. */
     changedAt: timestamptz("changed_at"),
     createdAt: createdAt(),
@@ -203,6 +207,8 @@ export const criteriaProfiles = pgTable("criteria_profiles", {
   active: boolean("active").notNull().default(true),
   /** Validated with the Zod schema in src/matching (SPEC section 6). */
   rules: jsonb("rules").$type<Record<string, unknown>>().notNull(),
+  /** Last change of what triage reads from the profile; its open matches are triaged again after it. */
+  triageInputsChangedAt: timestamptz("triage_inputs_changed_at").notNull().defaultNow(),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 }).enableRLS();
@@ -291,6 +297,60 @@ export const tenderReviews = pgTable(
   (t) => [index("tender_reviews_tender_id_decided_at_idx").on(t.tenderId, t.decidedAt)],
 ).enableRLS();
 
+/**
+ * The qualification policy's current verdict on a tender (docs/qualification-policy-v1.md),
+ * worked out in code (src/policy) from its latest facts. One row per tender,
+ * kept for rejected tenders too (part XII.6); the detail page works out the
+ * full lot-level assessment again from the same facts.
+ */
+export const tenderAssessments = pgTable(
+  "tender_assessments",
+  {
+    tenderId: uuid("tender_id")
+      .primaryKey()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    factsAnalysisId: uuid("facts_analysis_id")
+      .notNull()
+      .references(() => analyses.id, { onDelete: "cascade" }),
+    policyVersion: text("policy_version").notNull(),
+    /** Status of the most promising lot. */
+    status: text("status").$type<Status>().notNull(),
+    /** Lot number of the most promising lot; empty when the tender has no lots. */
+    bestLot: text("best_lot").notNull(),
+    explanation: text("explanation").notNull(),
+    /** Gates the most promising lot fails. */
+    blocking: text("blocking").$type<GateId[]>().array().notNull().default(emptyTextArray),
+    fitLow: integer("fit_low").notNull(),
+    fitHigh: integer("fit_high").notNull(),
+    preliminaryLow: integer("preliminary_low").notNull(),
+    preliminaryHigh: integer("preliminary_high").notNull(),
+    confidence: integer("confidence").notNull(),
+    /** When the verdict was last written: the job rewrites a row only when something in it changed. */
+    assessedAt: timestamptz("assessed_at").notNull().defaultNow(),
+    statusChangedAt: timestamptz("status_changed_at").notNull().defaultNow(),
+  },
+  (t) => [index("tender_assessments_status_idx").on(t.status)],
+).enableRLS();
+
+/** Each status an assessment has had, with the policy version that gave it (part XII.6). */
+export const assessmentHistory = pgTable(
+  "assessment_history",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderId: uuid("tender_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    factsAnalysisId: uuid("facts_analysis_id").references(() => analyses.id, { onDelete: "set null" }),
+    policyVersion: text("policy_version").notNull(),
+    status: text("status").$type<Status>().notNull(),
+    bestLot: text("best_lot").notNull(),
+    explanation: text("explanation").notNull(),
+    blocking: text("blocking").$type<GateId[]>().array().notNull().default(emptyTextArray),
+    createdAt: createdAt(),
+  },
+  (t) => [index("assessment_history_tender_id_idx").on(t.tenderId, t.createdAt)],
+).enableRLS();
+
 /** ECB euro reference rates (SPEC 4.3): units of `currency` per 1 EUR on `date`. */
 export const fxRates = pgTable(
   "fx_rates",
@@ -317,3 +377,4 @@ export type ProfileMatch = typeof profileMatches.$inferSelect;
 export type Analysis = typeof analyses.$inferSelect;
 export type TenderReview = typeof tenderReviews.$inferSelect;
 export type FxRate = typeof fxRates.$inferSelect;
+export type TenderAssessmentRow = typeof tenderAssessments.$inferSelect;

@@ -98,6 +98,21 @@ describe("foldNotices", () => {
     expect(folded.status).toBe("open");
   });
 
+  it("keeps the contract details until a later notice states them again", () => {
+    const correction = notice("celex-tender-update");
+    const original = notice("celex-tender-old-regime", {
+      ocid: correction.procedureKey,
+      date: "2026-01-10T10:00:00Z",
+    });
+    // The correction repeats only the changed fragments.
+    expect(original.details).not.toBeNull();
+    expect(correction.details).toBeNull();
+    expect(foldNotices([original, correction]).details).toEqual(original.details);
+
+    const restated = { ...correction, details: { ...original.details!, durationMonths: 12 } };
+    expect(foldNotices([restated, original]).details?.durationMonths).toBe(12);
+  });
+
   it("refuses a list without a planning or tender notice", () => {
     expect(() => foldNotices([])).toThrow();
     expect(() => foldNotices([notice("uk6-award")])).toThrow();

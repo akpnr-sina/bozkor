@@ -1,8 +1,9 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { triageInputsChanged } from "@/analysis/profile-inputs";
 import { getDb } from "@/db";
 import { categories, criteriaProfiles } from "@/db/schema";
 import { requireUser } from "@/lib/auth/session";
@@ -58,9 +59,17 @@ export async function saveProfile(_prev: SaveProfileState, formData: FormData): 
 
   let profileId = id;
   if (profileId) {
+    const [existing] = await db
+      .select({ name: criteriaProfiles.name, rules: criteriaProfiles.rules })
+      .from(criteriaProfiles)
+      .where(eq(criteriaProfiles.id, profileId));
+    if (!existing) return { status: "error", message: "Profil bulunamadı.", fieldErrors: {} };
+    const before = profileRulesSchema.safeParse(existing.rules);
+    // Only edits that change what triage reads ask for a new AI pre-assessment of the open matches.
+    const retriage = !before.success || triageInputsChanged({ name: existing.name, rules: before.data }, { name, rules });
     const updated = await db
       .update(criteriaProfiles)
-      .set({ name, active, rules })
+      .set({ name, active, rules, ...(retriage ? { triageInputsChangedAt: sql`now()` } : {}) })
       .where(eq(criteriaProfiles.id, profileId))
       .returning({ id: criteriaProfiles.id });
     if (!updated.length) return { status: "error", message: "Profil bulunamadı.", fieldErrors: {} };

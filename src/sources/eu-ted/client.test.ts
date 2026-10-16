@@ -234,6 +234,37 @@ describe("completed days", () => {
   });
 });
 
+describe("noticesByNumber", () => {
+  it("asks for each number once in one scroll, with the same fields as a sync", async () => {
+    const { fetch, requests } = fakeTed([withLinks(first), last]);
+    const client = createTedClient({ fetch, sleep: noSleep });
+    const pages = await collect(client.noticesByNumber(["705429-2026", "634842-2026", "705429-2026"]));
+
+    expect(pages).toEqual([first.notices]);
+    expect(requests).toHaveLength(2);
+    expect(requests[0]?.body).toEqual({
+      query: "publication-number IN (705429-2026 634842-2026)",
+      fields: [...TED_FIELDS],
+      limit: TED_MAX_PAGE_SIZE,
+      scope: "ALL",
+      paginationMode: "ITERATION",
+    });
+  });
+
+  it("never puts anything but a publication number into the query", async () => {
+    const { fetch, requests } = fakeTed([last]);
+    const client = createTedClient({ fetch, sleep: noSleep });
+    await collect(client.noticesByNumber(["704782-2026", "1) OR (publication-date>=20000101", "", "704782"]));
+    expect(requests[0]?.body.query).toBe("publication-number IN (704782-2026)");
+  });
+
+  it("sends nothing without a valid number", async () => {
+    const { fetch, requests } = fakeTed([]);
+    expect(await collect(createTedClient({ fetch, sleep: noSleep }).noticesByNumber(["", "abc"]))).toEqual([]);
+    expect(requests).toEqual([]);
+  });
+});
+
 describe("tedDay", () => {
   it("reads the Brussels date in summer and winter time", () => {
     expect(tedDay(new Date("2026-10-13T21:59:59Z"))).toBe("2026-10-13");

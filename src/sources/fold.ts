@@ -9,7 +9,7 @@ export type FoldedTender = Omit<NormalizedNotice, "lots" | "regime" | "status" |
   noticeCount: number;
 };
 
-type Nullable<T> = { [K in keyof T]: null extends T[K] ? K : never }[keyof T];
+type Nullable<T> = { [K in keyof T]-?: null extends T[K] ? K : never }[keyof T];
 
 /**
  * The latest notice with lots decides which lots exist; fields it leaves
@@ -106,5 +106,8 @@ export function foldNotices(notices: readonly NormalizedNotice[]): FoldedTender 
     documentsPortalUrl: latestValue("documentsPortalUrl"),
     lots: foldLots(sorted),
     documents: [...documents.values()],
+    // Notices that state none (awards, partial corrections, payloads stored
+    // before the detail fields existed) keep an earlier notice's.
+    details: latestValue("details"),
   };
 }

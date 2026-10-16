@@ -1,0 +1,181 @@
+{
+  "change-reason-code": "update-add",
+  "deadline-receipt-tender-date-lot": [
+    "2026-10-23+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "award-criterion-description-lot": {
+    "hrv": [
+      "Cijena ponude",
+      "Minimalan jamstveni rok je 24 mjeseci od primopredajnog zapisnika a maksimalni rok koji se uzima u obzir je 60 mjeseci. Minimalno trajanje jamstva na opremu propisano je 24 mjeseca koji ujedno čine i minimalni uvjet za tehničku ispravnost ponuđene opreme. Ponuditelj u svojoj ponudi ima mogućnost nuđenja dužeg jamstvenog roka na opremu od minimalno propisanog specifikacijom opreme. Ponuđeni jamstveni rok mora se iskazati kao jedinstveni jamstveni rok za cjelokupan predmet nabave.",
+      "Minimalan jamstveni rok je 24 mjeseci od primopredajnog zapisnika a maksimalni rok koji se uzima u obzir je 60 mjeseci. Minimalno trajanje jamstva na opremu propisano je 24 mjeseca koji ujedno čine i minimalni uvjet za tehničku ispravnost ponuđene opreme. Ponuditelj u svojoj ponudi ima mogućnost nuđenja dužeg jamstvenog roka na opremu od minimalno propisanog specifikacijom opreme. Ponuđeni jamstveni rok mora se iskazati kao jedinstveni jamstveni rok za cjelokupan predmet nabave."
+    ]
+  },
+  "selection-criterion-description-lot": {
+    "hrv": [
+      "Detalji opisani u dokumentaciji o nabavi",
+      "Detalji opisani u dokumentaciji o nabavi",
+      "Detalji opisani u dokumentaciji o nabavi",
+      "Detalji opisani u dokumentaciji o nabavi"
+    ]
+  },
+  "main-classification-proc": [
+    "30123100"
+  ],
+  "submission-url-lot": [
+    "https://eojn.hr/tender-eo/100212"
+  ],
+  "change-description": {
+    "hrv": [
+      "Ostalo - Naručitelj je objavio i stavio na raspolaganje svim zainteresiranim gospodarskim subjektima novu tehničku specifikaciju - Prilog 1"
+    ]
+  },
+  "procedure-identifier": "67e7ffea-5610-4892-9a9f-7356bb24c047",
+  "buyer-country-sub": [
+    "HR050",
+    "HR050"
+  ],
+  "place-of-performance-country-proc": [
+    "HRV"
+  ],
+  "selection-criterion-lot": [
+    "slc-suit-reg-trade",
+    "slc-abil-ref-supply",
+    "slc-abil-staff-tech-ctrl",
+    "slc-abil-qual-smp-w-autent"
+  ],
+  "award-criterion-number-lot": [
+    "80",
+    "10",
+    "10"
+  ],
+  "identifier-lot": [
+    "LOT-0000"
+  ],
+  "notice-identifier": "3b9ec331-82a6-4265-a4a4-85401225f25c",
+  "title-proc": {
+    "hrv": "NABAVA I UGRADNJA OPREME ZA ELEKTRONIČKU NAPLATU I VALIDACIJU KARATA U JAVNOM PRIJEVOZU"
+  },
+  "place-of-performance-subdiv-lot": [
+    "HR050"
+  ],
+  "term-performance-lot": {
+    "hrv": [
+      "<p>Ugovaratelj je obvezan tijekom izvršenja ugovora o javnoj nabavi pridržavati se primjenjivih obveza u području prava okoliša, socijalnog i radnog prava, uključujući kolektivne ugovore, a osobito obvezu isplate ugovorene plaće ili odredaba međunarodnog prava okoliša, socijalnog i radnog prava navedenim u Prilogu XI. Zakona o javnoj nabavi.</p> <p>Na odgovornost ugovornih strana za ispunjenje obveza iz ugovora o javnoj nabavi, uz odredbe Zakona o javnoj nabavi, na odgovarajući način primjenjuju se odredbe zakona kojim se uređuju obvezni odnosi.</p> <p>Ako ugovaratelj ne izvrši obveze u ugovorenim rokovima (rokovima propisanim kod jamstva za uredno ispunjenje, kod jamstva za otklanjanje nedostataka, rokovima izvršenja (izuzev roka koji je nefinancijski kriterij )), dužan je naručitelju platiti ugovornu kaznu u iznosu 0,5 % od ukupno ugovorene vrijednosti za svaki dan zakašnjenja te nadoknaditi naručitelju sve eventualne troškove i štetu koja bi iz toga proizašla.</p> <p>Ukupni izn..."
+    ]
+  },
+  "estimated-value-lot": [
+    "4000000"
+  ],
+  "award-criterion-type-lot": [
+    "price",
+    "quality",
+    "quality"
+  ],
+  "dispatch-date": "2026-10-12+02:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "framework-agreement-lot": [
+    "fa-wo-rc"
+  ],
+  "award-criterion-name-lot": {
+    "hrv": [
+      "Cijena ponude",
+      "Jamstveni rok za uređaje za naplatu i validaciju prijevoznih karata",
+      "Jamstveni rok za centralno računalo / kontrolnu jedinicu"
+    ]
+  },
+  "duration-period-unit-lot": [
+    "MONTH"
+  ],
+  "award-criterion-number-weight-lot": [
+    "poi-exa",
+    "poi-exa",
+    "poi-exa"
+  ],
+  "description-lot": {
+    "hrv": [
+      "Predmet nabave je NABAVA I UGRADNJA OPREME ZA ELEKTRONIČKU NAPLATU I VALIDACIJU KARATA U JAVNOM PRIJEVOZU. CPV oznaka i naziv: 30123100 - Uređaji za poništavanje karata OPIS PREDMETA NABAVE: Oprema koja je predmet ove nabave namijenjena je zamjeni zastarjelih, neispravnih i oštećenih uređaja u tramvajima i autobusima, te opremanju tramvajskih vozila i autobusa kojima se dopunjava vozni park Naručitelja. Od 2009. godine u Zagrebačkom električnom tramvaju d.o.o. u primjeni je sustav za automatsku naplatu prijevoza. Sustav je integriran sa sustavom za nadzor i upravljanje prometom tvrtke ATRON electronic GmbH, dok je za sustav automatske naplate karata i podršku uređajima proizveden od strane tvrtki Mikroelektronika i King ICT. Uređaji i oprema za naplatu i validaciju prijevoznih karata povezani su s ostalom opremom sustava za nadzor i upravljanje prometom putem IBIS protokola. Naručitelj trenutno u svom sustavu koristi sljedeće uređaje za naplatu i validaciju karata: Proizvođač Model Mikroelektronika CV24DCTEA Mikroelektronika CV24FCTEA Mikroelektronika CVB25 Mikroelektronika CVT25 Mikroelektronika CVB48 Mikroelektronika CVT48 Naručitelj trenutno u svom sustavu koristi sljedeće uređaje za nadzor i upravljanje prometom: Proizvođač Model ATRON electronic GmbH AVG4 ATRON Vehicle Geteway Uređaji i oprema za naplatu i validaciju prijevoznih karata koji su predmet ove nabave moraju biti u potpunosti kompatibilni s postojećim sustavom za naplatu i validaciju karata te sa sustavom za nadzor i upravljanje prometom, uključujući komunikaciju putem IBIS protokola."
+    ]
+  },
+  "gpa-lot": [
+    true
+  ],
+  "buyer-name": {
+    "hrv": [
+      "GRAD ZAGREB",
+      "ZAGREBAČKI ELEKTRIČNI TRAMVAJ d.o.o."
+    ]
+  },
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "HR050"
+  ],
+  "form-type": "competition",
+  "contract-duration-start-date-lot": [
+    "2026-11-30+01:00"
+  ],
+  "publication-number": "705429-2026",
+  "main-classification-lot": [
+    "30123100"
+  ],
+  "document-url-lot": [
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212",
+    "https://eojn.hr/tender-eo/100212"
+  ],
+  "official-language": [
+    "HRV"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "4000000",
+  "contract-nature-main-proc": "supplies",
+  "electronic-ordering-lot": [
+    false
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "duration-period-value-lot": [
+    "12"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "change-notice-version-identifier": "19fbdbe1-fce3-4376-9e93-65d5412e0e62-01",
+  "buyer-country": [
+    "HRV",
+    "HRV"
+  ],
+  "guarantee-required-lot": [
+    "true"
+  ],
+  "place-of-performance-country-lot": [
+    "HRV"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "09:00:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "30123100",
+    "30123100"
+  ],
+  "submission-language": [
+    "HRV"
+  ],
+  "title-lot": {
+    "hrv": [
+      "NABAVA I UGRADNJA OPREME ZA ELEKTRONIČKU NAPLATU I VALIDACIJU KARATA U JAVNOM PRIJEVOZU"
+    ]
+  },
+  "description-proc": {
+    "hrv": "Predmet nabave je NABAVA I UGRADNJA OPREME ZA ELEKTRONIČKU NAPLATU I VALIDACIJU KARATA U JAVNOM PRIJEVOZU. CPV oznaka i naziv: 30123100 - Uređaji za poništavanje karata OPIS PREDMETA NABAVE: Oprema koja je predmet ove nabave namijenjena je zamjeni zastarjelih, neispravnih i oštećenih uređaja u tramvajima i autobusima, te opremanju tramvajskih vozila i autobusa kojima se dopunjava vozni park Naručitelja. Od 2009. godine u Zagrebačkom električnom tramvaju d.o.o. u primjeni je sustav za automatsku naplatu prijevoza. Sustav je integriran sa sustavom za nadzor i upravljanje prometom tvrtke ATRON electronic GmbH, dok je za sustav automatske naplate karata i podršku uređajima proizveden od strane tvrtki Mikroelektronika i King ICT. Uređaji i oprema za naplatu i validaciju prijevoznih karata povezani su s ostalom opremom sustava za nadzor i upravljanje prometom putem IBIS protokola. Naručitelj trenutno u svom sustavu koristi sljedeće uređaje za naplatu i validaciju karata: Proizvođač Model Mikroelektronika CV24DCTEA Mikroelektronika CV24FCTEA Mikroelektronika CVB25 Mikroelektronika CVT25 Mikroelektronika CVB48 Mikroelektronika CVT48 Naručitelj trenutno u svom sustavu koristi sljedeće uređaje za nadzor i upravljanje prometom: Proizvođač Model ATRON electronic GmbH AVG4 ATRON Vehicle Geteway Uređaji i oprema za naplatu i validaciju prijevoznih karata koji su predmet ove nabave moraju biti u potpunosti kompatibilni s postojećim sustavom za naplatu i validaciju karata te sa sustavom za nadzor i upravljanje prometom, uključujući komunikaciju putem IBIS protokola."
+  }
+}

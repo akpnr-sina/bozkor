@@ -44,8 +44,10 @@ Zamanlayıcı (pg-boss)
   -> raw_notices (ham JSON / XML)
   -> normalize -> tenders, lots, documents (sadece URL)
   -> match: her aktif profil, deterministik
-  -> triage job (triage modeli, sadece ilan metni)
-  -> skor >= profil eşiği ise: fetch_documents job
+  -> facts job (triage modeli, ilan metni): olgular, alıntılı (bölüm 7.0)
+  -> assess (kod): yeterlilik politikası, lot bazında durum, puan aralıkları ve gerekçe
+  -> translate job: ekibin gördüğü ilanların Türkçesi (bölüm 7.1a)
+  -> umut verici ya da doküman gereken ihalelerde: fetch_documents job (Faz 5)
   -> profil autoAnalyze açıksa ya da kullanıcı "Analiz et" derse: deep_analysis job
   -> günlük özet e-postası (08:00 İstanbul)
 ```
@@ -95,6 +97,7 @@ Alan eşlemesi (`normalize.ts`):
 | documents_portal_url | `tender.submissionMethodDetails` içindeki ilk URL (çıplak alan adına https eklenir); yoksa ilk `biddingDocuments` linki |
 | lots | `tender.lots[]`: `id` lot_number olur; CPV'ler `items[relatedLot]`'tan, değer `lot.value`'dan |
 | documents | `planning.documents` ve `tender.documents` içinde linki olanlar; ilan sayfaları (`noticeType` olan ya da türü `...Notice` ile biten) hariç. Bir kısmı doğrudan dosya (`/Notice/Attachment/...`), bir kısmı portal giriş sayfası |
+| details | Sözleşme detayları (`NoticeDetails`, ortak yardımcılar `src/sources/details.ts`). Süre: `tender.contractPeriod` ve `lots[].contractPeriod` (`durationInDays`, yoksa `startDate` ile `endDate` arası), en uzunu, ay olarak, uzatmalar hariç. framework `tender.techniques.hasFrameworkAgreement`, electronicOrdering `tender.contractTerms.hasElectronicOrdering`, gpaCovered `tender.coveredBy` içinde GPA (alan yoksa null). Ödül kriterleri `lots[].awardCriteria.criteria[]`: tür (price, quality, cost), ad, açıklama; ağırlık `numbers[].weight` koduna göre yüzdeye çevrilir, eski rejimde ağırlık açıklamadaki sayıdır. `weightingDescription` (örn. geçme puanı) türsüz son kriter olur. Lotlar aynı listeyi veriyorsa tek liste, yoksa lotların farklı kriterleri. Seçim kriterleri `tender.selectionCriteria` ve `lots[].selectionCriteria` (tür suitability, economic, technical); `otherRequirements.requiresStaffNamesAndQualifications` staffNamesAndQualifications kriteri olur. performanceTerms `tender.contractTerms.performanceTerms`, submissionLanguages `tender.submissionTerms.languages`. FaT teminat şartını vermez, guaranteeRequired hep null. Sonuç ilanlarında ve kısmi eski rejim düzeltmelerinde null |
 
 Bilinen veri tuhaflıkları:
 
@@ -124,7 +127,7 @@ Senkron (`src/sources/sync.ts`):
 - Yazılım (CPV 48) mal alımı sayıldığı için sunucuda elenmez (13 Ekim'de supplies ilanlarının ~%7'si). Ham kaydı saklanır ama ana CPV'si 48 ile başlayan prosedürden ihale oluşturulmaz. Kapsam kuralının ayrıntısı bölüm 1'de.
 - Sonuç ilanları (`form-type` result) şimdilik çekilmiyor. Bu yüzden TED ihaleleri awarded olmaz; son tarih geçince kapalı görünür (kapanış son tarihten türetilir).
 - Sayfalama kaydırma (ITERATION) moduyla. Sunucu bir point in time tutar: sayfalar arasında ilan kaçmaz ya da tekrarlanmaz, sonuç sayısında üst sınır yoktur (sayfa numaralı modda 15.000). Token her sayfada değişir ve hiç null gelmez; son sayfa `notices: []` ve dolu bir tokenla gelir. Kaydırma boş `notices` ile biter (tokensız sayfa da bitirir). Aynı token tekrar gelirse döngü hatası; en fazla 2.000 sayfa.
-- Sayfa boyutu: en fazla 250 ilan ve 10.000 alan. API alanı `limit × (alan sayısı + 1)` olarak sayar, çünkü her ilana `links` ekler. İstemci `limit` = min(250, floor(10.000 / (alan sayısı + 1))) kullanır: 44 alanla 222 (14 Ekim'de 45 alanla 217 geçti, 222 HTTP 400 `SEARCH_FIELDS_PER_PAGE_EXCEEDS_MAX_LIMIT` aldı). `fields.ts`'e alan eklenince limit kendiliğinden küçülür.
+- Sayfa boyutu: en fazla 250 ilan ve 10.000 alan. API alanı `limit × (alan sayısı + 1)` olarak sayar, çünkü her ilana `links` ekler. İstemci `limit` = min(250, floor(10.000 / (alan sayısı + 1))) kullanır: 62 alanla 158 (14 Ekim'de 45 alanla 217 geçti, 222 HTTP 400 `SEARCH_FIELDS_PER_PAGE_EXCEEDS_MAX_LIMIT` aldı). `fields.ts`'e alan eklenince limit kendiliğinden küçülür.
 - Yanıt: `notices`, `totalNoticeCount`, `iterationNextToken`, `timedOut` (Zod ile doğrulanır). `timedOut: true` gelirse sayfa eksik olabilir; istemci hata fırlatır, çalıştırma düşer ve sonraki çalıştırma aynı günleri yeniden çeker.
 - Tarihler: TED yayın tarihi gündür. Senkron penceresinin başı ve sonu Brüksel takvimine göre güne çevrilir (`tedDay`; yaz saatinde 22:00 UTC, kışın 23:00 UTC ertesi gündür).
 - Tamamlanan günler: aynı istemci örneği, hatasız biten bir kaydırmanın bugünden önceki günlerini tamamlandı sayar. Sonraki pencerede baştaki tamamlanmış günler atlanır, hepsi tamamsa istek atılmaz. Bugün hiç işaretlenmez, çünkü günün baskısı henüz yayımlanmamış olabilir. Hata, `timedOut` ya da sayfa işlenirken düşen bir senkron hiçbir günü işaretlemez. Backfill pencereleri günün herhangi bir saatinde başladığından, her gün böylece bir kez çekilir.
@@ -162,6 +165,7 @@ Eşleme (`src/sources/eu-ted/normalize.ts`):
 | published_at | `publication-date` gününün başlangıcı, ofsetiyle (`2026-10-13+02:00`, 2026-10-12T22:00Z olur). ECB kuru da bu günün (Frankfurt takvimi) kurudur |
 | lots | `identifier-lot` sırasıyla. Başlık, açıklama, ana CPV, değer ve para birimi aynı sıradaki elemandan alınır, ama sadece alanın lot sayısı kadar elemanı varsa. Tek elemanlı lot para birimi tüm lotlara uygulanır. Lot ek CPV'leri düz liste geldiği için lota bağlanmaz (ihalenin CPV'lerine girer) |
 | documents | `document-url-lot` içindeki tekil http(s) linkler (`procurementDocuments` türüyle). Çoğu ulusal e-ihale portalının sayfası, doğrudan dosya değil |
+| details | Sözleşme detayları (`NoticeDetails`). Süre: `duration-period-value-lot` ve `duration-period-unit-lot` (BT-36; DAY, WEEK, MONTH, YEAR) ya da `contract-duration-start-date-lot` ile `contract-duration-end-date-lot` arası (BT-536, BT-537); en uzun lot, ay olarak, uzatmalar hariç. framework: `framework-agreement-lot` (BT-765) içinde none dışında bir kod (fa-wo-rc, fa-w-rc, fa-mix). electronicOrdering `electronic-ordering-lot`, gpaCovered `gpa-lot` (BT-115), guaranteeRequired `guarantee-required-lot` (BT-751): herhangi bir lot evetse true. Ödül kriterleri: `award-criterion-type-lot` (BT-539), `award-criterion-name-lot` (BT-734), `award-criterion-description-lot` (BT-540), `award-criterion-number-lot` (BT-541) ve `award-criterion-number-weight-lot` (BT-5421: per-exa / per-mid yüzde, dec-exa / dec-mid ondalık, poi-exa / poi-mid puan, ord-imp önem sırası). Ağırlık yüzdeye çevrilir: ondalık ×100, puan lotun toplam puanına oranla, önem sırası null. Seçim kriterleri: `selection-criterion-lot` (BT-747 kodu, örn. slc-abil-ref-supply), açıklama `selection-criterion-name-lot` ve `selection-criterion-description-lot`. performanceTerms `term-performance-lot` (BT-70), HTML'den düz metne. submissionLanguages `submission-language`, iki harfe çevrilmiş. Bu alanların hiçbiri yoksa null |
 
 Bilinen veri tuhaflıkları:
 
@@ -173,6 +177,9 @@ Bilinen veri tuhaflıkları:
 - Nadiren son tarihi hiç olmayan çağrı ilanı gelir (13 Ekim'de 1/642); son tarihi bilinmediği için açık görünür.
 - MDL (Moldova) gibi ECB'nin yayınlamadığı para birimlerinde value_eur boş kalır.
 - `competition-termination-proc` (BT-756) eForms'a göre sadece sonuç ilanlarında bulunur, çekilmez.
+- Ödül ve seçim kriterleri tüm lotlar için tek düz liste gelir, lota bağlanamaz. Her lot aynı listeyi tekrar ediyorsa (çok lotlu ilanlarda sık) tek liste kalır ve puanlar oranlanır; lotların listeleri farklıysa tekrarlar atılır, puanlar null kalır. Ad ve açıklama sadece kriter sayısı kadar eleman varsa eşlenir.
+- Evet/hayır alanları (`electronic-ordering-lot`, `gpa-lot`, `guarantee-required-lot`) bazen boolean, bazen "true" / "false" metni olarak gelir. `term-performance-lot` bazı ilanlarda (Hırvatistan) HTML etiketleriyle gelir.
+- 15 Ekim'de 250 ilanlık örnekte `contract-conditions-description-lot` hiç, `quantity-lot` 5 kez geçti; ikisi de çekilmez. `contract-duration-period-oth-lot` (UNKNOWN, UNLIMITED) da çekilmez, süre null kalır.
 
 Bilinen eksikler:
 
@@ -185,6 +192,7 @@ Birleştirme ve senkron:
 - Birleştirme FaT ile aynı kurallarla (`fold.ts`). TED yayın tarihi gün olduğundan aynı gün yayınlanan iki ilan ilan numarasına göre sıralanır; bir değişiklik ancak asıl ilan yayınlandıktan sonra gönderilebildiği için pratikte aynı güne düşmezler.
 - Artımlı: günde 2 kez (pg-boss `sync-eu-ted`, `30 11,17 * * *`, İstanbul). Sabah baskısını öğlen, geciken baskıyı akşam alır. İlk çalışmada son 24 saat.
 - Backfill: `pnpm backfill --source=eu_ted --days=30`. `pnpm renormalize --source=eu_ted` FaT'deki gibi.
+- `pnpm enrich-ted`: `TED_FIELDS`'e sonradan eklenen alanlar (örn. sözleşme detayları) eski ham kayıtlarda yoktur ve renormalize bunları getiremez. Komut, güncel eşleşmesi (unmatched_at boş) ya da kararı olan TED ihalelerinin tüm ilanlarını `publication-number IN (...)` sorgusuyla 100'erli gruplar halinde yeniden çeker (15 Ekim'de 100 numara tek sayfada geldi), yeni payload'ları ham kayıt olarak ekler ve bu prosedürleri yeniden hesaplar. Birleştirme her ilanın en son çekilen payload'ını okur. changed_at basmaz; tekrar çalıştırınca bir şey yazmaz. Tüm ham kayıtları yeniden çekmek yerine sadece ekibin gördüğü ihaleler zenginleştirilir.
 
 ### 4.3 Kurlar
 
@@ -199,15 +207,17 @@ ECB günlük referans kurları. `value_eur` hesaplanır; orijinal tutar ve para 
 
 - `sources`: id (`uk_fat`, `eu_ted`), cursor, last_synced_at, last_error
 - `raw_notices`: id, source, external_id, procedure_key, payload (jsonb) ya da payload_xml (text), sha256, fetched_at, applied_at. (source, external_id, sha256) tekil: aynı payload tekrar yazılmaz, değişen payload yeni satır olur. procedure_key ile bir prosedür ham veriden yeniden hesaplanabilir.
-- `tenders`: id, source, external_id, procedure_key (tekilleştirme), notice_type, regime (`covered` | `below_threshold` | `utilities` | `defence` | `unknown`), contract_nature (`goods` | `services` | `works`, belirtilmemişse null), status (`open` | `closed` | `awarded` | `cancelled`), title, description, buyer_name, buyer_country, nuts_code, cpv_main, cpv_additional[], value_amount, value_currency, value_eur, published_at, submission_deadline, clarification_deadline, procedure_type, notice_language, notice_url, documents_portal_url, changed_at, created_at, updated_at
+- `tenders`: id, source, external_id, procedure_key (tekilleştirme), notice_type, regime (`covered` | `below_threshold` | `utilities` | `defence` | `unknown`), contract_nature (`goods` | `services` | `works`, belirtilmemişse null), status (`open` | `closed` | `awarded` | `cancelled`), title, description, buyer_name, buyer_country, nuts_code, cpv_main, cpv_additional[], value_amount, value_currency, value_eur, published_at, submission_deadline, clarification_deadline, procedure_type, notice_language, notice_url, documents_portal_url, details (jsonb: süre, çerçeve anlaşma, elektronik sipariş, GPA, ödül ve seçim kriterleri, teminat, ifa şartları, teklif dilleri; ilanlar belirtmiyorsa null; eşleme bölüm 4.1 ve 4.2), changed_at, created_at, updated_at
 - `lots`: id, tender_id, lot_number, title, description, cpv, value_amount, value_currency, quantity_text
 - `documents`: id, tender_id, origin (`auto` | `manual`), source_url, title, document_type, filename, mime, size_bytes, sha256, storage_path, page_count, text_content (DOCX / XLSX için), fetch_status (`pending` | `fetched` | `needs_manual` | `failed` | `unsupported`), fetch_error. Otomatik dokümanlarda (tender_id, source_url) tekil.
 - `categories`: id, name, cpv_prefixes[], description. Profiller ve ileride üreticiler bu ortak taksonomiyi kullanır.
-- `criteria_profiles`: id, name, active, rules (jsonb, şema bölüm 6), created_at, updated_at
+- `criteria_profiles`: id, name, active, rules (jsonb, şema bölüm 6), triage_inputs_changed_at, created_at, updated_at
 - `profile_matches`: profile_id, tender_id, matched_at, filter_reasons (jsonb), triage_score, triage_analysis_id, state (`new` | `seen` | `dismissed`), unmatched_at (profil artık istemiyorsa; satır silinmez)
-- `analyses`: id, tender_id, profile_id (opsiyonel), kind (`triage` | `deep`), model, prompt_version, document_ids[], output (jsonb), valid, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, error, created_at
+- `analyses`: id, tender_id, profile_id (opsiyonel), kind (`triage` | `deep` | `translation` | `facts`), model, prompt_version, document_ids[], output (jsonb), valid, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, error, created_at
 - `tender_reviews`: id, tender_id, decision (`GO` | `REVIEW` | `NO_GO` | `WATCH` ya da boş), note, decided_by, decided_at. Append-only; son kayıt geçerli karardır, geçmiş görünür. Kararı geri almak, kararı boş yeni bir kayıt eklemektir.
 - `fx_rates`: date, currency, rate_per_eur (1 EUR karşılığı birim), fetched_at. ECB referans kurları.
+- `tender_assessments`: tender_id (birincil anahtar), facts_analysis_id, policy_version, status (bölüm 7.0.2), best_lot, explanation, blocking[] (takılan kapılar), fit_low, fit_high, preliminary_low, preliminary_high, confidence, assessed_at, status_changed_at. İhale başına yeterlilik politikasının güncel kararı; elenen ihaleler de kalır.
+- `assessment_history`: id, tender_id, facts_analysis_id, policy_version, status, best_lot, explanation, blocking[], created_at. Durum, lot ya da politika sürümü her değiştiğinde bir satır (kalibrasyon için).
 
 Tüm tablolarda RLS açık ve politikasızdır; uygulama Postgres'e doğrudan bağlanır, Supabase Data API bu tablolara erişemez.
 
@@ -270,19 +280,74 @@ Başlangıç kategorileri (seed; CPV önekleri başlangıç önerisidir, kullan�
 
 ## 7. AI analizi
 
-### 7.1 Triage
+### 7.0 Yeterlilik politikası
 
-Model: `LLM_TRIAGE_MODEL`. Girdi: ilan metni, lotlar, profil açıklaması ve profil soruları. Doküman okunmaz. Çıktı:
+Değerlendirme çerçevesi Bozkor'un yeterlilik politikasıdır: `docs/qualification-policy-v1.md` (15 Ekim 2026). İlk deneme olan rubrik V2'de (`docs/scoring-rubric-v2.md`) ekip, yüksek puanlı ihalelerin elle kontrolde Bozkor'a uymadığını gördü; aynı gün bu politikaya geçildi.
 
-```json
-{
-  "relevance": 72,
-  "reasons": ["..."],
-  "productSummary": "...",
-  "quantityHint": "...",
-  "noticeRedFlags": ["..."]
-}
-```
+Mimari (politika bölüm XII): olgu çıkarma ile puanlama ayrıdır.
+
+- Olgular (AI): model ilanı okur ve ne yazdığını alıntıyla söyler. Puan ya da karar vermez; ilan bir konuda sessizse olgu UNKNOWN kalır ("sessizlik kanıt değildir").
+- Politika motoru (kod, `src/policy/`): olgular, kodun bildiği değerler (EUR tutar, son tarih, ülke, ilanın yapılandırılmış alanları) ve yapılandırılabilir politika (`src/policy/policy.ts`, sürüm `policy.v1`) girer; her lot için puanlar, kapılar, durum, Türkçe gerekçe ve sonraki adımlar çıkar. Saf fonksiyon: `assessTender(input, policy)`.
+
+#### 7.0.1 Olgular
+
+Model `LLM_TRIAGE_MODEL`, prompt `prompts/facts.v1.md`, şema `src/analysis/facts-schema.ts`, girdi `src/analysis/facts-input.ts`, iş `src/analysis/facts.ts`, alıntı kontrolü `src/analysis/facts-evidence.ts`.
+
+- Girdi: triage ile aynı ilan düzeni (bilgiler, başlık, açıklama, lotlar), yapılandırılmış ayrıntı satırları (süre, çerçeve anlaşma, elektronik sipariş, GPA, teminat, teklif dilleri, değerlendirme kriterleri) ve alıntılanabilir bölümler: seçim kriterleri, ifa koşulları ve doküman açıklamaları (bazı alıcılar şartnameyi buraya yazar, ör. FaT 096535). Profil girmez; olgular ihale başına bir kez çıkarılır.
+- Çıktı: her lot için ürün (Türkçe), Bozkor kategorisi (politika bölüm III, 16 kod), alınan şeyin türü (mal, hizmet, yapım, mal ve bağlı hizmet), ürün niteliği (standart, özel üretim, uzmanlık isteyen) ve miktar türü; ihale düzeyinde kurulum, sahada devreye alma ve eğitim, yerinde servis (her biri geçtiği lotların listesiyle; listede olmayan lot için bilinmiyor sayılır), garanti yılı (açıkça istenmiyorsa 0), teslimat düzeni ve noktaları, süre, çerçeve anlaşma, marka şartı, belgeler (istekli, üretici, ürün, projeye özel), referans ve ciro şartı, numune, saha ziyareti, kontrole tabi ürün, değerlendirme yöntemi ve bilinmeyenleri çözecek dokümanlar. Her olgu birebir alıntıyla.
+- Alıntılar yanıt geldiği anda modelin okuduğu metinde aranır ve sonuç yanıtla saklanır (kural 5). Alıntısı bulunamayan olgu sayfada "doğrulanmadı, kararda kullanılmadı" görünür; motor onu bilinmiyor sayar. Yapılandırılmış alanlar (süre, çerçeve, değerlendirme kriterleri, teklif dili, GPA) motora doğrudan `tenders.details`'ten gelir ve modelin okumasına göre önceliklidir.
+- Bekleyen ihaleler: aktif bir profilin güncel eşleşmesi olan açık ihaleler ve kararı verilmiş her ihale (kalibrasyon için); güncel prompt sürümünden yanıt yoksa ya da ihale, olgular için okunduktan sonra yeniden yazıldıysa (`updated_at`: yeni ilan, `renormalize`, `enrich-ted`; okuma anı yanıtla birlikte `inputUpdatedAt` olarak saklanır, model yanıt verirken gelen yazma da kaçmaz). Doküman açıklamaları önce şartname ve ihale dokümanları gelecek sırayla okunur. Kayıt `analyses`'e (kind `facts`, profil yok), maliyetiyle (kural 7). Geçersiz yanıt bir kez tekrar denenir (kural 6); lotlar girdiyle birebir ve aynı sırada olmalı. Efor "medium", sınır 16.000 token. Olgu şeması API'nin çıktı dilbilgisi için fazla büyük ("compiled grammar is too large", 16 Ekim 2026): istek çıktı biçimi göndermez, şema JSON Schema olarak sistem promptunun sonuna eklenir ve yanıt kodda Zod ile doğrulanır; kod bloğuna sarılı yanıt da okunur.
+- Worker işi `facts` 10 dakikada bir en fazla 200 ihale işler, aylık bütçe dolunca durur; başarılı her turdan sonra değerlendirme çalışır. `pnpm facts [--limit=50] [--tender=<id>] [--notice=<ilan no>,...]` elle çalıştırır ve seçilen ihalelerin kararını yazdırır.
+- Maliyet: Haiku 5.5 ile ihale başına yaklaşık 0,002 USD.
+- `tenders.details` zenginleştirmesi (`pnpm enrich-ted`, `renormalize`) `changed_at` basmaz ama ihaleyi yeniden yazar; olgular bir sonraki turda yeniden çıkarılır. Tüm ihaleleri `renormalize` etmek, eşleşen ihalelerin olgularını yeniden çıkartır (ihale başına ~0,002 USD). Worker işi `enrich-ted` her gün 05:45'te ayrıntısı eksik eşleşmiş TED ihalelerini zenginleştirir.
+- `pnpm facts --notice` FaT ve TED aynı numara biçimini kullandığı için `fat:` ya da `ted:` öneki alır; iki kaynakta da olan öneksiz numara işlenmez.
+
+#### 7.0.2 Politika motoru
+
+- Lot bazında değerlendirme (bölüm XII.1): her lot kendi ürünü, kategorisi ve değeriyle değerlendirilir; ihale en umut verici lotunun durumunu alır.
+- Sekiz boyut (bölüm V.2: A 15, B 15, C 15, D 20, E 15, F 10, G 5, H 5) ölçütlerden oluşur. Bilinmeyen ölçüt aralık verir: alt sınır en kötü, üst sınır en iyi durum. Üç puan: fırsat uyumu (A, C, F), teklif hazırlığı (B, G), ticari uygunluk (D, E); ayrıca 100 üzerinden ön puan ve güven (bilinen ağırlığın oranı). Üretici veritabanı (Faz 8), marj ve nakit planı henüz yok; bu ölçütler bilinmiyor sayılır.
+- Kapılar (bölüm VI): H01-H05 kesin, C01-C09 koşullu; her biri PASS, FAIL, UNKNOWN ya da NOT_APPLICABLE. Bilinmeyen ne başarısız ne başarılı sayılır. H03 ve H05 yalnız doğrulanmış bir şart kalan sürede karşılanamıyorsa başarısız olur: örneğin zorunlu yerinde servis var, o ülkede ortak yok ve son tarihe 10 iş gününden az kaldı. H03 için doğrulanmış sayılan: Bozkor'un kendi referansı olmaması ve elinde olmayan istekli belgesi. Ciro şartı tutar karşılaştırılmadığı için yalnız yeterlilik incelemesine gönderir.
+- Yerel yükümlülük: sahada kurulum ve yerinde servis; devreye alma ve eğitim yalnız bunlarla birlikte ya da uzmanlık isteyen üründe (tek başına uzaktan ya da üretici tesisinde verilebilir; puana ve sonraki adıma girer).
+- Çıkarım karar vermez: teslimat düzeni yazmayan ama elektronik siparişli uzun sözleşme yalnız puana ve gerekçeye "tekrarlanan siparişlere işaret ediyor" olarak girer; durum doküman gerekli kalır.
+- Yalnızca teslim (ekip kararı, 16 Ekim 2026; `supplyOnly`, policy.v2): sahada kurulum, yerinde servis ya da bakım, sahada devreye alma ya da eğitim isteyen lot, ortak ve süre ne olursa olsun "Ticari olarak uygun değil" olur; gerekçe "ürün teslimine ek olarak ... istiyor" der. Basit montaj (`MINOR`) da şimdilik eler (policy.v3, `allowMinorAssembly`). Anahtar kapatılırsa aşağıdaki ortak kuralları (yerel ortak gerekli, süre yetmiyorsa teklif verilemez) devreye girer.
+- Durum sırası: süresi doldu (H01), kapsam dışı (lot hizmet ya da yapım alımı: "Kesin ret"; ilanın sözleşme türü mal dese de), yalnızca teslim kuralı, teklif verilemez (H03, H05), ticari olarak uygun değil (bölüm I örneklerinin kuralları: 12 aydan uzun, düşük tutarlı sözleşmede yerinde servis; 12 aydan uzun sözleşmede ilanda yazan tekrarlı küçük siparişler ya da garantisiz çerçeve, aylık ortalama 2.000 EUR altı; düşük tutarlı sözleşmede sahada kurulum, uzmanlık isteyen ekipman hariç), yeterlilik incelemesi (referans, ciro ya da Bozkor'da olmayan istekli belgesi şartı; kontrole tabi ürün), yerel ortak gerekli, izle (fırsat uyumu düşük), doküman gerekli (kurulum, servis, referans, garanti ya da teslimat düzeninden biri bilinmiyor), üretici bulunmalı. Kısa liste ve teklif incelemesi, üretici ve doküman doğrulaması geldiğinde (Faz 6, 8) ulaşılabilir olur; motor hiçbir zaman teklif onayı vermez (bölüm X).
+- Her durumun somut Türkçe gerekçesi (tutar, süre, ülke, şart) ve final olmayan durumlarda sonraki adımları vardır (bölüm XII.4, XII.5).
+- Yapılandırma: sermaye, değer segmentleri, düşük tutar sınırı (35.000 EUR), uzun sözleşme (12 aydan uzun), aylık asgari gelir, marj hedefi, asgari mutlak katkı, teklif hazırlama ve ortak bulma süreleri, servis ortağı olan ülkeler, Bozkor'un kendi referans ve belge durumu, çalışma dilleri, ağırlıklar ve bantlar. Bir değer değişince sürüm artar ve sonraki değerlendirmede tüm ihaleler yeniden değerlendirilir.
+- Regresyon testleri politika bölüm I ve IX'un altı gerçek ilanıyla: `src/policy/engine.test.ts`, fixture'lar `tests/fixtures/eu-ted/ted-policy-*` ve `tests/fixtures/uk-fat/uk4-policy-*`.
+
+#### 7.0.3 Saklama ve gösterim
+
+- Worker işi `assess` 15 dakikada bir ve her olgu turundan sonra olgusu olan her ihaleyi değerlendirir: süre geçtikçe durum değişebilir, yeni politika sürümü her şeyi yeniden değerlendirir. LLM işleri turda en fazla 60 ihale işler; kuyruklarda 60 saniyelik kalp atışı var, durdurulan worker'ın yarım kalan işi bir dakikada serbest kalır. Anthropic kredisi bitince çalıştırma ilk hatada durur ve logda Türkçe uyarı çıkar. Yazanlar işlem düzeyinde danışma kilidiyle sıraya girer (worker ve komut satırı aynı anda çalışabilir); bir ihalede hata diğerlerini durdurmaz; en son olgusu okunamayan ihalenin kararı kaldırılır. `tender_assessments` ihale başına güncel kararı tutar ve yalnız değişince yazılır; durum, lot ya da politika sürümü değişince `assessment_history`'ye satır eklenir (bölüm XII.6). `pnpm assess [--dry-run]` elle çalıştırır.
+- Puan gösterimi: tek sayı, aralığın ortası (beklenen puan); aralık detayda küçük, gelen kutusunda üzerine gelince görünür. Gerekçeler "fırsat uyumu yaklaşık N" der.
+- Gelen kutusu: durum rozeti ve beklenen uyum puanı, gerekçe başlığın altında; "Değerlendirme" filtresi (umut verici, koşullu, izle, elenen, süresi dolan, henüz değerlendirilmemiş) ve "Değerlendirme" sıralaması. Kapsam dışı (kesin ret) ihaleler varsayılan listede görünmez (GO, REVIEW ya da WATCH kararı varsa görünür); "Elenen" filtresinde bulunur. Birden fazla ret nedeni varsa gerekçe hepsini yazar. `pnpm assess --report` kararların dağılımını, ret nedenlerini, ortak bulma süresine duyarlılığı ve örnek gerekçeleri yazar (hiçbir şey yazmaz).
+- İhale detayı: lot bazında durum ve gerekçe, üç puan ve ön puan aralığı, güven, sonraki adımlar, kapılar, boyut puanlarının nedenleri ve olgular (alıntı ve kaynağı ya da "doğrulanmadı"). Tam değerlendirme sayfa açılınca aynı olgulardan yeniden hesaplanır.
+- Bilinen sınırlar: yükümlülükler ihale düzeyinde tek değerle ve geçtiği lotların listesiyle çıkarılır; lotlar farklı yükümlülük taşıyorsa en ağırı yazılır, diğerleri bilinmiyor sayılır. Olgular şimdilik yalnız ilandan; dokümanlar Faz 5-6'da eklenir. Gelen kutusundaki durum en fazla 15 dakika geriden gelebilir; detay sayfası anlık hesaplar. Finansman (C04) nakit modeli olmadan bilinmiyor kalır, "Finansman gerekli" durumu henüz üretilmez.
+
+### 7.1 Ortak LLM kuralları ve emekli triage
+
+Profil başına AI uygunluk puanı (triage, `prompts/triage.v1.md` ve `triage.v2.md`, rubrik V2'nin ilan aşaması) 15 Ekim 2026'da olgular ve yeterlilik politikasıyla değiştirildi: worker'da zamanlanmıyor, sayfada gösterilmiyor. Eski analizler `analyses`'te duruyor; kod ve `pnpm triage` şimdilik yerinde.
+
+Olgu çıkarma ve çeviri aynı altyapıyı kullanır (`src/analysis/runner.ts`, `llm.ts`, `pricing.ts`, `budget.ts`, `quotes.ts`):
+
+- Çıktı API'ye `output_config.format` ile JSON şeması olarak gönderilir (olgu çıkarmada şema promptta) ve her durumda Zod ile doğrulanır. Geçersiz yanıt (JSON değil, şemaya ya da işin kendi kontrollerine uymuyor, token sınırında kesildi) bir kez tekrar denenir; kesilen yanıt iki katı sınırla. Model reddettiyse tekrar denenmez. Başarısız denemeden sonra son geçerli sonuç kalır (kural 6).
+- Her çağrı `analyses`'e yazılır: API'nin döndürdüğü model sürümü, prompt sürümü, token sayıları ve istenen modelin fiyatıyla maliyet (kural 7). API'ye ulaşamayan çağrı da yazılır (çıktı boş, maliyet 0) ve bir saat sonra yeniden denenir. Fiyatı tanımlı olmayan model hiç çağrılmaz.
+- Alıntı eşleştirme büyük/küçük harf, boşluk, tırnak ve tire biçimlerini ve görünmez Unicode biçim karakterlerini (sıfır genişlikli boşluk, yumuşak tire) yok sayar; 8 karakterden kısa alıntı kanıt sayılmaz.
+- Haiku 5.5 varsayılan olarak düşünür ve düşünme `max_tokens`'a sayılır; efor açıkça verilir. İstemci zaman aşımını SDK'ya bırakır, en fazla 2 tekrar.
+- Otomatik işler 2 eşzamanlı çağrıyla çalışır, aylık bütçe dolunca durur; 401/403'te ya da art arda 5 API hatasında çalıştırma durur. Elle çalıştırma bütçe dolmuşsa uyarıp devam eder. Bütçe, çalıştırma başındaki harcama ve biten çağrılarla kontrol edilir; uçuştaki çağrılar kadar aşılabilir.
+- Worker ile komut satırı aynı anda çalışırsa aynı ihale iki kez işlenebilir; kayıtlar tutarlı kalır.
+
+### 7.1a Türkçe çeviri
+
+Ekibin gördüğü her ilan Türkçe gösterilir (ekip kararı, 15 Ekim 2026): aktif bir profille güncel eşleşmesi olan ya da son kararı verilmiş (geri alınmamış) ihaleler. Diğer ihaleler çevrilmez (tümünü çevirmek ayda ~40 USD ve ~50 MB demekti).
+
+- Model `LLM_TRIAGE_MODEL`, prompt `prompts/translate.v2.md`, kod `src/analysis/translate.ts` (yazma) ve `translations.ts` (okuma). Efor "medium", düşünme açık (16 Ekim 2026: v1'in Türkçesi bozuk ve açıklamaları tek blok bulundu).
+- Çıktı: açıklayıcı Türkçe başlık (ne alınıyor, varsa miktar ya da çerçeve anlaşma; ref numarası ve kurum adı yok), açıklamanın ve her lotun (başlık, açıklama) tam çevirisi. Çeviri doğal Türkçe söz dizimiyle ve ihale terimleri sözlüğüyle yapılır; açıklama içerik değişmeden konu konu paragraflara (boş satırla) ve "- " maddelerine ayrılır. Sayfa bunları paragraf ve madde listesi olarak gösterir (`src/components/formatted-text.tsx`); lot açıklamaları lot tablosunda açılır. Sayılar, kodlar, standartlar, tutarlar ve özel adlar korunur. Lot numaraları girdiyle birebir ve aynı sırada olmalı, aksi geçersizdir (kural 6).
+- Girdi sınırları: açıklama 8.000, en fazla 30 lot, lot açıklaması 1.500, toplam 30.000 karakter. Kısaltma olduysa bunu kod kaydeder ve sayfada not edilir; model kısaltılan kısmı uydurmaz.
+- Kayıt: `analyses` (kind `translation`, profil yok), her çağrı maliyetiyle (kural 7). Saklanan çıktı, çevrilen metinlerin parmak izini taşır; ilan değiştiyse sayfa çevirinin eski olduğunu söyler ve yeniden çevrilir. Prompt sürümü değişince de yeniden çevrilir. Başarısız denemede son geçerli çeviri kalır.
+- Worker işi `translate` 10 dakikada bir en fazla 200 ihale (önce açık ve son tarihi yakın olanlar), aynı aylık bütçeyle. `pnpm translate [--limit=50] [--tender=<id>]` elle çalıştırır.
+- Gösterim: gelen kutusunda Türkçe başlık ana başlık, orijinali altında. İhale detayında Türkçe başlık (orijinali altında, "AI çevirisi" notuyla), Türkçe açıklama (orijinal metin açılır bölümde) ve Türkçe lot başlıkları (orijinali üzerine gelince). Alıntılar orijinal dilde kalır.
+- Maliyet: ihale başına ~0,002-0,01 USD.
+- Akışsız çağrı kullanıldığı için çıktı sınırı en fazla 21.000 token (SDK daha yükseğini reddeder); tekrar denemede sınır ikiye katlanırken bu eşiği aşmaz.
 
 ### 7.2 Derin analiz
 
@@ -322,8 +387,8 @@ Kurallar:
 
 ## 8. Ekranlar
 
-- Gelen kutusu `/inbox`: eşleşen ihaleler. Filtreler: profil, kaynak, durum, karar. Kolonlar: başlık, alıcı, ülke, değer (EUR), kalan gün, triage skoru, doküman durumu, karar, "değişti" etiketi. Varsayılan sıralama: son tarihe göre, kapanmışlar gizli.
-- İhale detayı `/tenders/[id]`: ilan bilgileri ve orijinal ilan linki, lotlar, eşleşme nedenleri, triage sonucu, doküman listesi (durumlar, portal linki, sürükle bırak yükleme), "Analiz et" düğmesi, bölüm bölüm derin analiz (her iddianın yanında kaynak, doğrulanmamış alıntılar işaretli, eksik bilgi listesi), karar ve not alanı, karar geçmişi.
+- Gelen kutusu `/inbox`: eşleşen ihaleler. Filtreler: profil, kaynak, durum, karar, değerlendirme. Kolonlar: başlık (Türkçe, orijinali altında) ve değerlendirme gerekçesi, alıcı, ülke, değer (EUR), kalan gün, değerlendirme (durum ve uyum aralığı), doküman durumu, karar, "değişti" etiketi. Varsayılan sıralama: son tarihe göre, kapanmışlar gizli; "Değerlendirme" sıralaması en umut verici durumu öne alır. Sayfa başına 100 ihale, filtreler sayfa linklerinde korunur.
+- İhale detayı `/tenders/[id]`: ilan bilgileri ve orijinal ilan linki, lotlar, eşleşme nedenleri, değerlendirme (bölüm 7.0.3), doküman listesi (durumlar, portal linki, sürükle bırak yükleme), "Analiz et" düğmesi, bölüm bölüm derin analiz (her iddianın yanında kaynak, doğrulanmamış alıntılar işaretli, eksik bilgi listesi), karar ve not alanı, karar geçmişi.
 - Profiller `/profiles`: liste ve form. Formda canlı önizleme: "son 30 günde bu kurallarla kaç ilan eşleşirdi" ve ilk 10 örnek.
 - Ayarlar `/settings`: kaynak bazında son senkron zamanı ve son hata, aylık LLM harcaması ve sınır, kategori yönetimi.
 
@@ -367,12 +432,16 @@ Her faz kendi kabul kriterleri sağlanınca kapanır. Faz bitince CLAUDE.md'deki
 - Prosedür bazında gruplama, alpha-3'ten alpha-2'ye ülke çevirisi; `value_eur` Faz 2'deki kur modülüyle hesaplanır.
 - Kabul: Faz 1 ile aynı; ayrıca düzeltme ilanı gelen bir prosedür tek tender olarak kalıyor ve son tarih güncelleniyor.
 
-### Faz 4: Triage
+### Faz 4: İlan değerlendirmesi
 
-- `prompts/triage.v1.md`, Zod şeması, yeni eşleşmelerde otomatik job.
+15 Ekim 2026'da kapsam güncellendi: profil başına AI puanı yerine olgu çıkarma ve kodla yeterlilik politikası (bölüm 7.0).
+
+- `prompts/facts.v1.md`, Zod şeması, alıntı doğrulama; yeni eşleşmelerde ve kararlı ihalelerde otomatik iş.
+- Politika motoru, lot bazında; politika bölüm I ve IX'un altı gerçek ilanı regresyon testi.
+- Eşleşen ve karar verilen ihalelerin Türkçe çevirisi (bölüm 7.1a).
 - Maliyet kaydı ve aylık bütçe kontrolü.
-- Gelen kutusunda skor ve kısa gerekçe.
-- Kabul: 50 gerçek eşleşmede triage çalışıyor; geçersiz çıktılar kayıtlı ve oranı ayarlar sayfasında görünüyor.
+- Gelen kutusunda durum, uyum aralığı ve gerekçe; ihale detayında lot bazında değerlendirme ve olgular.
+- Kabul: 50 gerçek eşleşmede olgu çıkarma ve değerlendirme çalışıyor; geçersiz çıktılar kayıtlı ve oranı ayarlar sayfasında görünüyor; kullanıcı daha önce elle incelediği ihalelerden bir örneklemde durum ve gerekçeleri kontrol ediyor.
 
 ### Faz 5: Dokümanlar
 

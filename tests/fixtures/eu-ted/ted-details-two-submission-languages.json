@@ -1,0 +1,198 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-11-16+01:00"
+  ],
+  "notice-type": "cn-standard",
+  "award-criterion-description-lot": {
+    "eng": [
+      "The award criteria \"Delivery security and logistics\" will be evaluated based on an overall assessment of the tenderer ́s response to the requirements associated with the award criteria.",
+      "The award criteria \"Climate and environment consideration\" will be evaluated based on the tenderer ́s response to the requirements associated with the award criteria.",
+      "The award criteria \"Price\" will be evaluated based on the evaluation sum stated in the tenderer's response to the competition ́s price form. Tenderers shall submit a completed Price Form. Prices are stated in NOK excluding VAT."
+    ]
+  },
+  "main-classification-proc": [
+    "34992200"
+  ],
+  "submission-url-lot": [
+    "https://hyyr.no/procurement/cmpy1q1h4000104jrfu1qgtb9"
+  ],
+  "procedure-identifier": "cb4439a6-c830-4b56-bf20-4a4f0dc4427f",
+  "buyer-country-sub": [
+    "NO072"
+  ],
+  "additional-classification-proc": [
+    "34992100",
+    "34000000",
+    "44423400",
+    "31523000",
+    "35261000",
+    "34928470",
+    "34928472",
+    "34992300",
+    "34992000",
+    "31523200",
+    "44113900",
+    "44113000"
+  ],
+  "place-of-performance-country-proc": [
+    "NOR"
+  ],
+  "award-criterion-number-lot": [
+    "30",
+    "30",
+    "40"
+  ],
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "aecda806-b2a8-4793-b087-6532d942a189",
+  "title-proc": {
+    "eng": "Framework agreement - Road signs for the county road network in Troms."
+  },
+  "place-of-performance-subdiv-lot": [
+    "NO072"
+  ],
+  "term-performance-lot": {
+    "eng": [
+      "See Tender Documents"
+    ]
+  },
+  "estimated-value-lot": [
+    "22000000"
+  ],
+  "award-criterion-type-lot": [
+    "quality",
+    "quality",
+    "price"
+  ],
+  "dispatch-date": "2026-10-12+02:00",
+  "estimated-value-cur-lot": [
+    "NOK"
+  ],
+  "framework-agreement-lot": [
+    "fa-wo-rc"
+  ],
+  "award-criterion-name-lot": {
+    "eng": [
+      "Delivery security and logistics",
+      "Climate and environmental considerations",
+      "Price"
+    ]
+  },
+  "duration-period-unit-lot": [
+    "MONTH"
+  ],
+  "award-criterion-number-weight-lot": [
+    "per-exa",
+    "per-exa",
+    "per-exa"
+  ],
+  "description-lot": {
+    "eng": [
+      "Background Troms County needs to establish a new framework agreement for the ongoing procurement of signs with accompanying equipment for the county road network in Troms. The framework agreement shall cover ongoing needs connected to ordinary operation and maintenance, replacement of injured or missing signs and temporary signs for road works, and contribute to more predictable and quicker access to signs covered by the contract. The objective of the procurement is to ensure uniform ordering routines, stable security of deliveries, products with documented quality and a more efficient ordering and follow-up process. The framework agreement shall allow the county to cover both planned and urgent needs in a proper and practical way. Description of the assignment The assignment includes the delivery of standard road signs for use on county road in Troms, including signs for ordinary replacement, maintenance and temporary use in road works. The delivery shall cover several categories of signs, including danger signs, ban signs, signposts, information signs, as well as street and road display signs. The delivery also includes the necessary accessories and assembly equipment, including fasteners, post clamps and systems for setting up temporary signs. Furthermore, documentation shall be entered into that demonstrates that the products fulfil relevant requirements for, among other things, conformity, reflective class and shelf life. The contract also includes an option for the delivery of digital signs and the accompanying Intelligent Transport Systems (ITS) systems. The contracting authority reserves the right, but not the obligation, to use this option in the contract period. A system is requested that enables simple and uniform ordering across operational areas, with standardised products and clear marking. The tenderer must be able to handle distribution throughout Troms county and take care of both ongoing orders and a need for quick delivery in incidents and acute replacements. See the Requirement Specifications for further information on the contract ́s content and extent."
+    ]
+  },
+  "gpa-lot": [
+    true
+  ],
+  "buyer-name": {
+    "eng": [
+      "Troms Fylkeskommune"
+    ]
+  },
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "NO072"
+  ],
+  "form-type": "competition",
+  "publication-number": "704165-2026",
+  "main-classification-lot": [
+    "34992200"
+  ],
+  "additional-classification-lot": [
+    "34992100",
+    "34000000",
+    "44423400",
+    "31523000",
+    "35261000",
+    "34928470",
+    "34928472",
+    "34992300",
+    "34992000",
+    "31523200",
+    "44113900",
+    "44113000"
+  ],
+  "document-url-lot": [
+    "https://hyyr.no/procurement/cmpy1q1h4000104jrfu1qgtb9"
+  ],
+  "official-language": [
+    "ENG"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "22000000",
+  "contract-nature-main-proc": "supplies",
+  "electronic-ordering-lot": [
+    false
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "duration-period-value-lot": [
+    "48"
+  ],
+  "estimated-value-cur-proc": "NOK",
+  "buyer-country": [
+    "NOR"
+  ],
+  "guarantee-required-lot": [
+    "false"
+  ],
+  "place-of-performance-country-lot": [
+    "NOR"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "12:00:00+01:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "34992200",
+    "34992100",
+    "34000000",
+    "44423400",
+    "31523000",
+    "35261000",
+    "34928470",
+    "34928472",
+    "34992300",
+    "34992000",
+    "31523200",
+    "44113900",
+    "44113000",
+    "34992200",
+    "34992100",
+    "34000000",
+    "44423400",
+    "31523000",
+    "35261000",
+    "34928470",
+    "34928472",
+    "34992300",
+    "34992000",
+    "31523200",
+    "44113900",
+    "44113000"
+  ],
+  "submission-language": [
+    "NOR",
+    "ENG"
+  ],
+  "title-lot": {
+    "eng": [
+      "Framework agreement - Road signs for the county road network in Troms."
+    ]
+  },
+  "description-proc": {
+    "eng": "Background Troms County needs to establish a new framework agreement for the ongoing procurement of signs with accompanying equipment for the county road network in Troms. The framework agreement shall cover ongoing needs connected to ordinary operation and maintenance, replacement of injured or missing signs and temporary signs for road works, and contribute to more predictable and quicker access to signs covered by the contract. The objective of the procurement is to ensure uniform ordering routines, stable security of deliveries, products with documented quality and a more efficient ordering and follow-up process. The framework agreement shall allow the county to cover both planned and urgent needs in a proper and practical way. Description of the assignment The assignment includes the delivery of standard road signs for use on county road in Troms, including signs for ordinary replacement, maintenance and temporary use in road works. The delivery shall cover several categories of signs, including danger signs, ban signs, signposts, information signs, as well as street and road display signs. The delivery also includes the necessary accessories and assembly equipment, including fasteners, post clamps and systems for setting up temporary signs. Furthermore, documentation shall be entered into that demonstrates that the products fulfil relevant requirements for, among other things, conformity, reflective class and shelf life. The contract also includes an option for the delivery of digital signs and the accompanying Intelligent Transport Systems (ITS) systems. The contracting authority reserves the right, but not the obligation, to use this option in the contract period. A system is requested that enables simple and uniform ordering across operational areas, with standardised products and clear marking. The tenderer must be able to handle distribution throughout Troms county and take care of both ongoing orders and a need for quick delivery in incidents and acute replacements. See the Requirement Specifications for further information on the contract ́s content and extent."
+  }
+}

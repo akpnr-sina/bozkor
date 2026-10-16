@@ -2,13 +2,13 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { loadFixture } from "../../../../tests/helpers/fixtures";
 import { createTestDb } from "../../../../tests/helpers/test-db";
-import { criteriaProfiles, profileMatches, tenderReviews, tenders } from "@/db/schema";
+import { analyses, criteriaProfiles, profileMatches, tenderAssessments, tenderReviews, tenders } from "@/db/schema";
 import { rematch } from "@/matching/apply";
 import { profileRulesSchema } from "@/matching/rules";
 import { syncWindow } from "@/sources/sync";
 import type { SourceAdapter } from "@/sources/types";
 import { fatNoticeKeys, normalizeFatRelease } from "@/sources/uk-fat/normalize";
-import { loadInbox, readFilters, type Filters } from "./data";
+import { inboxQuery, loadInbox, readFilters, type Filters } from "./data";
 
 function fakeAdapter(pages: unknown[][]): SourceAdapter {
   return {
@@ -21,7 +21,7 @@ function fakeAdapter(pages: unknown[][]): SourceAdapter {
   };
 }
 
-const all: Filters = { profile: "", source: "", status: "open", decision: "" };
+const all: Filters = { profile: "", source: "", status: "open", decision: "", assessment: "", sort: "deadline", page: 1 };
 
 let testDb: Awaited<ReturnType<typeof createTestDb>>;
 let wide: string;
@@ -76,10 +76,15 @@ describe("loadInbox", () => {
     expect(helmet).toMatchObject({ isNew: true, current: true, decision: null, documentCount: 0 });
   });
 
-  it("applies the limit to tenders, not to match rows", async () => {
-    const { list, total } = await loadInbox(testDb.db, all, 2);
-    expect(list).toHaveLength(2);
-    expect(total).toBe(3);
+  it("pages over tenders, not match rows, and counts all of them", async () => {
+    const first = await loadInbox(testDb.db, all, 2);
+    expect(first.list).toHaveLength(2);
+    expect(first.total).toBe(3);
+    const second = await loadInbox(testDb.db, { ...all, page: 2 }, 2);
+    expect(second.list).toHaveLength(1);
+    expect(second.total).toBe(3);
+    expect(second.list[0]?.tenderId).not.toBe(first.list[0]?.tenderId);
+    expect(second.list[0]?.tenderId).not.toBe(first.list[1]?.tenderId);
   });
 
   it("filters by the latest decision, including a withdrawn one", async () => {
@@ -116,6 +121,67 @@ describe("loadInbox", () => {
     expect(decided.list[0]?.current).toBe(false);
     // The page still offers the filters: there are profiles, just none active.
     expect(decided).toMatchObject({ hasAnyProfile: true, profiles: [] });
+  });
+
+  it("sorts by the qualification verdict and filters by its group", async () => {
+    const { db } = testDb;
+    const idOf = async (externalId: string) => (await db.select({ id: tenders.id }).from(tenders).where(eq(tenders.externalId, externalId)))[0]!.id;
+    const medical = await idOf("096253-2026");
+    const helmet = await idOf("096315-2026");
+    const verdict = async (tenderId: string, status: "NEEDS_SUPPLIER" | "COMMERCIAL_NO_BID", fit: [number, number]) => {
+      const [facts] = await db
+        .insert(analyses)
+        .values({ tenderId, kind: "facts", model: "claude-haiku-5-5", promptVersion: "facts.v1", output: {}, valid: true })
+        .returning({ id: analyses.id });
+      await db.insert(tenderAssessments).values({
+        tenderId,
+        factsAnalysisId: facts!.id,
+        policyVersion: "policy.v1",
+        status,
+        bestLot: "",
+        explanation: `${status} gerekçesi`,
+        fitLow: fit[0],
+        fitHigh: fit[1],
+        preliminaryLow: fit[0],
+        preliminaryHigh: fit[1],
+        confidence: 50,
+      });
+    };
+    await verdict(helmet, "COMMERCIAL_NO_BID", [20, 60]);
+    await verdict(medical, "NEEDS_SUPPLIER", [70, 90]);
+
+    const { list, total } = await loadInbox(db, { ...all, sort: "assessment" });
+    expect(total).toBe(3);
+    expect(list.map((row) => [row.tenderId, row.assessmentStatus])).toEqual([
+      [medical, "NEEDS_SUPPLIER"],
+      [helmet, "COMMERCIAL_NO_BID"],
+      [expect.any(String), null],
+    ]);
+    expect(list[0]).toMatchObject({ fitLow: 70, fitHigh: 90, assessmentExplanation: "NEEDS_SUPPLIER gerekçesi" });
+
+    expect((await loadInbox(db, { ...all, assessment: "rejected" })).list.map((row) => row.tenderId)).toEqual([helmet]);
+    expect((await loadInbox(db, { ...all, assessment: "promising" })).list.map((row) => row.tenderId)).toEqual([medical]);
+    expect((await loadInbox(db, { ...all, assessment: "none" })).list.map((row) => row.assessmentStatus)).toEqual([null]);
+
+    // The decision view carries verdicts too.
+    await db.insert(tenderReviews).values({ tenderId: helmet, decision: "WATCH", decidedBy: "a@bozkor.com" });
+    expect((await loadInbox(db, { ...all, decision: "WATCH" })).list[0]).toMatchObject({ tenderId: helmet, assessmentStatus: "COMMERCIAL_NO_BID" });
+
+    // Out of scope leaves the everyday list but stays findable; a tender the team works on stays.
+    await db.update(tenderAssessments).set({ status: "HARD_REJECT" });
+    const everyday = (await loadInbox(db, all)).list.map((row) => row.tenderId);
+    expect(everyday).not.toContain(medical);
+    expect(everyday).toContain(helmet);
+    expect((await loadInbox(db, { ...all, assessment: "rejected" })).list.map((row) => row.tenderId).sort()).toEqual([helmet, medical].sort());
+
+    expect(inboxQuery({ ...all, sort: "assessment", assessment: "promising" }, 2)).toBe("?assessment=promising&sort=assessment&page=2");
+    expect(readFilters({ assessment: "rejected", sort: "assessment" })).toMatchObject({ assessment: "rejected", sort: "assessment" });
+    expect(readFilters({ assessment: "toString", sort: "score" })).toMatchObject({ assessment: "", sort: "deadline" });
+  });
+
+  it("reports the total on a page past the end", async () => {
+    const page = await loadInbox(testDb.db, { ...all, page: 5 }, 2);
+    expect(page).toMatchObject({ list: [], total: 3 });
   });
 
   it("keeps tenders the team is working on in the default view after their match ended", async () => {
@@ -157,10 +223,18 @@ describe("loadInbox", () => {
 describe("readFilters", () => {
   it("accepts known values and drops the rest", () => {
     expect(readFilters({ profile: "not-a-uuid", source: "x", status: "weird", decision: "MAYBE" })).toEqual(all);
-    expect(readFilters({ source: "uk_fat", status: "closed", decision: "GO" })).toMatchObject({
+    expect(readFilters({ source: "uk_fat", status: "closed", decision: "GO", page: "3" })).toMatchObject({
       source: "uk_fat",
       status: "closed",
       decision: "GO",
+      page: 3,
     });
+    for (const page of ["0", "-1", "2.5", "abc", "999999"]) expect(readFilters({ page }).page).toBe(1);
+  });
+
+  it("builds links that keep the filters and leave out defaults", () => {
+    expect(inboxQuery(all)).toBe("");
+    expect(inboxQuery({ ...all, source: "eu_ted", decision: "GO" }, 2)).toBe("?source=eu_ted&decision=GO&page=2");
+    expect(inboxQuery({ ...all, status: "all", page: 4 }, 1)).toBe("?status=all");
   });
 });

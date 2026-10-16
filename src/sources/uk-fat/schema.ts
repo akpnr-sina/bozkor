@@ -31,6 +31,25 @@ const document = z.object({
 
 const period = z.object({ endDate: str });
 
+// Contract details for the qualification policy (OCDS lots, award and
+// selection criteria, techniques, coveredBy, submission and contract terms).
+const contractPeriod = z.object({ startDate: str, endDate: str, durationInDays: num }).nullish().catch(null);
+
+const awardCriteria = z
+  .object({
+    weightingDescription: str,
+    criteria: list(
+      z.object({ type: str, name: str, description: str, numbers: list(z.object({ number: num, weight: str })) }),
+    ),
+  })
+  .nullish()
+  .catch(null);
+
+const selectionCriteria = z
+  .object({ criteria: list(z.object({ type: str, description: str })) })
+  .nullish()
+  .catch(null);
+
 const item = z.object({
   id: str,
   relatedLot: str,
@@ -51,6 +70,9 @@ const lot = z.object({
   description: str,
   status: str,
   value: value.nullish().catch(null),
+  contractPeriod,
+  awardCriteria,
+  selectionCriteria,
 });
 
 const tender = z.object({
@@ -75,6 +97,13 @@ const tender = z.object({
   documents: list(document),
   /** Only presence matters: an update that lists amendments but no status is partial. */
   amendments: list(z.unknown()),
+  contractPeriod,
+  techniques: z.object({ hasFrameworkAgreement: bool }).nullish().catch(null),
+  coveredBy: list(z.string()),
+  submissionTerms: z.object({ languages: list(z.string()) }).nullish().catch(null),
+  contractTerms: z.object({ performanceTerms: str, hasElectronicOrdering: bool }).nullish().catch(null),
+  selectionCriteria,
+  otherRequirements: z.object({ requiresStaffNamesAndQualifications: bool }).nullish().catch(null),
 });
 
 const party = z.object({

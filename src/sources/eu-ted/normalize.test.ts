@@ -157,6 +157,110 @@ describe("normalizeTedNotice", () => {
   });
 });
 
+describe("normalizeTedNotice details", () => {
+  // Recorded on 15 October 2026 with the detail fields. The ted-policy-* ones
+  // are the unsuitable tenders of docs/qualification-policy-v1.md, Part I.
+  const details = (name: string) => {
+    const result = normalized(name).details;
+    if (!result) throw new Error(`${name} has no details`);
+    return result;
+  };
+
+  it("reads example 2 (spare parts): 24 months, electronic ordering, lowest price, Bulgarian", () => {
+    expect(details("ted-policy-spare-parts-24-months")).toEqual({
+      durationMonths: 24,
+      framework: false,
+      electronicOrdering: true,
+      gpaCovered: false,
+      awardCriteria: [
+        { type: "price", name: "Най-ниска предложена цена", weight: null, description: "Най-ниска предложена цена" },
+      ],
+      selectionCriteria: [{ type: "slc-abil-mgmt-supply", description: "Доставка на резервни части." }],
+      guaranteeRequired: false,
+      performanceTerms: null,
+      submissionLanguages: ["BG"],
+    });
+  });
+
+  it("states example 1's equipment criterion once for its three lots", () => {
+    const tyres = details("ted-policy-tyres-with-services");
+    expect(tyres.durationMonths).toBe(24);
+    expect(tyres.selectionCriteria).toEqual([{ type: "slc-abil-facil-tools", description: expect.stringContaining("Преди сключването") }]);
+    expect(tyres.awardCriteria.every((c) => c.type === "price" && c.weight === null)).toBe(true);
+  });
+
+  it("keeps example 4's 36 months and GPA cover; its criteria are only in the documents", () => {
+    expect(details("ted-policy-generators-defence")).toMatchObject({
+      durationMonths: 36,
+      electronicOrdering: true,
+      gpaCovered: true,
+      awardCriteria: [],
+      selectionCriteria: [],
+      guaranteeRequired: null,
+      submissionLanguages: ["LT"],
+    });
+  });
+
+  it("leaves example 5's unknown duration empty", () => {
+    expect(details("ted-policy-street-lighting-install")).toMatchObject({
+      durationMonths: null,
+      framework: false,
+      gpaCovered: true,
+      submissionLanguages: ["EN"],
+    });
+  });
+
+  it("reads durations in years, in days and from start and end dates", () => {
+    expect(details("ted-details-years").durationMonths).toBe(48); // 4 YEAR
+    expect(details("ted-details-days-guarantee").durationMonths).toBe(1.5); // 45 DAY
+    expect(details("ted-details-dates-percentages").durationMonths).toBe(36);
+  });
+
+  it("turns points into shares when every lot repeats the same criteria", () => {
+    const repeated = details("ted-details-points-repeated-lots");
+    // Six lots, each with cost 50 and quality 20, 10, 10 and 30 points.
+    expect(repeated.awardCriteria.map((c) => [c.type, c.weight])).toEqual([
+      ["cost", 41.7],
+      ["quality", 16.7],
+      ["quality", 8.3],
+      ["quality", 8.3],
+      ["quality", 25],
+    ]);
+    expect(repeated.framework).toBe(true);
+  });
+
+  it("keeps percentage weights, the guarantee and the performance terms without their HTML", () => {
+    const croatian = details("ted-details-framework-guarantee");
+    expect(croatian.awardCriteria.map((c) => c.weight)).toEqual([80, 10, 10]);
+    expect(croatian).toMatchObject({ framework: true, guaranteeRequired: true, durationMonths: 12 });
+    expect(croatian.performanceTerms).toMatch(/^Ugovaratelj je obvezan tijekom izvršenja ugovora/);
+    expect(croatian.performanceTerms).not.toMatch(/<\/?p>/);
+    expect(details("ted-details-years").awardCriteria).toEqual([expect.objectContaining({ type: "price", weight: 100 })]);
+  });
+
+  it("lists every submission language once", () => {
+    const norwegian = details("ted-details-two-submission-languages");
+    expect(norwegian.submissionLanguages).toEqual(["NO", "EN"]);
+    expect(norwegian.awardCriteria.map((c) => [c.name, c.weight])).toEqual([
+      ["Delivery security and logistics", 30],
+      ["Climate and environmental considerations", 30],
+      ["Price", 40],
+    ]);
+  });
+
+  it("reads decimal weights as percentages and ranks as no weight", () => {
+    const base = fixture("ted-policy-spare-parts-24-months");
+    const decimal = normalizeTedNotice({ ...base, "award-criterion-number-lot": ["0.6"], "award-criterion-number-weight-lot": ["dec-exa"] });
+    expect(decimal?.details?.awardCriteria[0]?.weight).toBe(60);
+    const ranked = normalizeTedNotice({ ...base, "award-criterion-number-lot": ["1"], "award-criterion-number-weight-lot": ["ord-imp"] });
+    expect(ranked?.details?.awardCriteria[0]?.weight).toBeNull();
+  });
+
+  it("has no details for a notice recorded before the detail fields were requested", () => {
+    expect(normalized("ted-cn-supplies-single-lot").details).toBeNull();
+  });
+});
+
 describe("tedNoticeKeys", () => {
   it("groups a notice and its change by procedure identifier", () => {
     expect(tedNoticeKeys(fixture("ted-cn-original"))).toEqual({

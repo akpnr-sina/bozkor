@@ -1,13 +1,22 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import type { Metadata } from "next";
 import { io } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { FormattedText } from "@/components/formatted-text";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db";
-import { criteriaProfiles, documents, documentFetchStatus, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
+import { retryRead } from "@/db/retry";
+import { analyses, criteriaProfiles, documents, documentFetchStatus, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
+import { sourcesHash } from "@/analysis/evidence";
+import { factsDocumentOrder } from "@/analysis/facts";
+import { factsQuoteSources } from "@/analysis/facts-input";
+import { byLotNumber, toTriageNotice } from "@/analysis/notice";
+import { latestTranslations } from "@/analysis/translations";
+import { noticeQuoteSources } from "@/analysis/triage-input";
+import { assessOne } from "@/policy/assess";
 import { getCurrentUser } from "@/lib/auth/session";
 import {
   CONTRACT_NATURE_LABELS,
@@ -24,6 +33,7 @@ import {
 } from "@/lib/format";
 import { describeReason, parseReasons } from "@/matching/describe";
 import { isProductScope } from "@/sources/scope";
+import { AssessmentCard } from "./assessment-card";
 import { DecisionForm } from "./decision-form";
 
 export const metadata: Metadata = { title: "İhale" };
@@ -59,7 +69,8 @@ async function loadTender(id: string) {
   if (!tender) return null;
   const [lotRows, documentRows, matchRows, reviewRows] = await Promise.all([
     db.select().from(lots).where(eq(lots.tenderId, id)).orderBy(asc(lots.lotNumber)),
-    db.select().from(documents).where(eq(documents.tenderId, id)).orderBy(asc(documents.createdAt)),
+    // In the order the facts stage reads them, so the fingerprints agree.
+    db.select().from(documents).where(eq(documents.tenderId, id)).orderBy(...factsDocumentOrder),
     db
       .select({
         profileId: profileMatches.profileId,
@@ -74,19 +85,46 @@ async function loadTender(id: string) {
       .orderBy(asc(criteriaProfiles.name)),
     db.select().from(tenderReviews).where(eq(tenderReviews.tenderId, id)).orderBy(desc(tenderReviews.decidedAt)),
   ]);
-  return { tender, lots: lotRows, documents: documentRows, matches: matchRows, reviews: reviewRows };
+  const [translations, assessed, [latestFactsAttempt]] = await Promise.all([
+    latestTranslations(db, [id]),
+    assessOne(db, id),
+    // The newest facts attempt, to show a failure after the last valid result.
+    db
+      .select()
+      .from(analyses)
+      .where(and(eq(analyses.tenderId, id), eq(analyses.kind, "facts")))
+      .orderBy(desc(analyses.createdAt))
+      .limit(1),
+  ]);
+  return {
+    tender,
+    lots: lotRows.sort(byLotNumber),
+    documents: documentRows,
+    matches: matchRows,
+    reviews: reviewRows,
+    translation: translations.get(id) ?? null,
+    assessed,
+    latestFactsAttempt: latestFactsAttempt ?? null,
+  };
 }
 
 async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["params"] }) {
   await getCurrentUser();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
-  const data = await loadTender(id);
+  const data = await retryRead(() => loadTender(id));
   if (!data) notFound();
   const { tender, reviews } = data;
   const now = new Date();
   const current = reviews[0] ?? null;
   const cpvs = [tender.cpvMain, ...tender.cpvAdditional].filter((c): c is string => !!c);
+  const notice = toTriageNotice(tender, data.lots);
+  const noticeHash = sourcesHash(noticeQuoteSources(notice));
+  const factsHash = sourcesHash(factsQuoteSources({ ...notice, documents: data.documents }));
+  const factsHashStored = data.assessed?.latest.stored.sourcesHash ?? null;
+  const { translation } = data;
+  const lotTitlesTr = new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.title]) ?? []);
+  const lotDescriptionsTr = new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.description]) ?? []);
   // A change the team has already decided on after does not need the badge.
   const changedSinceDecision = tender.changedAt && (!current || tender.changedAt > current.decidedAt);
 
@@ -94,7 +132,17 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-w-0 flex-col gap-8">
         <header className="flex flex-col gap-3">
-          <h1 className="text-xl font-semibold">{tender.title}</h1>
+          <div className="flex flex-col gap-1">
+            <h1 className="text-xl font-semibold">{translation?.title || tender.title}</h1>
+            {translation && (
+              <p className="text-sm text-muted-foreground">
+                {tender.title} <span className="text-xs">(orijinal başlık; Türkçesi AI çevirisi)</span>
+              </p>
+            )}
+            {translation?.sourcesHash && translation.sourcesHash !== noticeHash && (
+              <p className="text-xs text-muted-foreground">Çeviri ilanın önceki hâline ait; yenisi sırada.</p>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             <Badge variant={tender.status === "open" ? "default" : "secondary"}>{STATUS_LABELS[tender.status]}</Badge>
             {tender.noticeType && <Badge variant="outline">{NOTICE_TYPE_LABELS[tender.noticeType] ?? tender.noticeType}</Badge>}
@@ -150,10 +198,20 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
 
         {tender.description && (
           <Section title="Açıklama">
-            <details className="text-sm">
-              <summary className="cursor-pointer text-muted-foreground">Açıklamayı göster</summary>
-              <p className="mt-2 whitespace-pre-line">{tender.description}</p>
-            </details>
+            {translation?.description ? (
+              <>
+                <FormattedText text={translation.description} className="text-sm leading-relaxed" />
+                <details className="text-sm">
+                  <summary className="cursor-pointer text-muted-foreground">Orijinal metin ({tender.noticeLanguage ?? "?"})</summary>
+                  <FormattedText text={tender.description} className="mt-2" />
+                </details>
+              </>
+            ) : (
+              <details className="text-sm">
+                <summary className="cursor-pointer text-muted-foreground">Açıklamayı göster</summary>
+                <FormattedText text={tender.description} className="mt-2" />
+              </details>
+            )}
           </Section>
         )}
 
@@ -201,7 +259,15 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
                   {data.lots.map((lot) => (
                     <TableRow key={lot.id}>
                       <TableCell>{lot.lotNumber}</TableCell>
-                      <TableCell className="whitespace-normal">{lot.title ?? "Belirtilmemiş"}</TableCell>
+                      <TableCell className="whitespace-normal" title={lotTitlesTr.get(lot.lotNumber) ? (lot.title ?? undefined) : undefined}>
+                        {lotTitlesTr.get(lot.lotNumber) || lot.title || "Belirtilmemiş"}
+                        {(lotDescriptionsTr.get(lot.lotNumber) || lot.description) && (
+                          <details className="mt-1 text-xs">
+                            <summary className="cursor-pointer text-muted-foreground">Açıklama</summary>
+                            <FormattedText text={lotDescriptionsTr.get(lot.lotNumber) || lot.description || ""} className="mt-1" />
+                          </details>
+                        )}
+                      </TableCell>
                       <TableCell className="whitespace-normal">{lot.cpv.join(", ") || "Belirtilmemiş"}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatMoney(lot.valueAmount, lot.valueCurrency)}</TableCell>
                     </TableRow>
@@ -214,8 +280,14 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
           )}
         </Section>
 
-        <Section title="AI ön değerlendirmesi">
-          <Empty>Henüz yok. Triage puanı bir sonraki aşamada eklenecek.</Empty>
+        <Section title="Değerlendirme">
+          <AssessmentCard
+            result={data.assessed}
+            latestAttempt={data.latestFactsAttempt}
+            stale={factsHashStored !== null && factsHashStored !== factsHash}
+            details={tender.details ?? null}
+            tenderId={tender.id}
+          />
         </Section>
 
         <Section title={`Dokümanlar (${data.documents.length})`}>

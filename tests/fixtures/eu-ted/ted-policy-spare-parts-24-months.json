@@ -1,0 +1,132 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-10-18+03:00"
+  ],
+  "notice-type": "cn-standard",
+  "award-criterion-description-lot": {
+    "bul": [
+      "Най-ниска предложена цена"
+    ]
+  },
+  "publication-number": "634842-2026",
+  "main-classification-lot": [
+    "34300000"
+  ],
+  "selection-criterion-description-lot": {
+    "bul": [
+      "Доставка на резервни части."
+    ]
+  },
+  "main-classification-proc": [
+    "34300000"
+  ],
+  "submission-url-lot": [
+    "https://app.eop.bg/today/608030"
+  ],
+  "procedure-identifier": "9f31d477-aa5d-4fd6-ab26-37debb712fde",
+  "buyer-country-sub": [
+    "BG413"
+  ],
+  "place-of-performance-country-proc": [
+    "BGR"
+  ],
+  "document-url-lot": [
+    "https://app.eop.bg/today/608030"
+  ],
+  "selection-criterion-lot": [
+    "slc-abil-mgmt-supply"
+  ],
+  "official-language": [
+    "BUL"
+  ],
+  "publication-date": "2026-09-15+02:00",
+  "estimated-value-proc": "25000.00",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "1762e97d-785b-4e28-b557-305e96bfd504",
+  "title-proc": {
+    "bul": "“Доставка на резервни части и аксесоари за техническо обслужване на моторни превозни средства /МПС/за нуждите на ТП „ДГС Разлог“ за срок от 24 месеца."
+  },
+  "place-of-performance-subdiv-lot": [
+    "BG413"
+  ],
+  "estimated-value-lot": [
+    "25000.00"
+  ],
+  "electronic-ordering-lot": [
+    true
+  ],
+  "award-criterion-type-lot": [
+    "price"
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "duration-period-value-lot": [
+    "24"
+  ],
+  "dispatch-date": "2026-09-14+03:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "framework-agreement-lot": [
+    "none"
+  ],
+  "award-criterion-name-lot": {
+    "bul": [
+      "Най-ниска предложена цена"
+    ]
+  },
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "BGR"
+  ],
+  "duration-period-unit-lot": [
+    "MONTH"
+  ],
+  "guarantee-required-lot": [
+    "false"
+  ],
+  "description-lot": {
+    "bul": [
+      "“Доставка на резервни части и аксесоари за техническо обслужване на моторни превозни средства /МПС/за нуждите на ТП „ДГС Разлог“ за срок от 24 месеца."
+    ]
+  },
+  "gpa-lot": [
+    false
+  ],
+  "place-of-performance-country-lot": [
+    "BGR"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "23:59:59+03:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "34300000",
+    "34300000"
+  ],
+  "buyer-name": {
+    "bul": [
+      "ТЕРИТОРИАЛНО ПОДЕЛЕНИЕ \"ДЪРЖАВНО ГОРСКО СТОПАНСТВО РАЗЛОГ\""
+    ]
+  },
+  "notice-version": 1,
+  "submission-language": [
+    "BUL"
+  ],
+  "place-of-performance-subdiv-proc": [
+    "BG413"
+  ],
+  "title-lot": {
+    "bul": [
+      "“Доставка на резервни части и аксесоари за техническо обслужване на моторни превозни средства /МПС/за нуждите на ТП „ДГС Разлог“ за срок от 24 месеца."
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "bul": "“Доставка на резервни части и аксесоари за техническо обслужване на моторни превозни средства /МПС/за нуждите на ТП „ДГС Разлог“ за срок от 24 месеца."
+  }
+}

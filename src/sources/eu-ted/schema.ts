@@ -36,6 +36,14 @@ const multilingual = z
     return result;
   });
 
+/** Yes/no values per lot; the API sends some as booleans and some as "true"/"false". */
+const flags = z
+  .unknown()
+  .optional()
+  .transform((v) =>
+    (Array.isArray(v) ? v : [v]).flatMap((x) => (x === true || x === "true" ? [true] : x === false || x === "false" ? [false] : [])),
+  );
+
 export const tedNoticeSchema = z.object({
   "publication-number": z.string().trim().min(1),
   "publication-date": z.string().trim().min(1),
@@ -78,6 +86,24 @@ export const tedNoticeSchema = z.object({
   "official-language": many,
   "document-url-lot": many,
   "submission-url-lot": many,
+  "duration-period-value-lot": many,
+  "duration-period-unit-lot": many,
+  "contract-duration-start-date-lot": many,
+  "contract-duration-end-date-lot": many,
+  "framework-agreement-lot": many,
+  "electronic-ordering-lot": flags,
+  "gpa-lot": flags,
+  "award-criterion-type-lot": many,
+  "award-criterion-name-lot": multilingual,
+  "award-criterion-description-lot": multilingual,
+  "award-criterion-number-lot": many,
+  "award-criterion-number-weight-lot": many,
+  "selection-criterion-lot": many,
+  "selection-criterion-name-lot": multilingual,
+  "selection-criterion-description-lot": multilingual,
+  "guarantee-required-lot": flags,
+  "term-performance-lot": multilingual,
+  "submission-language": many,
 });
 
 export type TedNotice = z.infer<typeof tedNoticeSchema>;

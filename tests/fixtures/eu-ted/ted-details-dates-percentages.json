@@ -1,0 +1,249 @@
+{
+  "notice-type": "cn-standard",
+  "award-criterion-description-lot": {
+    "deu": [
+      "Preis",
+      "Preis"
+    ]
+  },
+  "selection-criterion-description-lot": {
+    "deu": [
+      "Die Eignungskriterien finden Sie unter nachfolgendem Link. Diese müssen nicht ausschließlich auf die angegebene Kategorie zutreffen, sondern können auch für weitere gelten. https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe/suitabilitycriteria Siehe dort nähere Erläuterungen unter „2. Persönliche Lage des Wirtschaftsteilnehmers (5.1.9)“.",
+      "Die Eignungskriterien finden Sie unter nachfolgendem Link. Diese müssen nicht ausschließlich auf die angegebene Kategorie zutreffen, sondern können auch für weitere gelten. https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe/suitabilitycriteria Siehe dort nähere Erläuterungen unter „3. Wirtschaftliche und finanzielle Leistungsfähigkeit (5.1.9)“.",
+      "Die Eignungskriterien finden Sie unter nachfolgendem Link. Diese müssen nicht ausschließlich auf die angegebene Kategorie zutreffen, sondern können auch für weitere gelten. https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe/suitabilitycriteria Siehe dort nähere Erläuterungen unter „4. Technische Leistungsfähigkeit (5.1.9)“.",
+      "Die Eignungskriterien finden Sie unter nachfolgendem Link. Diese müssen nicht ausschließlich auf die angegebene Kategorie zutreffen, sondern können auch für weitere gelten. https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe/suitabilitycriteria Siehe dort nähere Erläuterungen unter „2. Persönliche Lage des Wirtschaftsteilnehmers (5.1.9)“.",
+      "Die Eignungskriterien finden Sie unter nachfolgendem Link. Diese müssen nicht ausschließlich auf die angegebene Kategorie zutreffen, sondern können auch für weitere gelten. https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe/suitabilitycriteria Siehe dort nähere Erläuterungen unter „3. Wirtschaftliche und finanzielle Leistungsfähigkeit (5.1.9)“.",
+      "Die Eignungskriterien finden Sie unter nachfolgendem Link. Diese müssen nicht ausschließlich auf die angegebene Kategorie zutreffen, sondern können auch für weitere gelten. https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe/suitabilitycriteria Siehe dort nähere Erläuterungen unter „4. Technische Leistungsfähigkeit (5.1.9)“."
+    ]
+  },
+  "main-classification-proc": [
+    "34928470"
+  ],
+  "submission-url-lot": [
+    "https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/deeplink/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe",
+    "https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/deeplink/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe"
+  ],
+  "procedure-identifier": "17c6a2fb-14a9-49e9-9381-73d32bde58ad",
+  "buyer-country-sub": [
+    "DE300"
+  ],
+  "additional-classification-proc": [
+    "31523000",
+    "31523100",
+    "31523300",
+    "34928471",
+    "34992000",
+    "34992100",
+    "34992300",
+    "39174000",
+    "44423400",
+    "44423460",
+    "44812320",
+    "45233290",
+    "45316000",
+    "45316100",
+    "45316211"
+  ],
+  "place-of-performance-country-proc": [
+    "DEU"
+  ],
+  "selection-criterion-lot": [
+    "slc-stand-other",
+    "slc-stand-other",
+    "slc-abil-mgmt-qual",
+    "slc-stand-other",
+    "slc-stand-other",
+    "slc-abil-mgmt-qual"
+  ],
+  "award-criterion-number-lot": [
+    "100",
+    "100"
+  ],
+  "identifier-lot": [
+    "LOT-0001",
+    "LOT-0002"
+  ],
+  "contract-duration-end-date-lot": [
+    "2030-05-31+02:00",
+    "2030-05-31+02:00"
+  ],
+  "deadline-receipt-request-date-lot": [
+    "2026-11-09+01:00",
+    "2026-11-09+01:00"
+  ],
+  "notice-identifier": "ad7645e9-1529-423c-b533-9937b4207abf",
+  "title-proc": {
+    "deu": "Planung, Lieferung und Montage von Schilder und Leuchtwerbeanlagen"
+  },
+  "place-of-performance-subdiv-lot": [
+    "DE300",
+    "DE300"
+  ],
+  "term-performance-lot": {
+    "deu": [
+      "Dieser Auftrag unterliegt den Vorgaben des Berliner Ausschreibungs- und Vergabegesetzes (BerlAVG), Abschnitte 3 und 4. Dies umfasst für die Auftragsausführung z.B. die Verpflichtung zur Einhaltung der jeweils geltenden Mindest- bzw. Tarifentgelte, Vorgaben gemäß Frauenförderverordnung, Vorgaben zur Verhinderung von Benachteiligungen sowie entsprechende Kontroll- und Sanktionsrechte. Die verpflichtenden Inhalte des BerlAVG werden in Form von Besonderen Vertragsbedingungen (BVBs) verbindliche Vertragsbestandteile. Siehe Vergabeunterlagen.",
+      "Dieser Auftrag unterliegt den Vorgaben des Berliner Ausschreibungs- und Vergabegesetzes (BerlAVG), Abschnitte 3 und 4. Dies umfasst für die Auftragsausführung z.B. die Verpflichtung zur Einhaltung der jeweils geltenden Mindest- bzw. Tarifentgelte, Vorgaben gemäß Frauenförderverordnung, Vorgaben zur Verhinderung von Benachteiligungen sowie entsprechende Kontroll- und Sanktionsrechte. Die verpflichtenden Inhalte des BerlAVG werden in Form von Besonderen Vertragsbedingungen (BVBs) verbindliche Vertragsbestandteile. Siehe Vergabeunterlagen."
+    ]
+  },
+  "award-criterion-type-lot": [
+    "price",
+    "price"
+  ],
+  "dispatch-date": "2026-10-09+02:00",
+  "framework-agreement-lot": [
+    "fa-wo-rc",
+    "fa-wo-rc"
+  ],
+  "award-criterion-name-lot": {
+    "deu": [
+      "Preis",
+      "Preis"
+    ]
+  },
+  "deadline-receipt-request-time-lot": [
+    "23:59:00+01:00",
+    "23:59:00+01:00"
+  ],
+  "award-criterion-number-weight-lot": [
+    "per-exa",
+    "per-exa"
+  ],
+  "description-lot": {
+    "deu": [
+      "Planung, Herstellung, Lieferung, Montage, Demontage, Instandsetzung und Wartung von Beschilderungen, Folierungen, Fahnen-, Banner- und Werbeanlagen an den Einsatzstandorten der BEW Berliner Energie und Wärme GmbH. Hierzu gehören insbesondere Innen- und Außenbeschilderungen, Wegweisungssysteme, Tür- und Raumschilder, Sicherheits- und Informationsschilder, Folierungen, Fassadenkennzeichnungen, Fahnenanlagen, Banneranlagen, Werbeanlagen sowie sonstige Systeme zur visuellen Kommunikation.",
+      "Planung, Herstellung, Lieferung, Montage, Demontage, Instandsetzung und Wartung von Leuchtwerbeanlagen und Steuerungstechnik an den Einsatzstandorten der BEW Berliner Energie und Wärme GmbH. Die Leistungen dienen insbesondere der beleuchteten Unternehmensdarstellung, Standortkennzeichnung, Orientierung sowie der visuellen Kommunikation an den Standorten des Auftraggebers. Hierzu gehören insbesondere Leuchtwerbeanlagen, Leuchtbuchstaben, Leuchtschriften, Leuchtlogos, Leuchtkästen, LED-Anlagen, beleuchtete Fassadenelemente, beleuchtete Standortkennzeichnungen sowie die hierfür erforderliche Steuerungs-, Schalt- und Überwachungstechnik."
+    ]
+  },
+  "gpa-lot": [
+    true,
+    true
+  ],
+  "buyer-name": {
+    "deu": [
+      "BEW Berliner Energie und Wärme GmbH"
+    ]
+  },
+  "notice-version": 1,
+  "place-of-performance-subdiv-proc": [
+    "DE300"
+  ],
+  "form-type": "competition",
+  "contract-duration-start-date-lot": [
+    "2027-06-01+02:00",
+    "2027-06-01+02:00"
+  ],
+  "publication-number": "704327-2026",
+  "main-classification-lot": [
+    "34928470",
+    "34928470"
+  ],
+  "additional-classification-lot": [
+    "34928471",
+    "34992300",
+    "39174000",
+    "42962100",
+    "44174000",
+    "44423400",
+    "44423450",
+    "44423460",
+    "44812320",
+    "45233290",
+    "31521000",
+    "31523000",
+    "31523100",
+    "31523300",
+    "31527200",
+    "31532900",
+    "31532910",
+    "34928430",
+    "34992000",
+    "45316000",
+    "45316100",
+    "45316211"
+  ],
+  "document-url-lot": [
+    "https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/deeplink/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe",
+    "https://bieterzugang.deutsche-evergabe.de/evergabe.bieter/api/supplier/external/deeplink/subproject/cfe0bd0b-d937-4b88-a355-8a61a4028bfe"
+  ],
+  "official-language": [
+    "DEU"
+  ],
+  "publication-date": "2026-10-13+02:00",
+  "estimated-value-proc": "600000",
+  "contract-nature-main-proc": "supplies",
+  "electronic-ordering-lot": [
+    false,
+    false
+  ],
+  "legal-basis": [
+    "32014L0025"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "DEU"
+  ],
+  "guarantee-required-lot": [
+    "false",
+    "false"
+  ],
+  "place-of-performance-country-lot": [
+    "DEU",
+    "DEU"
+  ],
+  "procedure-type": "neg-w-call",
+  "classification-cpv": [
+    "34928470",
+    "31523000",
+    "31523100",
+    "31523300",
+    "34928471",
+    "34992000",
+    "34992100",
+    "34992300",
+    "39174000",
+    "44423400",
+    "44423460",
+    "44812320",
+    "45233290",
+    "45316000",
+    "45316100",
+    "45316211",
+    "34928470",
+    "34928470",
+    "34928471",
+    "34992300",
+    "39174000",
+    "42962100",
+    "44174000",
+    "44423400",
+    "44423450",
+    "44423460",
+    "44812320",
+    "45233290",
+    "31521000",
+    "31523000",
+    "31523100",
+    "31523300",
+    "31527200",
+    "31532900",
+    "31532910",
+    "34928430",
+    "34992000",
+    "45316000",
+    "45316100",
+    "45316211"
+  ],
+  "submission-language": [
+    "DEU",
+    "DEU"
+  ],
+  "title-lot": {
+    "deu": [
+      "Lieferung von Beschilderungen, Folierungen, Fahnen und Werbeanlagen.",
+      "Lieferung von Leuchtwerbeanlagen"
+    ]
+  },
+  "description-proc": {
+    "deu": "Die Ausschreibung umfasst die Planung, Herstellung, Lieferung, Montage, Demontage, Instandsetzung, Änderung, Ergänzung und Wartung von Hinweis- und Wegleitsystemen sowie Einrichtungen zur Darstellung der Unternehmensmarke, insbesondere Beschilderungen, Folierungen, Fahnen-, Banner- und Werbeanlagen an den Einsatzstandorten der BEW Berliner Energie und Wärme GmbH."
+  }
+}

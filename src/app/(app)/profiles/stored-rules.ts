@@ -17,7 +17,7 @@ const FIELD_LABELS: Record<string, string> = {
   minDaysToDeadline: "Son tarihe kalan gün",
   regimes: "Rejimler",
   noticeLanguages: "İlan dilleri",
-  triageThreshold: "Triage eşiği",
+  triageThreshold: "Uyum eşiği",
   autoAnalyze: "Otomatik analiz",
   notify: "Bildirim",
   analysisQuestions: "Analiz soruları",

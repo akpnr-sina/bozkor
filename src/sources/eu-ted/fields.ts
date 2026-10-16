@@ -62,6 +62,28 @@ export const TED_FIELDS = [
   "official-language",
   "document-url-lot",
   "submission-url-lot",
+  // Contract details for the qualification policy (docs/qualification-policy-v1.md).
+  // Duration as a period (BT-36) or as start and end dates (BT-536, BT-537).
+  "duration-period-value-lot",
+  "duration-period-unit-lot",
+  "contract-duration-start-date-lot",
+  "contract-duration-end-date-lot",
+  "framework-agreement-lot",
+  "electronic-ordering-lot",
+  "gpa-lot",
+  // Award criteria (BT-539, BT-734, BT-540); the number (BT-541) and how it weighs (BT-5421).
+  "award-criterion-type-lot",
+  "award-criterion-name-lot",
+  "award-criterion-description-lot",
+  "award-criterion-number-lot",
+  "award-criterion-number-weight-lot",
+  // Selection criteria (BT-747, BT-749, BT-750).
+  "selection-criterion-lot",
+  "selection-criterion-name-lot",
+  "selection-criterion-description-lot",
+  "guarantee-required-lot",
+  "term-performance-lot",
+  "submission-language",
 ] as const;
 
 /** TED publication dates are days; the API takes them as YYYYMMDD. */

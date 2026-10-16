@@ -98,6 +98,7 @@ export async function upsertTender(
         noticeLanguage: f.noticeLanguage,
         noticeUrl: f.noticeUrl,
         documentsPortalUrl: f.documentsPortalUrl,
+        details: f.details,
       })
       .onConflictDoUpdate({
         target: [tenders.source, tenders.procedureKey],
@@ -123,6 +124,7 @@ export async function upsertTender(
           noticeLanguage: excluded(tenders.noticeLanguage),
           noticeUrl: excluded(tenders.noticeUrl),
           documentsPortalUrl: excluded(tenders.documentsPortalUrl),
+          details: excluded(tenders.details),
           changedAt: sql`case
             when ${tenders.externalId} is distinct from excluded.external_id
               and ${tenders.createdAt} < ${runStartedAt.toISOString()}::timestamptz

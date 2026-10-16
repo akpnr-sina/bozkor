@@ -43,6 +43,9 @@ export function tedDay(instant: Date): string {
 
 const DAY_MS = 86_400_000;
 
+/** A TED publication number, e.g. 704782-2026; anything else never reaches a query. */
+const PUBLICATION_NUMBER = /^\d{1,8}-\d{4}$/;
+
 /** The calendar day after `day` (YYYY-MM-DD). */
 function nextDay(day: string): string {
   return new Date(Date.parse(`${day}T00:00:00Z`) + DAY_MS).toISOString().slice(0, 10);
@@ -71,24 +74,12 @@ export function createTedClient(options: TedClientOptions = {}) {
   const completedDays = new Set<string>();
 
   /**
-   * Notices published on the window's days. Scroll mode ("ITERATION") keeps
-   * a point in time on the server, so no notice is missed or repeated across
-   * pages, and it has no cap on the number of results.
-   *
-   * Leading days an earlier window already fetched in full are skipped; when
-   * none is left, nothing is requested. A scroll that ends cleanly marks its
-   * days before today as complete; one that breaks off marks nothing.
+   * Every page of one search. Scroll mode ("ITERATION") keeps a point in
+   * time on the server, so no notice is missed or repeated across pages, and
+   * it has no cap on the number of results. Returns normally only when the
+   * scroll reached its end; a caller that stops early closes it.
    */
-  async function* noticePages(window: SyncWindow): AsyncGenerator<unknown[]> {
-    const toDay = tedDay(window.to);
-    let fromDay = tedDay(window.from);
-    while (fromDay <= toDay && completedDays.has(fromDay)) fromDay = nextDay(fromDay);
-    if (fromDay > toDay) return;
-
-    // Read before the first page: today's edition may not be out yet, so
-    // only earlier days of this scroll can count as complete.
-    const today = tedDay(new Date(now()));
-    const query = `${TED_BASE_QUERY} AND ${tedDateRange(fromDay, toDay)}`;
+  async function* scroll(query: string): AsyncGenerator<unknown[]> {
     const seenTokens = new Set<string>();
     let token: string | undefined;
 
@@ -119,7 +110,7 @@ export function createTedClient(options: TedClientOptions = {}) {
       if (body.timedOut) throw new Error(`TED search timed out on page ${page}`);
       if (!body.notices.length) break;
       // If the caller fails while storing this page, the generator is closed
-      // here and the marking below never runs.
+      // here and noticePages marks no day as complete.
       yield body.notices.map(withoutLinks);
 
       const next = body.iterationNextToken;
@@ -128,9 +119,33 @@ export function createTedClient(options: TedClientOptions = {}) {
       seenTokens.add(next);
       token = next;
     }
+  }
 
+  /**
+   * Notices published on the window's days. Leading days an earlier window
+   * already fetched in full are skipped; when none is left, nothing is
+   * requested. A scroll that ends cleanly marks its days before today as
+   * complete; one that breaks off marks nothing.
+   */
+  async function* noticePages(window: SyncWindow): AsyncGenerator<unknown[]> {
+    const toDay = tedDay(window.to);
+    let fromDay = tedDay(window.from);
+    while (fromDay <= toDay && completedDays.has(fromDay)) fromDay = nextDay(fromDay);
+    if (fromDay > toDay) return;
+
+    // Read before the first page: today's edition may not be out yet, so
+    // only earlier days of this scroll can count as complete.
+    const today = tedDay(new Date(now()));
+    yield* scroll(`${TED_BASE_QUERY} AND ${tedDateRange(fromDay, toDay)}`);
     for (let day = fromDay; day <= toDay && day < today; day = nextDay(day)) completedDays.add(day);
   }
 
-  return { noticePages };
+  /** Known notices again by publication number, e.g. to fetch fields added to TED_FIELDS since. */
+  async function* noticesByNumber(numbers: readonly string[]): AsyncGenerator<unknown[]> {
+    const valid = [...new Set(numbers.filter((n) => PUBLICATION_NUMBER.test(n)))];
+    if (!valid.length) return;
+    yield* scroll(`publication-number IN (${valid.join(" ")})`);
+  }
+
+  return { noticePages, noticesByNumber };
 }

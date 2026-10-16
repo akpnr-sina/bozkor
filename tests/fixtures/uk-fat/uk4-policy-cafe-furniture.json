@@ -1,0 +1,175 @@
+{
+  "id": "096735-2026",
+  "tag": [
+    "tenderUpdate"
+  ],
+  "date": "2026-10-13T17:06:24+01:00",
+  "initiationType": "tender",
+  "ocid": "ocds-h6vhtk-0785d5",
+  "parties": [
+    {
+      "name": "Awdurdod Parc Cenedlaethol Eryri",
+      "id": "GB-PPON-PMBN-3325-GJRQ",
+      "identifier": {
+        "scheme": "GB-PPON",
+        "id": "PMBN-3325-GJRQ"
+      },
+      "address": {
+        "streetAddress": "Penrhyndeudraeth",
+        "locality": "Gwynedd",
+        "postalCode": "LL48 6LF",
+        "country": "GB",
+        "countryName": "United Kingdom",
+        "region": "UKL12"
+      },
+      "contactPoint": {
+        "name": "Bethan Hughes",
+        "email": "bethan.hughes@eryri.llyw.cymru",
+        "telephone": "01766770274"
+      },
+      "roles": [
+        "buyer"
+      ],
+      "details": {
+        "url": "http://www.eryri.llyw.cymru",
+        "classifications": [
+          {
+            "scheme": "UK_CA_TYPE",
+            "id": "publicAuthoritySubCentralGovernment",
+            "description": "Public authority - sub-central government"
+          },
+          {
+            "scheme": "UK_CA_DEVOLVED_REGULATIONS",
+            "id": "GB-WLS",
+            "description": "Welsh devolved regulations apply"
+          }
+        ]
+      }
+    }
+  ],
+  "buyer": {
+    "id": "GB-PPON-PMBN-3325-GJRQ",
+    "name": "Awdurdod Parc Cenedlaethol Eryri"
+  },
+  "tender": {
+    "id": "ocds-h6vhtk-0785d5",
+    "legalBasis": {
+      "id": "2023/54",
+      "scheme": "UKPGA",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents"
+    },
+    "title": "High Quality Cafe Furniture ",
+    "description": "High quality contemporary external cafe furniture comprising chairs and matching \ntables, suitable for installation within a publicly accessible outdoor space and \nintended to remain outdoors throughout the year. See documents for details. ",
+    "status": "active",
+    "items": [
+      {
+        "id": "1",
+        "additionalClassifications": [
+          {
+            "scheme": "CPV",
+            "id": "39100000",
+            "description": "Furniture"
+          }
+        ],
+        "deliveryAddresses": [
+          {
+            "region": "UK",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "relatedLot": "1"
+      }
+    ],
+    "value": {
+      "amountGross": 15000,
+      "amount": 12500,
+      "currency": "GBP"
+    },
+    "procurementMethod": "open",
+    "procurementMethodDetails": "Below threshold - open competition",
+    "mainProcurementCategory": "goods",
+    "aboveThreshold": false,
+    "techniques": {
+      "hasElectronicAuction": true
+    },
+    "submissionMethodDetails": "Submissions@snowdonia.gov.wales or Cyflwyniadau@eryri.llyw.cymru",
+    "submissionTerms": {
+      "electronicSubmissionPolicy": "notAllowed"
+    },
+    "tenderPeriod": {
+      "endDate": "2026-11-09T12:00:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-11-02T12:00:00+00:00"
+    },
+    "lots": [
+      {
+        "id": "1",
+        "status": "active",
+        "value": {
+          "amountGross": 15000,
+          "amount": 12500,
+          "currency": "GBP"
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "type": "cost",
+              "name": "Price",
+              "numbers": [
+                {
+                  "number": 60,
+                  "weight": "percentageExact"
+                }
+              ]
+            },
+            {
+              "type": "quality",
+              "name": "Quality",
+              "description": "See document for details",
+              "numbers": [
+                {
+                  "number": 40,
+                  "weight": "percentageExact"
+                }
+              ]
+            }
+          ]
+        },
+        "suitability": {
+          "sme": true
+        },
+        "contractPeriod": {
+          "startDate": "2026-11-13T00:00:00+00:00",
+          "endDate": "2027-01-08T23:59:59+00:00"
+        },
+        "description": null
+      }
+    ],
+    "documents": [
+      {
+        "id": "L-1",
+        "documentType": "biddingDocuments",
+        "description": "Tender details and specification",
+        "url": "https://www.sell2wales.gov.wales/Assets/NoticeBuilder_FileDownload.aspx?id=382859"
+      },
+      {
+        "id": "L-2",
+        "documentType": "biddingDocuments",
+        "description": "Manylion tendr a manyleb",
+        "url": "https://www.sell2wales.gov.wales/Assets/NoticeBuilder_FileDownload.aspx?id=382860"
+      },
+      {
+        "id": "096735-2026",
+        "documentType": "tenderNotice",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "url": "https://www.find-tender.service.gov.uk/Notice/096735-2026",
+        "datePublished": "2026-10-13T17:06:24+01:00",
+        "format": "text/html"
+      }
+    ]
+  },
+  "language": "en"
+}

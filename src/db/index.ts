@@ -8,8 +8,17 @@ import * as schema from "./schema";
 export type AppDb = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 function createDb() {
-  // prepare: false keeps this working behind Supabase's transaction pooler too.
-  const client = postgres(requireEnv("DATABASE_URL"), { prepare: false, max: 5 });
+  const client = postgres(requireEnv("DATABASE_URL"), {
+    // Keeps this working behind Supabase's transaction pooler too.
+    prepare: false,
+    // Supabase's session pooler gives the whole project 15 connections (free
+    // plan). The web app (3), the worker (3, plus 4 for pg-boss) and one
+    // command (3) together use 13. Idle connections go back after 20 seconds.
+    max: 3,
+    idle_timeout: 20,
+    // Replaces connections now and then, so one the pooler has dropped does not fail a query.
+    max_lifetime: 30 * 60,
+  });
   return { db: drizzle(client, { schema }), client };
 }
 

@@ -30,7 +30,12 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `pnpm lint` ESLint
 - `pnpm db:generate --name <ad>` / `pnpm db:migrate` Drizzle migration
 - `pnpm backfill --source=uk_fat --days=30` geriye dönük yükleme, `--source=eu_ted` TED için (tekrar çalıştırmak güvenli)
-- `pnpm renormalize --source=uk_fat` normalizer, fold ya da kapsam kuralı değişince tüm ihaleleri ham veriden yeniden hesaplar (API çağırmaz). `--dry-run` önce neyin silineceğini yazar
+- `pnpm renormalize --source=uk_fat` normalizer, fold ya da kapsam kuralı değişince tüm ihaleleri ham veriden yeniden hesaplar (API çağırmaz). `--dry-run` önce neyin silineceğini yazar. İhaleleri yeniden yazdığı için eşleşen ve kararlı ihalelerin olgularını da yeniden çıkartır (ihale başına ~0,002 USD)
+- `pnpm facts --limit=50` bekleyen ihalelerden olgu çıkarır ve değerlendirir (elle; bütçe dolsa da uyarıyla çalışır), `--tender=<id>` ya da `--notice=ted:702149-2026,fat:096535-2026` seçilen ihaleleri yeniden işler ve kararlarını yazdırır (FaT ve TED numaraları çakışabildiği için önek)
+- `pnpm assess` olgusu olan tüm ihaleleri yeterlilik politikasıyla yeniden değerlendirir, `--dry-run` hiçbir şey yazmadan kaç kararın değişeceğini gösterir (politika değerini değiştirdikten sonra), `--report` kayıtlı kararları özetler (ret nedenleri, ortak bulma süresine duyarlılık, örnek gerekçeler)
+- `pnpm triage --limit=50` emekli profil bazlı AI puanı (worker çalıştırmaz; SPEC 7.1)
+- `pnpm translate --limit=50` ekibin gördüğü ihalelerin Türkçe çevirisi (elle), `--tender=<id>` tek ihale
+- `pnpm enrich-ted` eşleşmesi ya da kararı olan TED ihalelerinin ilanlarını TED_FIELDS'e sonradan eklenen alanlarla (süre, ödül ve seçim kriterleri) yeniden çeker ve ihaleleri günceller; "değişti" basmaz, tekrar çalıştırmak güvenli
 
 ## Klasör yapısı
 
@@ -76,7 +81,23 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0, 1, 2 ve 3 tamam (14 Ekim 2026). Sıradaki: Faz 4 (Triage). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0, 1, 2, 3 ve 4 tamam (16 Ekim 2026). Sıradaki: Faz 5 (dokümanlar). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Faz 4 kabulü (Supabase üzerinde, 16 Ekim 2026):
+- Kapsam ekip geri bildirimiyle değişti: profil başına AI puanı (triage, rubrik V2) yüksek puanlı ihalelerin elle kontrolde Bozkor'a uymadığını gösterince yerini yeterlilik politikası aldı (`docs/qualification-policy-v1.md`). AI yalnız alıntılı olgu çıkarır (`prompts/facts.v4.md`), puan, kapı, durum ve Türkçe gerekçeyi kod hesaplar (`src/policy/`, policy.v3). Ekip kararları: yalnızca ürün teslimi (kurulum, basit montaj, yerinde servis, sahada devreye alma ya da eğitim isteyen lot elenir), hizmet ve yapım lotları kapsam dışı, ortak bulma süresi 10 iş günü, Bozkor'un istekli belgesi, kendi referansı ve hiçbir ülkede ortağı yok.
+- Migration 0009-0012 uygulandı. `renormalize --source=uk_fat` 421 FaT ihalesine, `enrich-ted` 571 TED ihalesine (677 ilan) yapılandırılmış ayrıntıları (süre, çerçeve, e-sipariş, GPA, ödül ve seçim kriterleri, teklif dilleri) ekledi.
+- Politika belgesinin örnekleri canlıda beklenen sonucu verdi: lastik ve yedek parça "Ticari olarak uygun değil" (aylık ~333 ve ~1.042 EUR), kompresör (şartname ilan dokümanının açıklamasında) eleniyor, Litvanya jeneratörleri ve kafe mobilyası ilandan "Doküman gerekli". Malta ilanı veritabanında yok (30 günlük yüklemenin dışında).
+- ~580 eşleşen ve kararlı ihalenin olguları çıkarıldı ve değerlendirildi (ihale başına ~0,0026 USD); dağılım: doküman gerekli 276, ticari olarak uygun değil 130, yeterlilik incelemesi 93, teklif verilemez 48, kesin ret (kapsam dışı) 29, süresi doldu 3. Geçersiz yanıt yok. Çeviriler translate.v2 ile (doğal Türkçe, paragraf ve madde düzeni) yeniden çevriliyor.
+- Kullanıcı gelen kutusunu ve detay sayfasını kontrol etti: tek puan (aralığın ortası) ve basit montajın elenmesi istendi, yapıldı; çeviri Türkçesi ve düzeni düzeltildi.
+- 534 test. Politika motoru ve olgu hattı iki Claude oturumunun salt okunur incelemesinden geçti (lot bazında yükümlülükler, çıkarımın ret vermemesi, eş zamanlı değerlendirme, okuma anına göre olgu kuyruğu gibi 30'a yakın bulgu düzeltildi).
+
+Faz 4 bilinen eksikleri:
+- Olgular yalnız ilan metninden; çoğu ihale "Doküman gerekli". Faz 5-6 dokümanları okuyunca ayrışacak. Üretici veritabanı ve nakit modeli olmadığı için "Üretici bulunmalı" ilan düzeyinde nadir, "Finansman gerekli" hiç üretilmiyor.
+- Yükümlülükler ihale düzeyinde tek değer ve lot listesiyle; lotlar farklıysa en ağırı yazılır, diğerleri bilinmiyor sayılır.
+- Dinamik satın alma sistemlerinde son tarih katılım tarihidir; H03 süre kuralı bunlarda fazla katı olabilir.
+- Emekli triage kodu (`src/analysis/triage*.ts`, `rubric.ts` içindeki metrikler, `pnpm triage`) duruyor; `bidWindow` politika motorunda kullanılıyor. Kalan kısım ileride silinebilir.
+- Worker kullanıcının Mac'inde arka planda çalışıyor (`worker.log`); Mac uyuyunca bağlantılar kopuyor, uyanınca toparlanıyor. Sunucuya taşıma (Railway) bekliyor.
+- Supabase oturum havuzu 15 bağlantı: web 3, worker 3 + pg-boss 4, bir komut 3.
 
 Faz 3 kabulü (Supabase üzerinde):
 - TED istemcisi, normalizer ve senkron (`src/sources/eu-ted/`), worker işi `sync-eu-ted`. 18 gerçek TED örneği ve 4 ilanlık değişiklik zinciri `tests/fixtures/eu-ted/` altında.
@@ -97,12 +118,14 @@ Bilinen eksikler:
 - TED sonuç ilanları çekilmiyor: TED ihaleleri "Sonuçlandı" olmaz, son tarih geçince kapalı görünür.
 - TED planlama ilanı (PIN) ile sonraki çağrı ilanı bağlanmıyor; ayrı ihaleler olarak görünür. TED yeterlilik sistemleri (qu-sy) bilerek alınmıyor.
 - TED ilanlarının ~%95'i İngilizce değil: profil anahtar kelimeleri orada pek işlemez, eşleşme CPV'ye dayanır (profil formunda not var).
-- Başlıklar ve açıklamalar ilanın dilinde (İngilizcesi yoksa çevrilmez); Türkçe özet Faz 4 triage ile gelecek.
+- Sadece ekibin gördüğü ilanlar (güncel eşleşme ya da karar) Türkçeye çevrilir; diğerleri ilanın dilinde kalır.
 - Depolama: 30 günlük TED verisi ~98 MB tuttu; iki kaynakla tahmini büyüme ayda 130-150 MB. Supabase ücretsiz planı 500 MB, aralık civarı dolar. Karar gerekiyor: Supabase Pro ya da kapanmış ihalelerin ve kapsam dışı FaT prosedürlerinin ham verisini silen saklama kuralı.
-- Profil 563 ihaleyle eşleşiyor, gelen kutusu en fazla 500 gösteriyor: sayfalama ya da profili daraltma gerekiyor.
 - TED backfill yavaş (30 gün ~85 dk); `APPLY_CONCURRENCY` ve havuz boyutu artırılarak hızlandırılabilir.
+- Promptlar `prompts/`'tan çalışma anında okunuyor; şimdilik sadece worker ve CLI çağırıyor. Bir Server Action ileride LLM çağırırsa Vercel'de `outputFileTracingIncludes` ile `prompts/*.md` eklenmeli.
+- Gelen kutusu sorgusu tüm ihaleleri tarıyor; ihale sayısı yüz binlere çıkınca eşleşme tablosundan başlayan bir sorguya çevrilmeli.
+- Politika motoru yükümlülükleri (kurulum, servis) ihale düzeyinde okur, lot bazında değil; olgular şimdilik yalnız ilan metninden (dokümanlar Faz 5-6).
+- LLM çağrıları akışsız; çıktı sınırı 21.000 token. Çok uzun çeviriler için akışlı çağrıya geçilebilir.
 - /settings'te kategori yönetimi ve LLM harcaması yok; kategoriler şimdilik migration 0005'teki seed'den geliyor.
-- Gelen kutusu en fazla 500 ihale gösteriyor, sayfalama yok.
 - Önizleme son 30 günün ihalelerini 2 dakika bellekte tutuyor; yeni gelen ilan önizlemeye en geç 2 dakikada yansır.
 - Worker sadece bilgisayarda açıkken çalışıyor; production ortamı (Vercel, Railway) henüz kurulmadı.
 - Supabase magic link şablonu düzenlenemedi; varsayılan şablon ve PKCE `code` akışı kullanılıyor. Link, isteğin yapıldığı bilgisayardaki aynı tarayıcıda açılmalı. Resend SMTP bağlanınca `token_hash` şablonuna geçilebilir (README).
@@ -122,7 +145,11 @@ Kararlar:
 - Eşleştirmede CPV önekleri ile `keywordsAny` arasında VEYA var (kaçırmak fazladan sonuçtan pahalı; Faz 4'te AI skorlayacak). Ayrıntılar SPEC bölüm 6.
 - Eşleşme kayıtları silinmez: profil artık istemiyorsa `profile_matches.unmatched_at` işaretlenir (durum, triage, karar korunur). Gelen kutusu karar filtresiyle bunları da gösterir.
 - Karar geri alma, `tender_reviews`'e kararı boş yeni bir satır eklemektir (append-only).
-- Worker işleri: `sync-uk-fat` (2 saatte bir), `sync-eu-ted` (11:30 ve 17:30), `fx-ecb` (18:30), hepsi açılışta bir kez; sonlarında `fillValueEur` ve `rematch` çalışır.
+- Worker işleri: `sync-uk-fat` (2 saatte bir), `sync-eu-ted` (11:30 ve 17:30), `fx-ecb` (18:30), `facts` ve `translate` (10 dakikada bir), `assess` (15 dakikada bir), hepsi açılışta bir kez; `enrich-ted` (05:45, ayrıntısı eksik eşleşmiş TED ihaleleri); senkron ve kur işlerinin sonunda `fillValueEur` ve `rematch` çalışır. Emekli `triage` işinin zamanlaması açılışta silinir.
 - Sadece mal alımı (14 Ekim 2026, ekip kararı). Kural `src/sources/scope.ts`'te, eşleştirme motorunun ilk kuralı da odur. Kapsam dışına düşen ihale silinir; kararı, analizi ya da indirilmiş dokümanı olan kalır ama eşleşmez.
 - Gelen kutusunun varsayılan görünümü, eşleşmesi bitmiş olsa da son kararı GO, REVIEW ya da WATCH olan ihaleleri de gösterir.
+- Şu aşamada yalnızca ürün teslimi (16 Ekim 2026, ekip kararı): kurulum (basit montaj dahil), yerinde servis, sahada devreye alma ya da eğitim isteyen lotlar elenir (`src/policy/policy.ts` `supplyOnly`, `allowMinorAssembly`). Puan tek sayı (aralığın ortası) gösterilir. Ekip ayrıca 10 iş günlük ortak bulma süresini ve Bozkor'un istekli belgesi, kendi referansı ve hiçbir ülkede ortağı olmadığını doğruladı.
+- Değerlendirme çerçevesi Bozkor'un yeterlilik politikası (`docs/qualification-policy-v1.md`, 15 Ekim 2026). AI sadece alıntılı olgu çıkarır; puan, kapı ve durumu kod hesaplar (`src/policy/`, SPEC 7.0). Alıntısı doğrulanmayan olgu kararda kullanılmaz. Politika değerleri `src/policy/policy.ts`'te; değer değişince sürüm artar. Rubrik V2 ve profil bazlı triage emekli (SPEC 7.1).
+- Ekibin gördüğü ihaleler (güncel eşleşme ya da karar) Türkçeye çevrilir, diğerleri çevrilmez (maliyet ve depolama). Orijinal metin her zaman görünür kalır (SPEC 7.1a).
+- LLM işleri ortak çalıştırıcıyı kullanır (`src/analysis/runner.ts`): tek tekrar, her çağrının kaydı, bütçe ve durma koşulları.
 - TED ham kaydı XML değil, arama API'sinin JSON alanlarıdır (`links` hariç); eForms XML indirilmez. Hizmet ve yapım ilanları sunucu tarafında elenir (SPEC 4.2).

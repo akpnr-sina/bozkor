@@ -1,11 +1,26 @@
 import { alpha3ToAlpha2 } from "@/lib/countries";
 import { languageToAlpha2 } from "@/lib/languages";
 import { zonedLocalToUtc } from "@/lib/time";
+import {
+  anyTrue,
+  detailsOrNull,
+  joinTexts,
+  languageCodes,
+  monthsBetween,
+  percentWeights,
+  periodMonths,
+  plainText,
+  uniqueBy,
+  weightKind,
+  type AwardCriterion,
+  type SelectionCriterion,
+} from "../details";
 import type {
   ContractNature,
   NormalizedDocument,
   NormalizedLot,
   NormalizedNotice,
+  NoticeDetails,
   NoticeStage,
   RawNoticeKeys,
   Regime,
@@ -175,6 +190,103 @@ function sumLotValues(lots: NormalizedLot[] | null): { amount: number; currency:
   return { amount: lots.reduce((sum, l) => sum + (l.valueAmount ?? 0), 0), currency: currencies[0] ?? null };
 }
 
+/** Longest duration over the lots, from the period (BT-36) or the start and end dates (BT-536, BT-537). */
+function durationMonthsOf(n: TedNotice): number | null {
+  const values = n["duration-period-value-lot"];
+  const units = n["duration-period-unit-lot"];
+  const fromPeriods = values.map((value, i) => {
+    const unit = perLot(units, values.length, i) ?? (units.length === 1 ? units[0] : null);
+    return unit ? periodMonths(Number(value), unit) : null;
+  });
+  const starts = n["contract-duration-start-date-lot"];
+  const ends = n["contract-duration-end-date-lot"];
+  const fromDates = ends.map((end, i) => {
+    const start = perLot(starts, ends.length, i) ?? (starts.length === 1 ? starts[0] : null);
+    return start ? monthsBetween(tedTimestamp(start, "00:00:00"), tedTimestamp(end, "00:00:00")) : null;
+  });
+  const months = [...fromPeriods, ...fromDates].filter((m): m is number => m !== null);
+  return months.length ? Math.max(...months) : null;
+}
+
+function criterionType(type: string | null): AwardCriterion["type"] {
+  return type === "price" || type === "quality" || type === "cost" ? type : null;
+}
+
+/**
+ * The search API lists the criteria of all lots in one flat list. When every
+ * lot repeats the same criteria, returns one lot's list; otherwise null.
+ */
+function repeatedBlock<T>(list: readonly T[], lotCount: number): T[] | null {
+  if (lotCount <= 1) return [...list];
+  if (!list.length || list.length % lotCount !== 0) return null;
+  const size = list.length / lotCount;
+  const key = (item: T) => JSON.stringify(item);
+  for (let i = size; i < list.length; i++) {
+    if (key(list[i] as T) !== key(list[i % size] as T)) return null;
+  }
+  return list.slice(0, size);
+}
+
+/**
+ * Award criteria with weights as percentages. Type, number and weight code
+ * pair by position; names and descriptions only when they have one entry per
+ * criterion. Points become shares only when one lot's list is known.
+ */
+function awardCriteriaOf(n: TedNotice, order: string[], lotCount: number): AwardCriterion[] {
+  const types = n["award-criterion-type-lot"];
+  const names = textsIn(n["award-criterion-name-lot"], order);
+  const descriptions = textsIn(n["award-criterion-description-lot"], order);
+  const numbers = n["award-criterion-number-lot"];
+  const codes = n["award-criterion-number-weight-lot"];
+  const count = types.length || names.length || descriptions.length;
+  const raw = Array.from({ length: count }, (_, i) => {
+    const number = Number(perLot(numbers, count, i) ?? Number.NaN);
+    return {
+      type: criterionType(perLot(types, count, i)),
+      name: perLot(names, count, i),
+      description: perLot(descriptions, count, i),
+      number: Number.isFinite(number) ? number : null,
+      kind: weightKind(perLot(codes, count, i)),
+    };
+  });
+  const block = repeatedBlock(raw, lotCount);
+  const list = block ?? raw;
+  const weights = percentWeights(list, block !== null);
+  const criteria = list.map((c, i) => ({ type: c.type, name: c.name, weight: weights[i] ?? null, description: c.description }));
+  // A block may hold two criteria that read alike; only a list mixing different lots is trimmed.
+  return block ? criteria : uniqueBy(criteria);
+}
+
+/** Selection criteria codes (e.g. slc-abil-ref-supply) with their texts, one entry per distinct pair. */
+function selectionCriteriaOf(n: TedNotice, order: string[]): SelectionCriterion[] {
+  const codes = n["selection-criterion-lot"];
+  const names = textsIn(n["selection-criterion-name-lot"], order);
+  const descriptions = textsIn(n["selection-criterion-description-lot"], order);
+  const count = codes.length || descriptions.length || names.length;
+  const criteria = Array.from({ length: count }, (_, i) => ({
+    type: perLot(codes, count, i),
+    description: [perLot(names, count, i), perLot(descriptions, count, i)].filter(Boolean).join(": "),
+  }));
+  return uniqueBy(criteria);
+}
+
+/** Contract details the qualification policy checks; null when the notice states none. */
+function detailsOf(n: TedNotice, order: string[]): NoticeDetails | null {
+  const frameworks = n["framework-agreement-lot"];
+  return detailsOrNull({
+    durationMonths: durationMonthsOf(n),
+    // "none" is the code for no framework agreement.
+    framework: frameworks.length ? frameworks.some((code) => code.toLowerCase() !== "none") : null,
+    electronicOrdering: anyTrue(n["electronic-ordering-lot"]),
+    gpaCovered: anyTrue(n["gpa-lot"]),
+    awardCriteria: awardCriteriaOf(n, order, unique(n["identifier-lot"]).length),
+    selectionCriteria: selectionCriteriaOf(n, order),
+    guaranteeRequired: anyTrue(n["guarantee-required-lot"]),
+    performanceTerms: joinTexts(textsIn(n["term-performance-lot"], order).map(plainText)),
+    submissionLanguages: languageCodes(n["submission-language"]),
+  });
+}
+
 // "<notice uuid>-<version>", the form a change notice uses to point at the notice it changes.
 const CHANGED_NOTICE = /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-\d{2}$/i;
 
@@ -277,5 +389,6 @@ export function normalizeTedNotice(raw: unknown): NormalizedNotice | null {
     documentsPortalUrl: documentUrls[0] ?? httpUrls(n["submission-url-lot"])[0] ?? null,
     lots,
     documents,
+    details: detailsOf(n, order),
   };
 }

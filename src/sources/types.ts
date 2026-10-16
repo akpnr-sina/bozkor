@@ -33,6 +33,30 @@ export type NormalizedDocument = {
 };
 
 /**
+ * Structured contract details some notices carry besides their texts
+ * (qualification policy, docs/qualification-policy-v1.md): what the facts
+ * stage reads and the policy engine checks in code. Null or empty when the
+ * notice does not say. Texts stay in the notice's language.
+ */
+export type NoticeDetails = {
+  /** Longest contract duration over the lots, in months. */
+  durationMonths: number | null;
+  framework: boolean | null;
+  electronicOrdering: boolean | null;
+  /** Covered by the WTO Government Procurement Agreement (TED BT-115, FaT coveredBy). */
+  gpaCovered: boolean | null;
+  /** Award criteria as stated, e.g. { type: "price", name: "Price", weight: 60 }. */
+  awardCriteria: { type: "price" | "quality" | "cost" | null; name: string | null; weight: number | null; description: string | null }[];
+  /** Selection criteria texts: turnover, references, technical ability. */
+  selectionCriteria: { type: string | null; description: string }[];
+  guaranteeRequired: boolean | null;
+  /** Conditions for performing the contract, as written. */
+  performanceTerms: string | null;
+  /** Languages tenders may be submitted in, ISO 639-1 upper case. */
+  submissionLanguages: string[];
+};
+
+/**
  * One notice mapped to platform fields. Null means "this notice does not say";
  * folding keeps the value from an earlier notice of the same procedure.
  * A notice is partial when it only states changes (old-regime corrections)
@@ -68,6 +92,8 @@ export type NormalizedNotice = {
   /** Null when the notice carries no lot information. */
   lots: NormalizedLot[] | null;
   documents: NormalizedDocument[];
+  /** Structured contract details; null when the notice states none of them. */
+  details: NoticeDetails | null;
 };
 
 /** A planning or tender notice with a stated status; only these can create a tender. */

@@ -1,10 +1,23 @@
 import { countryNameToAlpha2, normalizeAlpha2 } from "@/lib/countries";
 import { parseTimestamp } from "@/lib/time";
+import {
+  detailsOrNull,
+  joinTexts,
+  languageCodes,
+  monthsBetween,
+  percentWeights,
+  periodMonths,
+  uniqueBy,
+  weightKind,
+  type AwardCriterion,
+  type SelectionCriterion,
+} from "../details";
 import type {
   NormalizedDocument,
   NormalizedLot,
   ContractNature,
   NormalizedNotice,
+  NoticeDetails,
   NoticeStage,
   RawNoticeKeys,
   Regime,
@@ -222,6 +235,95 @@ function milestoneText(r: FatRelease): string | null {
   return texts.length ? texts.join("\n\n") : null;
 }
 
+type ContractPeriod = NonNullable<Tender["contractPeriod"]>;
+type LotAwardCriteria = NonNullable<Lot["awardCriteria"]>;
+
+function periodLength(p: ContractPeriod): number | null {
+  if (p.durationInDays) return periodMonths(p.durationInDays, "DAY");
+  return monthsBetween(parseTimestamp(p.startDate, FAT_TIMEZONE), parseTimestamp(p.endDate, FAT_TIMEZONE));
+}
+
+/** Longest contract period over the tender and its lots, in months; extensions are not counted. */
+function durationMonthsOf(t: Tender): number | null {
+  const months = [t.contractPeriod, ...(t.lots ?? []).map((l) => l.contractPeriod)]
+    .filter(isPresent)
+    .map(periodLength)
+    .filter(isPresent);
+  return months.length ? Math.max(...months) : null;
+}
+
+function criterionType(type: string | null | undefined): AwardCriterion["type"] {
+  return type === "price" || type === "quality" || type === "cost" ? type : null;
+}
+
+/**
+ * One lot's award criteria with weights as percentages. Old-regime notices
+ * put the weight in the description ("60"); the lot's weighting text, such
+ * as a pass mark, comes last.
+ */
+function lotAwardCriteria(a: LotAwardCriteria): AwardCriterion[] {
+  const entries = (a.criteria ?? []).map((c) => {
+    const first = c.numbers?.find((n) => n.number !== null);
+    const description = clean(c.description);
+    const described = description && /^\d+(?:\.\d+)?$/.test(description) ? Number(description) : null;
+    return {
+      type: criterionType(c.type),
+      name: clean(c.name),
+      description: described === null ? description : null,
+      number: first?.number ?? described,
+      kind: first ? weightKind(first.weight) : described !== null ? ("percent" as const) : null,
+    };
+  });
+  const weights = percentWeights(entries, true);
+  const criteria: AwardCriterion[] = entries.map((e, i) => ({
+    type: e.type,
+    name: e.name,
+    weight: weights[i] ?? null,
+    description: e.description,
+  }));
+  const weighting = clean(a.weightingDescription);
+  return weighting ? [...criteria, { type: null, name: null, weight: null, description: weighting }] : criteria;
+}
+
+/** The criteria every lot shares, or each lot's distinct ones. */
+function awardCriteriaOf(t: Tender): AwardCriterion[] {
+  const perLot = (t.lots ?? []).map((l) => (l.awardCriteria ? lotAwardCriteria(l.awardCriteria) : [])).filter((c) => c.length);
+  const [first] = perLot;
+  if (!first) return [];
+  const same = perLot.every((c) => JSON.stringify(c) === JSON.stringify(first));
+  return same ? first : uniqueBy(perLot.flat());
+}
+
+function selectionCriteriaOf(t: Tender): SelectionCriterion[] {
+  const criteria = [t.selectionCriteria, ...(t.lots ?? []).map((l) => l.selectionCriteria)]
+    .flatMap((s) => s?.criteria ?? [])
+    .map((c) => ({ type: clean(c.type), description: clean(c.description) ?? "" }))
+    .filter((c) => c.type !== null || c.description);
+  if (t.otherRequirements?.requiresStaffNamesAndQualifications) {
+    criteria.push({ type: "staffNamesAndQualifications", description: "Names and qualifications of the staff performing the contract are required." });
+  }
+  return uniqueBy(criteria);
+}
+
+/**
+ * Contract details the qualification policy checks. Find a Tender does not
+ * say whether a guarantee is required, so that stays unknown.
+ */
+function detailsOf(t: Tender): NoticeDetails | null {
+  const coveredBy = t.coveredBy;
+  return detailsOrNull({
+    durationMonths: durationMonthsOf(t),
+    framework: t.techniques?.hasFrameworkAgreement ?? null,
+    electronicOrdering: t.contractTerms?.hasElectronicOrdering ?? null,
+    gpaCovered: coveredBy ? coveredBy.some((agreement) => agreement.toUpperCase() === "GPA") : null,
+    awardCriteria: awardCriteriaOf(t),
+    selectionCriteria: selectionCriteriaOf(t),
+    guaranteeRequired: null,
+    performanceTerms: joinTexts([t.contractTerms?.performanceTerms]),
+    submissionLanguages: languageCodes(t.submissionTerms?.languages ?? []),
+  });
+}
+
 function awardStageStatus(tags: readonly string[], t: Tender | null): "awarded" | "cancelled" {
   const ended = t?.status === "unsuccessful" || t?.status === "cancelled" || t?.status === "withdrawn";
   // Contract changes and terminations come after an award was made.
@@ -258,6 +360,7 @@ function statusOnlyNotice(r: FatRelease, publishedAt: Date): NormalizedNotice {
     documentsPortalUrl: null,
     lots: null,
     documents: [],
+    details: null,
   };
 }
 
@@ -332,5 +435,7 @@ export function normalizeFatRelease(raw: unknown): NormalizedNotice | null {
       null,
     lots,
     documents,
+    // A partial correction repeats only fragments; its details must not replace the original's.
+    details: t && !partial ? detailsOf(t) : null,
   };
 }

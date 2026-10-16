@@ -1,0 +1,110 @@
+{
+  "deadline-receipt-tender-date-lot": [
+    "2026-09-29+02:00"
+  ],
+  "notice-type": "cn-standard",
+  "publication-number": "599159-2026",
+  "main-classification-lot": [
+    "34928500"
+  ],
+  "main-classification-proc": [
+    "34928500"
+  ],
+  "submission-url-lot": [
+    "https://www.etenders.gov.mt/epps/cft/viewTenders.do?resourceId=14054027"
+  ],
+  "procedure-identifier": "125da9fa-f736-47b2-9568-812bb1a73591",
+  "buyer-country-sub": [
+    "MT001"
+  ],
+  "additional-classification-proc": [
+    "34928530"
+  ],
+  "place-of-performance-country-proc": [
+    "MLT"
+  ],
+  "additional-classification-lot": [
+    "34928530"
+  ],
+  "document-url-lot": [
+    "https://www.etenders.gov.mt/epps/cft/listContractDocuments.do?resourceId=14054027"
+  ],
+  "official-language": [
+    "ENG"
+  ],
+  "publication-date": "2026-08-31+02:00",
+  "estimated-value-proc": "14000",
+  "contract-nature-main-proc": "supplies",
+  "identifier-lot": [
+    "LOT-0001"
+  ],
+  "notice-identifier": "a6f182bd-16a1-4ac8-b569-95231a99d547",
+  "title-proc": {
+    "eng": "TENDER FOR THE INSTALLATION OF LOW POLLUTION AND ENERGY EFFICIENT LUMINAIRES (ON BRACKET) IN VARIOUS STREETS TO THE GHARGHUR LOCAL COUNCIL"
+  },
+  "place-of-performance-subdiv-lot": [
+    "MT001"
+  ],
+  "estimated-value-lot": [
+    "14000"
+  ],
+  "electronic-ordering-lot": [
+    false
+  ],
+  "legal-basis": [
+    "32014L0024"
+  ],
+  "dispatch-date": "2026-08-28+02:00",
+  "estimated-value-cur-lot": [
+    "EUR"
+  ],
+  "framework-agreement-lot": [
+    "none"
+  ],
+  "estimated-value-cur-proc": "EUR",
+  "buyer-country": [
+    "MLT"
+  ],
+  "description-lot": {
+    "eng": [
+      "TENDER FOR THE INSTALLATION OF LOW POLLUTION AND ENERGY EFFICIENT LUMINAIRES (ON BRACKET) IN VARIOUS STREETS TO THE GHARGHUR LOCAL COUNCIL"
+    ]
+  },
+  "gpa-lot": [
+    true
+  ],
+  "place-of-performance-country-lot": [
+    "MLT"
+  ],
+  "deadline-receipt-tender-time-lot": [
+    "11:00:00+02:00"
+  ],
+  "procedure-type": "open",
+  "classification-cpv": [
+    "34928500",
+    "34928530",
+    "34928500",
+    "34928530"
+  ],
+  "buyer-name": {
+    "eng": [
+      "Gharghur Local Council"
+    ]
+  },
+  "notice-version": 1,
+  "submission-language": [
+    "ENG"
+  ],
+  "place-of-performance-subdiv-proc": [
+    "MT001"
+  ],
+  "title-lot": {
+    "eng": [
+      "TENDER FOR THE INSTALLATION OF LOW POLLUTION AND ENERGY EFFICIENT LUMINAIRES (ON BRACKET) IN VARIOUS STREETS TO THE GHARGHUR LOCAL COUNCIL"
+    ]
+  },
+  "form-type": "competition",
+  "description-proc": {
+    "eng": "TENDER FOR THE INSTALLATION OF LOW POLLUTION AND ENERGY EFFICIENT LUMINAIRES (ON BRACKET) IN VARIOUS STREETS TO THE GHARGHUR LOCAL COUNCIL"
+  }
+}
