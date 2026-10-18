@@ -8,7 +8,14 @@ import { foldNotices, type FoldedTender } from "@/sources/fold";
 import type { NormalizedNotice, NoticeDetails } from "@/sources/types";
 import { normalizeFatRelease } from "@/sources/uk-fat/normalize";
 import { FACTS_PROMPT_VERSION } from "./facts";
-import { buildFactsInput, FACTS_INPUT_LIMITS, factsQuoteSources, type FactsNotice } from "./facts-input";
+import {
+  buildFactsInput,
+  FACTS_INPUT_LIMITS,
+  factsQuoteSources,
+  selectFactsFiles,
+  type FactsFileCandidate,
+  type FactsNotice,
+} from "./facts-input";
 import { factsOutputSchema } from "./facts-schema";
 import { findQuote } from "./quotes";
 import { noticeQuoteSources } from "./triage-input";
@@ -279,6 +286,169 @@ describe("buildFactsInput", () => {
   });
 });
 
+const at = (minute: number) => new Date(Date.UTC(2026, 9, 1, 0, minute));
+
+function candidate(fields: Partial<FactsFileCandidate> & Pick<FactsFileCandidate, "id" | "name">): FactsFileCandidate {
+  return { kind: "docx", documentType: null, origin: "auto", text: "Text of the file.", truncated: false, createdAt: at(0), ...fields };
+}
+
+/** A page of exactly `length` characters, starting with `tag`. */
+const pageOf = (length: number, tag: string) => `${tag} `.padEnd(length, "x");
+
+describe("selectFactsFiles", () => {
+  it("reads uploads first, then by the notice's document type, the role the name tells and age", () => {
+    const { ids } = selectFactsFiles([
+      candidate({ id: "bidding", name: "Invitation.pdf", kind: "pdf", documentType: "biddingDocuments", createdAt: at(3) }),
+      candidate({ id: "spec-type", name: "Annex 1.pdf", kind: "pdf", documentType: "technicalSpecifications", createdAt: at(4) }),
+      candidate({ id: "upload-price", name: "Fiyat cetveli.xlsx", kind: "xlsx", origin: "manual", createdAt: at(5) }),
+      candidate({ id: "upload-spec", name: "Teknik Şartname.docx", origin: "manual", createdAt: at(6) }),
+      candidate({ id: "contract", name: "Pogodba.docx", createdAt: at(1) }),
+      candidate({ id: "instructions", name: "Navodila_RC.pdf", kind: "pdf", createdAt: at(2) }),
+      // "spec" inside a word and "rc" inside a name do not count.
+      candidate({ id: "inspection", name: "Inspection plan.docx", createdAt: at(7) }),
+      candidate({ id: "sources", name: "source-list.docx", createdAt: at(8) }),
+    ]);
+    expect(ids).toEqual(["upload-spec", "upload-price", "spec-type", "bidding", "instructions", "contract", "inspection", "sources"]);
+  });
+
+  it("recognises a file's role from its name in the tenders' languages", () => {
+    const names = ["BPU.xlsx", "Vertragsentwurf.docx", "Teklif talimatı.pdf", "Cahier des charges CCTP.pdf", "Tehnične specifikacije.pdf", "ITT_rules.docx", "Predračun.xlsx"];
+    const { ids } = selectFactsFiles(names.map((name, i) => candidate({ id: name, name, createdAt: at(i) })));
+    expect(ids).toEqual(["Cahier des charges CCTP.pdf", "Tehnične specifikacije.pdf", "Teklif talimatı.pdf", "ITT_rules.docx", "Vertragsentwurf.docx", "BPU.xlsx", "Predračun.xlsx"]);
+  });
+
+  it("recognises Bulgarian and Greek file names too", () => {
+    const names = [
+      "Приложение 3.pdf",
+      "Ценово предложение.xlsx",
+      "Σχέδιο σύμβασης.docx",
+      "Документация за участие.docx",
+      "Техническа спецификация.pdf",
+      "Τιμολόγιο.xlsx",
+      "Проект на договор.docx",
+      "ΔΙΑΚΗΡΥΞΗ.pdf",
+      "Τεχνικές προδιαγραφές.pdf",
+    ];
+    const { ids } = selectFactsFiles(names.map((name, i) => candidate({ id: name, name, createdAt: at(i) })));
+    expect(ids).toEqual([
+      "Техническа спецификация.pdf",
+      "Τεχνικές προδιαγραφές.pdf",
+      "Документация за участие.docx",
+      "ΔΙΑΚΗΡΥΞΗ.pdf",
+      "Σχέδιο σύμβασης.docx",
+      "Проект на договор.docx",
+      "Ценово предложение.xlsx",
+      "Τιμολόγιο.xlsx",
+      "Приложение 3.pdf",
+    ]);
+  });
+
+  it("counts Cyrillic and Greek text double against both limits", () => {
+    const limits = FACTS_INPUT_LIMITS.files;
+    const bulgarian = Array.from({ length: 5 }, (_, i) => candidate({ id: `bg${i}`, name: `Документ ${i}.docx`, text: words(9_000, `дума${i}х`), createdAt: at(i) }));
+    const shown = selectFactsFiles(bulgarian);
+    // Each takes at most half of fileChars, and four of them use up totalChars.
+    expect(shown.files).toHaveLength(4);
+    expect(shown.omitted).toBe(1);
+    for (const file of shown.files) expect(file.pages[0]!.length).toBeLessThanOrEqual(limits.fileChars / 2);
+
+    const [greek] = selectFactsFiles([candidate({ id: "gr", name: "Έγγραφο.docx", text: words(9_000, "λέξη") })]).files;
+    expect(greek!.pages[0]!.length).toBeLessThanOrEqual(limits.fileChars / 2);
+
+    // A few Cyrillic words in a Latin text do not make it dense.
+    const [mixed] = selectFactsFiles([candidate({ id: "mixed", name: "Spec.docx", text: `Техническа спецификация ${words(9_000)}` })]).files;
+    expect(mixed!.pages[0]!.length).toBeGreaterThan(limits.fileChars / 2);
+  });
+
+  it("cuts a PDF at whole pages, and only a first page that alone is too long within it", () => {
+    const pages = [pageOf(25_000, "one"), pageOf(25_000, "two"), pageOf(25_000, "three")];
+    const [cut] = selectFactsFiles([candidate({ id: "pdf", name: "Spec.pdf", kind: "pdf", text: pages.join("\f") })]).files;
+    expect(cut!.pages).toEqual(pages.slice(0, 2));
+    expect(cut!.truncated).toBe(true);
+
+    const [long] = selectFactsFiles([candidate({ id: "long", name: "Long.pdf", kind: "pdf", text: words(12_000) })]).files;
+    expect(long!.pages).toHaveLength(1);
+    expect(long!.pages[0]!.length).toBeLessThanOrEqual(FACTS_INPUT_LIMITS.files.fileChars);
+    expect(long!.truncated).toBe(true);
+
+    // A file cut when it was read stays marked, even if all of it fits here.
+    const [read] = selectFactsFiles([candidate({ id: "w", name: "W.pdf", kind: "pdf", text: "Page one\fPage two", truncated: true })]).files;
+    expect(read).toEqual({ name: "W.pdf", kind: "pdf", pages: ["Page one", "Page two"], truncated: true });
+  });
+
+  it("keeps to the number of files and to the total, and counts what it leaves out", () => {
+    const large = Array.from({ length: 5 }, (_, i) => candidate({ id: `large${i}`, name: `Doc ${i}.docx`, text: words(9_000, `w${i}x`), createdAt: at(i) }));
+    const byTotal = selectFactsFiles(large);
+    expect(byTotal.files).toHaveLength(4);
+    expect(byTotal.omitted).toBe(1);
+    for (const file of byTotal.files) {
+      expect(file.truncated).toBe(true);
+      expect(file.pages[0]!.length).toBeLessThanOrEqual(FACTS_INPUT_LIMITS.files.fileChars);
+    }
+    expect(byTotal.files.reduce((sum, f) => sum + f.pages[0]!.length, 0)).toBeLessThanOrEqual(FACTS_INPUT_LIMITS.files.totalChars);
+
+    const many = Array.from({ length: 14 }, (_, i) => candidate({ id: `small${i}`, name: `Note ${i}.docx`, createdAt: at(i) }));
+    expect(selectFactsFiles(many)).toMatchObject({ omitted: 2, ids: many.slice(0, 12).map((c) => c.id) });
+
+    // A scanned PDF has no text to show and is not counted.
+    const scan = candidate({ id: "scan", name: "Scan.pdf", kind: "pdf", text: "\f\f" });
+    expect(selectFactsFiles([scan, candidate({ id: "note", name: "Note.docx" })])).toMatchObject({ ids: ["note"], omitted: 0 });
+  });
+});
+
+describe("buildFactsInput with files", () => {
+  it("writes the files after the notice, a PDF page by page, and quotes them by page", () => {
+    const selection = selectFactsFiles([
+      candidate({ id: "contract", name: "Sözleşme.docx", text: "Payment within 30 days of acceptance." }),
+      candidate({
+        id: "spec",
+        name: "Teknik şartname.pdf",
+        kind: "pdf",
+        origin: "manual",
+        text: ["Scope of supply.", "The supplier shall install the furniture on site.", ""].join("\f"),
+      }),
+    ]);
+    const n: FactsNotice = { ...notice(), files: selection.files, filesOmitted: selection.omitted };
+    const { text, sources } = buildFactsInput(n);
+
+    expect(selection.ids).toEqual(["spec", "contract"]);
+    expect(text).toContain(
+      '</ilan>\n<dosyalar toplam="2">\n<dosya sira="1" ad="Teknik şartname.pdf" tur="pdf">\n<sayfa no="1">Scope of supply.</sayfa>\n' +
+        '<sayfa no="2">The supplier shall install the furniture on site.</sayfa>\n</dosya>\n' +
+        '<dosya sira="2" ad="Sözleşme.docx" tur="docx">\nPayment within 30 days of acceptance.\n</dosya>\n</dosyalar>\n\n' +
+        "Bu ilandaki ve ihale dosyalarındaki olguları çıkar.",
+    );
+    expect(sources).toMatchObject({
+      "file:1:p1": "Scope of supply.",
+      "file:1:p2": "The supplier shall install the furniture on site.",
+      "file:2": "Payment within 30 days of acceptance.",
+    });
+    // An empty page is not shown and gives no source.
+    expect(Object.keys(sources)).not.toContain("file:1:p3");
+    expect(findQuote("the supplier shall install the furniture", sources)).toBe("file:1:p2");
+    expect(findQuote("Payment within 30 days", sources)).toBe("file:2");
+    expect(factsQuoteSources(n)).toEqual(sources);
+  });
+
+  it("says how many files it left out and which it cut, with names safe as attributes", () => {
+    const dash = String.fromCharCode(0x2014);
+    const n: FactsNotice = {
+      ...notice(),
+      files: [{ name: `Ek "A"${dash}fiyat\ncetveli.xlsx`, kind: "xlsx", pages: ["## Fiyat\nKalem\tAdet"], truncated: true }],
+      filesOmitted: 3,
+    };
+    const { text } = buildFactsInput(n);
+    expect(text).toContain(`<dosyalar toplam="4" gosterilmeyen="3">\n<dosya sira="1" ad="Ek 'A'-fiyat cetveli.xlsx" tur="xlsx" kesildi="evet">`);
+    expect(text).not.toContain(dash);
+  });
+
+  it("is unchanged without files", () => {
+    const { text } = buildFactsInput({ ...notice(), files: [], filesOmitted: 0 });
+    expect(text).toBe(buildFactsInput(notice()).text);
+    expect(text.endsWith("</ilan>\n\nBu ilandaki olguları çıkar.")).toBe(true);
+  });
+});
+
 describe("buildFactsInput with recorded notices", () => {
   it("quotes the specification FaT 096535 writes in its document description", () => {
     const { text, sources } = buildFactsInput(fromFixture("uk-fat", "uk4-policy-ba-compressor"));
@@ -343,11 +513,23 @@ describe("the current facts prompt", () => {
         }),
       }),
       documents: Array.from({ length: 12 }, (_, i) => ({ title: words(300, `d${i}w`), documentType: "technicalSpecifications" })),
+      files: selectFactsFiles([
+        candidate({ id: "spec", name: "Spec.pdf", kind: "pdf", text: "Page one.\fPage two.", truncated: true }),
+        candidate({ id: "terms", name: "Terms.docx", text: "Terms of contract." }),
+      ]).files,
+      filesOmitted: 2,
     });
     const tags = [...new Set([...text.matchAll(/<([a-z_]+)[ >]/g)].map((m) => m[1]!))];
-    expect(tags).toEqual(expect.arrayContaining(["secim_kriteri", "ifa_kosullari", "lot_bilgileri", "dokuman"]));
+    expect(tags).toEqual(expect.arrayContaining(["secim_kriteri", "ifa_kosullari", "lot_bilgileri", "dokuman", "dosyalar", "dosya", "sayfa"]));
     for (const tag of tags) expect(prompt, tag).toContain(`<${tag}>`);
-    for (const attribute of ["kisaltildi", "gosterilmeyen", "numara", "tur"]) expect(prompt, attribute).toContain(`\`${attribute}\``);
+    // In backticks, alone or in an example tag.
+    const tick = "`";
+    const explained = (name: string) =>
+      prompt.includes(tick + name + tick) || new RegExp(`${tick}(?:[^${tick}]* )?${name}="[^${tick}]*${tick}`).test(prompt);
+    const attributes = [...new Set([...text.matchAll(/ ([a-z_]+)="/g)].map((m) => m[1]!))];
+    expect(attributes).toEqual(expect.arrayContaining(["kisaltildi", "gosterilmeyen", "numara", "tur", "ad", "kesildi", "no"]));
+    expect(attributes).toEqual(expect.arrayContaining(["sira", "toplam"]));
+    for (const attribute of attributes) expect(explained(attribute), attribute).toBe(true);
     expect(text).toContain("Değerlendirme kriterleri (toplam 12, gösterilmeyen 2): ");
     expect(prompt).toContain("`(toplam N, gösterilmeyen M)`");
   });

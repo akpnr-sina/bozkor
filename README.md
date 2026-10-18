@@ -57,7 +57,16 @@ pnpm db:migrate
 
 Tüm tablolar `public` şemasında RLS açık ve politikasız oluşturulur. Uygulama Postgres'e doğrudan bağlandığı için etkilenmez; bu sadece Supabase Data API'sini kapatır. pg-boss kendi tablolarını ilk çalışmada `pgboss` şemasına kurar.
 
-### 5. Çalıştırma
+### 5. Dosya deposu
+
+İhale dokümanları özel bir Supabase Storage kovasında durur (`SUPABASE_STORAGE_BUCKET`, varsayılan `tender-documents`).
+
+1. **Storage > New bucket**: ad `tender-documents`, "Public bucket" kapalı.
+2. "Restrict file size" açık, 50 MB. İzin verilen dosya türlerini (MIME) boş bırakın; tür kontrolünü uygulama yapar.
+
+Kovaya sadece sunucu ve worker gizli anahtarla erişir. Tarayıcı tek kullanımlık imzalı linkle yükler, iki dakikalık imzalı linkle indirir. Kova yoksa ya da değişkenler eksikse worker doküman işlerini atlar, ihale sayfasında yükleme kapalı görünür.
+
+### 6. Çalıştırma
 
 ```bash
 pnpm dev      # web: http://localhost:3000
@@ -82,7 +91,7 @@ Sonrasında `pnpm worker` açık olduğu sürece yeni ilanlar 2 saatte bir otoma
 
 - **/profiles**: kriter profillerini oluşturup düzenleyin. Form, kaydetmeden önce "son 30 günde kaç ihale eşleşirdi" önizlemesini gösterir. Kaydedince profil açık ihalelerle hemen eşleştirilir.
 - **/inbox**: eşleşen ihaleler, neden eşleştikleri ve kararlarınız. Varsayılan olarak teklif verilebilir olanlar, son tarihe göre sıralı gösterilir.
-- **/tenders/[id]**: ilan bilgileri, lotlar, eşleşme nedenleri, dokümanlar ve karar (GO / REVIEW / NO_GO / WATCH). Karar geri alınabilir, geçmiş görünür.
+- **/tenders/[id]**: ilan bilgileri, lotlar, eşleşme nedenleri, değerlendirme, dokümanlar ve karar (GO / REVIEW / NO_GO / WATCH). Karar geri alınabilir, geçmiş görünür. Worker ilan linklerini ve girişsiz açık portal sayfalarının listelediği dokümanları kendisi indirir (robots.txt'e uyarak; giriş, form ve captcha yok). Giriş isteyen portallardaki dosyaları "Portalı aç" ile indirip sayfadaki alana sürükleyin (PDF, DOCX, XLSX, ZIP; dosya başına 50 MB). Worker dosyaları bir iki dakikada okur; okunan dosyalar değerlendirmeye girer ve her olgunun yanında hangi dosyanın hangi sayfasından alındığı görünür.
 - Worker açıkken yeni ilanlar ve ECB kurları geldikçe eşleşmeler kendiliğinden güncellenir.
 
 ## Komutlar
@@ -98,6 +107,7 @@ Sonrasında `pnpm worker` açık olduğu sürece yeni ilanlar 2 saatte bir otoma
 | `pnpm assess` | Olgusu olan tüm ihaleleri politikayla yeniden değerlendirir (worker 15 dakikada bir yapar); `--dry-run` hiçbir şey yazmaz |
 | `pnpm translate --limit=50` | Ekibin gördüğü ihalelerin Türkçe çevirisi; `--tender=<id>` tek ihale. Worker bunu da 10 dakikada bir yapar |
 | `pnpm enrich-ted` | Eşleşmesi ya da kararı olan TED ihalelerinin ilanlarını sonradan eklenen alanlarla (süre, ödül ve seçim kriterleri) yeniden çeker. Tekrar çalıştırmak güvenli |
+| `pnpm documents --report` | Doküman durumları, elle yüklenmesi gereken siteler ve son denenen linkler (`--limit=20`). `--fetch` ve `--process` worker'ın indirme ve okuma işlerinden birer parti çalıştırır; worker açıkken de güvenli |
 | `pnpm test` | Vitest (canlı API ve Supabase kullanmaz) |
 | `pnpm typecheck` | Route tiplerini üretir ve `tsc` çalıştırır |
 | `pnpm lint` | ESLint |

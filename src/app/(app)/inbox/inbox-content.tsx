@@ -12,7 +12,7 @@ import { DECISION_SHORT, daysLeft, formatDaysLeft, formatMoney, SOURCE_LABELS } 
 import { sourceIds } from "@/matching/rules";
 import { STATUS_GROUP_LABELS, STATUS_GROUPS, type StatusGroup } from "@/policy/labels";
 import { isProductScope } from "@/sources/scope";
-import { inboxQuery, loadInbox, PAGE_SIZE, readFilters, type Filters } from "./data";
+import { inboxQuery, loadInbox, PAGE_SIZE, readFilters, type DocumentSummary, type Filters } from "./data";
 
 export async function InboxContent({ searchParams }: { searchParams: PageProps<"/inbox">["searchParams"] }) {
   await getCurrentUser();
@@ -171,7 +171,7 @@ export async function InboxContent({ searchParams }: { searchParams: PageProps<"
                     )}
                   </TableCell>
                   <TableCell>
-                    {item.documentCount ? `${item.documentCount} link` : item.documentsPortalUrl ? "Portal" : "Yok"}
+                    <DocumentsCell summary={item.documents} />
                   </TableCell>
                   <TableCell>{item.decision ? DECISION_SHORT[item.decision] : <span className="text-muted-foreground">-</span>}</TableCell>
                 </TableRow>
@@ -226,4 +226,24 @@ function Pager({ filters, total }: { filters: Filters; total: number }) {
       {filters.page < pages ? link(filters.page + 1, "Sonraki sayfa") : <span className="text-muted-foreground">Sonraki sayfa</span>}
     </nav>
   );
+}
+
+/** The short word shows; the explanation is a tooltip, and read out by screen readers. */
+function DocumentsCell({ summary }: { summary: DocumentSummary }) {
+  const cell = (text: string, explanation: string, muted = false) => (
+    <span title={explanation} className={muted ? "text-muted-foreground" : undefined}>
+      {text}
+      <span className="sr-only">: {explanation}</span>
+    </span>
+  );
+  switch (summary.state) {
+    case "files":
+      return cell(`${summary.files} dosya`, "okunmuş, analize girecek dosyalar");
+    case "reading":
+      return cell("Okunuyor", "dosyalar depoda, worker okuyor", true);
+    case "portal":
+      return cell("Portal", "dokümanlar alıcının portalında; ihale sayfasından portala gidip indirin ve yükleyin");
+    default:
+      return <span className="text-muted-foreground">-</span>;
+  }
 }

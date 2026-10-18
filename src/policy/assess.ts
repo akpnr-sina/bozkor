@@ -33,6 +33,8 @@ export function policyInputOf(tender: Tender, lotRows: readonly Lot[], facts: Fa
 export type LatestFacts = {
   analysisId: string;
   createdAt: Date;
+  /** The files the facts call read, in the order of its "file:<n>" quote sources. */
+  documentIds: string[];
   /** The answer as stored, with its quote checks. */
   stored: ReadFacts;
   /** What the policy acts on (see evidencedFacts). */
@@ -43,7 +45,13 @@ export type LatestFacts = {
 export async function latestFacts(db: AppDb, tenderIds: readonly string[]): Promise<Map<string, LatestFacts>> {
   if (!tenderIds.length) return new Map();
   const rows = await db
-    .selectDistinctOn([analyses.tenderId], { id: analyses.id, tenderId: analyses.tenderId, output: analyses.output, createdAt: analyses.createdAt })
+    .selectDistinctOn([analyses.tenderId], {
+      id: analyses.id,
+      tenderId: analyses.tenderId,
+      output: analyses.output,
+      createdAt: analyses.createdAt,
+      documentIds: analyses.documentIds,
+    })
     .from(analyses)
     .where(and(inArray(analyses.tenderId, [...tenderIds]), eq(analyses.kind, "facts"), eq(analyses.valid, true)))
     .orderBy(analyses.tenderId, sql`${analyses.createdAt} desc`);
@@ -51,7 +59,13 @@ export async function latestFacts(db: AppDb, tenderIds: readonly string[]): Prom
   for (const row of rows) {
     const read = readStoredFacts(row.output);
     if (read) {
-      result.set(row.tenderId, { analysisId: row.id, createdAt: row.createdAt, stored: read, facts: evidencedFacts(read.facts, read.quoteChecks) });
+      result.set(row.tenderId, {
+        analysisId: row.id,
+        createdAt: row.createdAt,
+        documentIds: row.documentIds,
+        stored: read,
+        facts: evidencedFacts(read.facts, read.quoteChecks),
+      });
     }
   }
   return result;

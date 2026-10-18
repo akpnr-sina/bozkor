@@ -12,7 +12,7 @@ import { valueInEur } from "@/sources/value-eur";
 import { sourcesHash } from "./evidence";
 import { parseFacts } from "./facts";
 import { checkFactsQuotes, evidencedFacts, readStoredFacts, type StoredFacts } from "./facts-evidence";
-import { buildFactsInput, type FactsNotice } from "./facts-input";
+import { buildFactsInput, selectFactsFiles, type FactsFileCandidate, type FactsNotice } from "./facts-input";
 import type { FactsOutput } from "./facts-schema";
 import { toTriageNotice } from "./notice";
 
@@ -63,6 +63,7 @@ function stored(source: keyof typeof NORMALIZERS, name: string): { tender: Tende
     documentsPortalUrl: f.documentsPortalUrl,
     details: f.details,
     changedAt: null,
+    documentsChangedAt: null,
     createdAt: NOW,
     updatedAt: NOW,
   };
@@ -77,10 +78,12 @@ function stored(source: keyof typeof NORMALIZERS, name: string): { tender: Tende
 
 /**
  * The answer as extractFacts checks and stores it, read back as the assess job
- * reads it, and the policy's verdict on the facts it may act on.
+ * reads it, and the policy's verdict on the facts it may act on. `files`: the
+ * tender's read files, chosen as the facts stage chooses them.
  */
-function pipeline(s: ReturnType<typeof stored>, answer: FactsOutput) {
-  const { text, sources, lotNumbers } = buildFactsInput(s.notice);
+function pipeline(s: ReturnType<typeof stored>, answer: FactsOutput, files: FactsFileCandidate[] = []) {
+  const selection = selectFactsFiles(files);
+  const { text, sources, lotNumbers } = buildFactsInput({ ...s.notice, files: selection.files, filesOmitted: selection.omitted });
   const parsed = parseFacts(answer, lotNumbers);
   if (!parsed.ok) throw new Error(parsed.error);
   const output: StoredFacts = {
@@ -211,5 +214,40 @@ describe("a fact whose quote is not in the notice", () => {
     expect(FINAL_STATUSES).not.toContain(result.assessment.status);
     expect(result.assessment.status).toBe("NEEDS_DOCUMENTS");
     expect(gate(result.assessment.best, "C01")).toBe("FAIL");
+  });
+});
+
+describe("a fact quoted from an uploaded specification", () => {
+  // The claim the notice did not support above, now on page 2 of a file the team uploaded.
+  const specification: FactsFileCandidate = {
+    id: "specification",
+    name: "Specification.pdf",
+    kind: "pdf",
+    documentType: null,
+    origin: "manual",
+    text: ["High Quality Cafe Furniture: specification", "The supplier shall install the furniture on site. Items are delivered assembled."].join("\f"),
+    truncated: false,
+    createdAt: NOW,
+  };
+  const answer = facts({
+    summaryTr: "Açık hava kafe alanı için sandalye ve masalar; tedarikçi sahada kuracak.",
+    lots: [
+      lot({
+        lotNumber: "1",
+        productTr: "dış mekân kafe sandalyeleri ve masaları",
+        category: "FURNITURE_STORAGE",
+        categoryQuote: "external cafe furniture comprising chairs and matching tables",
+      }),
+    ],
+    installation: { value: "REQUIRED", detail: "Mobilyaların sahada kurulumu", quote: "The supplier shall install the furniture on site." },
+  });
+  const result = pipeline(stored("uk-fat", "uk4-policy-cafe-furniture"), answer, [specification]);
+
+  it("is found on its page and decides the verdict (delivery only)", () => {
+    expect(result.text).toContain('<dosya sira="1" ad="Specification.pdf" tur="pdf">');
+    expect(result.checks.facts.installation).toBe("file:1:p2");
+    expect(result.acted.installation.value).toBe("REQUIRED");
+    expect(result.assessment.status).toBe("COMMERCIAL_NO_BID");
+    expect(result.assessment.best.explanation).toContain("ürün teslimine ek olarak sahada kurulum");
   });
 });

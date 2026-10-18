@@ -1,0 +1,1 @@
+ALTER TABLE "tenders" ADD COLUMN "documents_changed_at" timestamp with time zone;

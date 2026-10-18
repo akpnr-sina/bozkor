@@ -4,6 +4,12 @@ import { runFacts } from "@/analysis/facts";
 import { createLlmClient } from "@/analysis/llm";
 import type { RunStats } from "@/analysis/runner";
 import { runTranslation } from "@/analysis/translate";
+import { extractFile } from "@/documents/extract";
+import { createCookieJar, createHostThrottle, fetchDocument } from "@/documents/fetch";
+import { fetchDocuments, type FetchStats } from "@/documents/fetch-job";
+import { createRobots, extractDocumentLinks } from "@/documents/portal";
+import { processDocuments, type ProcessStats } from "@/documents/process-job";
+import { createDocumentStorage, type DocumentStorage, storageConfigured } from "@/documents/storage";
 import { syncEcbRates } from "@/fx/sync";
 import { rematch } from "@/matching/apply";
 import { assessTenders, type AssessStats } from "@/policy/assess";
@@ -101,6 +107,43 @@ function formatAssessStats(stats: AssessStats): string {
     (stats.errors ? ` errors=${stats.errors}` : "") +
     (stats.removed ? ` removed=${stats.removed}` : "") +
     (byStatus ? ` | ${byStatus}` : "")
+  );
+}
+
+/** Jobs that have already logged missing storage settings; each says it once. */
+const warnedNoStorage = new Set<string>();
+
+function hasStorage(job: string): boolean {
+  if (storageConfigured()) return true;
+  if (!warnedNoStorage.has(job)) console.log(`[${job}] SUPABASE_SECRET_KEY ya da SUPABASE_STORAGE_BUCKET tanımlı değil; doküman işleri atlanıyor.`);
+  warnedNoStorage.add(job);
+  return false;
+}
+
+let storage: DocumentStorage | null = null;
+const documentStorage = () => (storage ??= createDocumentStorage());
+
+/** One host spacing for the worker's life, so robots.txt requests keep it too; robots.txt is read once per host. */
+const throttle = createHostThrottle();
+const robots = createRobots({ wait: (url) => throttle.wait(url) });
+
+/** Links per fetch run: most answer in a second, a slow one takes up to the 60-second timeout. */
+const FETCH_BATCH = 30;
+/** Files per processing run; a full run queues the next at once. */
+const PROCESS_BATCH = 20;
+
+function formatFetchStats(stats: FetchStats): string {
+  return (
+    `attempted=${stats.attempted} fetched=${stats.fetched} manual=${stats.manual} unsupported=${stats.unsupported}` +
+    ` failed=${stats.failed} retry=${stats.retry} pageFiles=${stats.pageFiles} robotsBlocked=${stats.blocked} termsBlocked=${stats.forbidden}` +
+    (stats.stoppedBy ? ` stoppedBy=${stats.stoppedBy}` : "")
+  );
+}
+
+function formatProcessStats(stats: ProcessStats): string {
+  return (
+    `processed=${stats.processed} members=${stats.members} skipped=${stats.skipped} failed=${stats.failed}` +
+    (stats.stoppedBy ? ` stoppedBy=${stats.stoppedBy}` : "")
   );
 }
 
@@ -212,6 +255,52 @@ const jobs: JobDefinition[] = [
             ` updated=${stats.updated} normalizeErrors=${stats.normalizeErrors}`,
         );
       }
+    },
+  },
+  {
+    // Document links of the tenders the team may bid on (SPEC Faz 5). Most
+    // are portal pages, which the team downloads from and uploads.
+    name: "fetch-documents",
+    cron: "15,45 * * * *",
+    runOnStart: true,
+    queue: syncQueue,
+    handler: async () => {
+      if (!hasStorage("fetch-documents")) return;
+      // Cookies a site sets for anonymous visitors, for this run only.
+      const cookies = createCookieJar();
+      const stats = await fetchDocuments(
+        getDb(),
+        {
+          // The guard (terms and robots.txt) is asked before every request, redirects included.
+          fetchDocument: (url, { guard, maxBytes }) => fetchDocument(url, { cookies, guard, maxBytes }),
+          wait: (url) => throttle.wait(url),
+          robots: (url) => robots.check(url),
+          extractLinks: (html, pageUrl) => extractDocumentLinks(html, pageUrl),
+          storage: documentStorage(),
+          log: (m) => console.warn(m),
+        },
+        { limit: FETCH_BATCH },
+      );
+      if (stats.attempted) console.log(`[fetch-documents] ${formatFetchStats(stats)}`);
+    },
+  },
+  {
+    // Text, page counts and ZIP members of fetched and uploaded files; an
+    // upload is read within a minute or two.
+    name: "process-documents",
+    cron: "* * * * *",
+    runOnStart: true,
+    queue: syncQueue,
+    handler: async () => {
+      if (!hasStorage("process-documents")) return;
+      const stats = await processDocuments(
+        getDb(),
+        { extract: (bytes, kind) => extractFile(bytes, kind), storage: documentStorage(), log: (m) => console.warn(m) },
+        { limit: PROCESS_BATCH },
+      );
+      const handled = stats.processed + stats.skipped + stats.failed;
+      if (handled) console.log(`[process-documents] ${formatProcessStats(stats)}`);
+      if (handled >= PROCESS_BATCH && !stats.stoppedBy) await runAgain("process-documents");
     },
   },
   {

@@ -14,6 +14,17 @@ export const formatDateTime = (date: Date | null) => (date ? dateTimeFormat.form
 export const formatDate = (date: Date | null) => (date ? dateFormat.format(date) : "Belirtilmemiş");
 export const formatNumber = (value: number) => numberFormat.format(value);
 
+const sizeFormat = new Intl.NumberFormat("tr-TR", { maximumFractionDigits: 1 });
+
+/** A file size as people read it: "850 KB", "12,4 MB". */
+export function formatBytes(bytes: number | null): string {
+  if (bytes === null) return "Bilinmiyor";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${sizeFormat.format(bytes / 1024 / 1024)} MB`;
+  return `${sizeFormat.format(bytes / 1024 / 1024 / 1024)} GB`;
+}
+
 export function formatMoney(amount: number | null, currency: string | null): string {
   if (amount === null) return "Belirtilmemiş";
   if (!currency) return numberFormat.format(amount);

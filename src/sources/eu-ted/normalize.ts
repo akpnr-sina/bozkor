@@ -130,8 +130,15 @@ const CPV_CODE = /^(\d{8})(?:-\d)?$/;
 const cpvCodes = (values: string[]): string[] =>
   values.map((v) => CPV_CODE.exec(v)?.[1]).filter((c): c is string => c !== undefined);
 
+/** TED's links carry HTML-escaped ampersands ("...login&amp;type=DCE"), now and then escaped twice. */
+export function decodeUrlAmpersands(url: string): string {
+  let decoded = url;
+  for (let i = 0; i < 3 && /&(?:amp|#0*38|#x0*26);/i.test(decoded); i++) decoded = decoded.replace(/&(?:amp|#0*38|#x0*26);/gi, "&");
+  return decoded;
+}
+
 function httpUrls(values: string[]): string[] {
-  return unique(values.filter((url) => /^https?:\/\//i.test(url)));
+  return unique(values.map((url) => decodeUrlAmpersands(url.trim())).filter((url) => /^https?:\/\//i.test(url)));
 }
 
 /** Language preference for multilingual texts: English, then the notice's own languages. */

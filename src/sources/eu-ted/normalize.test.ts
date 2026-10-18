@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadFixture } from "../../../tests/helpers/fixtures";
 import { foldNotices } from "../fold";
-import { normalizeTedNotice, tedNoticeKeys, tedTimestamp } from "./normalize";
+import { decodeUrlAmpersands, normalizeTedNotice, tedNoticeKeys, tedTimestamp } from "./normalize";
 
 type Raw = Record<string, unknown>;
 const fixture = (name: string) => loadFixture<Raw>("eu-ted", name);
@@ -130,6 +130,16 @@ describe("normalizeTedNotice", () => {
 
   it("uses the submission portal when there is no documents link", () => {
     expect(normalized("ted-cn-utilities")).toMatchObject({ documents: [], documentsPortalUrl: "https://josephine.proebiz.com/cs/" });
+  });
+
+  it("decodes the HTML-escaped ampersands of TED's links", () => {
+    const escaped = "https://www.marches-publics.info/mpiaws/index.cfm?fuseaction=dematEnt.login&amp;type=DCE&amp;IDM=1854555";
+    const raw = { ...fixture("ted-cn-supplies-single-lot"), "document-url-lot": [escaped] };
+    const notice = normalizeTedNotice(raw)!;
+    const url = "https://www.marches-publics.info/mpiaws/index.cfm?fuseaction=dematEnt.login&type=DCE&IDM=1854555";
+    expect(notice.documents.map((d) => d.url)).toEqual([url]);
+    expect(notice.documentsPortalUrl).toBe(url);
+    expect(decodeUrlAmpersands("https://a.example/?x=1&amp;amp;y=2&#38;z=3")).toBe("https://a.example/?x=1&y=2&z=3");
   });
 
   it("folds a chain of changes into the latest deadline", () => {

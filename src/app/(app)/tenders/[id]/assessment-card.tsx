@@ -21,15 +21,19 @@ type Props = {
   result: { assessment: TenderAssessment; latest: LatestFacts } | null;
   /** The newest facts attempt, valid or not. */
   latestAttempt: Analysis | null;
-  /** The facts were read from an earlier version of the notice. */
+  /** The facts wait to be extracted again: the notice, its files or the extraction changed since. */
   stale: boolean;
   details: NoticeDetails | null;
   tenderId: string;
+  /** Names of the files the facts call read, in the order of its "file:<n>" quote sources. */
+  fileNames?: string[];
+  /** The month's LLM budget is spent: automatic extraction waits (CLAUDE.md rule 7). */
+  budgetExceeded?: boolean;
 };
 
 const range = (r: Range) => (r.low === r.high ? `${r.low}` : `${r.low}-${r.high}`);
 
-export function AssessmentCard({ result, latestAttempt, stale, details, tenderId }: Props) {
+export function AssessmentCard({ result, latestAttempt, stale, details, tenderId, fileNames = [], budgetExceeded = false }: Props) {
   const failedSince = latestAttempt && !latestAttempt.valid && latestAttempt.id !== result?.latest.analysisId ? latestAttempt : null;
   if (!result) {
     return failedSince ? (
@@ -45,11 +49,17 @@ export function AssessmentCard({ result, latestAttempt, stale, details, tenderId
   const multiLot = assessment.lots.length > 1;
   return (
     <div className="flex flex-col gap-5 text-sm">
-      {stale && <p className="text-xs text-muted-foreground">Olgular ilanın önceki hâlinden çıkarıldı; yenisi sırada.</p>}
+      {stale && (
+        <p className="text-xs text-muted-foreground">
+          {budgetExceeded
+            ? "İlan, dosyalar ya da çıkarma yöntemi bu olgulardan sonra değişti; ama bu ayın LLM bütçesi doldu, olgular bütçe yenilenince ya da elle çalıştırılınca güncellenir."
+            : "İlan, dosyalar ya da çıkarma yöntemi bu olgulardan sonra değişti; olgular yeniden çıkarılmak üzere sırada."}
+        </p>
+      )}
       {failedSince && <FailedAttempt attempt={failedSince} hasEarlier tenderId={tenderId} />}
       <LotVerdict lot={best} heading={multiLot ? `En umut verici lot: ${lotLabel(best.lotNumber)} (${best.productTr})` : null} />
       {multiLot && <LotsTable lots={assessment.lots} />}
-      <FactsList stored={latest.stored} details={details} />
+      <FactsList stored={latest.stored} details={details} fileNames={fileNames} />
       <p className="text-xs text-muted-foreground">
         Olguları AI ilan metninden çıkardı ({formatDateTime(latest.createdAt)}); puan, kapı ve kararları kod {assessment.policyVersion} politikasıyla
         hesapladı. Doğrulanmamış alıntıya dayanan olgu karar için kullanılmaz. Karar sizindir.
@@ -218,8 +228,13 @@ const CERT_LEVEL_LABELS: Record<FactsOutput["certifications"][number]["level"], 
   UNKNOWN: "seviyesi belirsiz",
 };
 
-/** Where in the notice a quote was found, in Turkish. */
-function sourceLabel(key: string): string {
+/** Where a quote was found, in Turkish: a part of the notice, or a file and its page. */
+function sourceLabel(key: string, fileNames: readonly string[]): string {
+  const file = /^file:(\d+)(?::p(\d+))?$/.exec(key);
+  if (file) {
+    const name = fileNames[Number(file[1]) - 1];
+    return `${name ? `"${name}"` : `dosya ${file[1]}`}${file[2] ? `, sayfa ${file[2]}` : ""}`;
+  }
   if (key === "title") return "başlık";
   if (key === "description") return "açıklama";
   if (key === "performance") return "ifa koşulları";
@@ -230,9 +245,11 @@ function sourceLabel(key: string): string {
   return key;
 }
 
-function FactsList({ stored, details }: { stored: ReadFacts; details: NoticeDetails | null }) {
+function FactsList({ stored, details, fileNames }: { stored: ReadFacts; details: NoticeDetails | null; fileNames: readonly string[] }) {
   const { facts, quoteChecks } = stored;
-  const found = (key: keyof NonNullable<typeof quoteChecks>["facts"]) => (quoteChecks ? quoteChecks.facts[key] : undefined);
+  /** Where a quote was found, as a label; null when it was not found, undefined without checks. */
+  const label = (key: string | null | undefined) => (key ? sourceLabel(key, fileNames) : key);
+  const found = (key: keyof NonNullable<typeof quoteChecks>["facts"]) => (quoteChecks ? label(quoteChecks.facts[key]) : undefined);
   const months = details?.durationMonths ?? null;
   const award = awardFromDetails(details);
   const lotPrefix = (lots: string[]) => (facts.lots.length > 1 && lots.length ? `${lots.map(lotLabel).join(", ")}: ` : "");
@@ -254,7 +271,7 @@ function FactsList({ stored, details }: { stored: ReadFacts; details: NoticeDeta
                   value={NATURE_LABELS[lot.productNature]!}
                   detail=""
                   quote={lot.natureQuote}
-                  found={quoteChecks ? quoteChecks.lots[i]?.nature : undefined}
+                  found={quoteChecks ? label(quoteChecks.lots[i]?.nature) : undefined}
                   unknown={lot.productNature === "UNKNOWN"}
                 />
                 <FactRow
@@ -262,7 +279,7 @@ function FactsList({ stored, details }: { stored: ReadFacts; details: NoticeDeta
                   value={lot.quantity.text || "Belirtilmemiş"}
                   detail=""
                   quote={lot.quantity.quote}
-                  found={quoteChecks ? quoteChecks.lots[i]?.quantity : undefined}
+                  found={quoteChecks ? label(quoteChecks.lots[i]?.quantity) : undefined}
                   unknown={lot.quantity.kind === "UNKNOWN" && !lot.quantity.text}
                 />
               </ul>
@@ -302,7 +319,7 @@ function FactsList({ stored, details }: { stored: ReadFacts; details: NoticeDeta
               value={`${cert.name} (${CERT_LEVEL_LABELS[cert.level]})`}
               detail=""
               quote={cert.quote}
-              found={quoteChecks ? quoteChecks.certifications[i] : undefined}
+              found={quoteChecks ? label(quoteChecks.certifications[i]) : undefined}
             />
           ))}
         </ul>
@@ -334,7 +351,7 @@ function FactRow({
   value: string;
   detail: string;
   quote: string;
-  /** Where the quote was found; null when it was not; undefined without checks. */
+  /** Where the quote was found, as a label (sourceLabel); null when it was not; undefined without checks. */
   found: string | null | undefined;
   /** An unknown value needs no quote. */
   unknown?: boolean;
@@ -352,9 +369,9 @@ function FactRow({
         <span className="flex flex-wrap items-baseline gap-2 text-xs text-muted-foreground">
           {quote && <q className="italic wrap-anywhere">{quote}</q>}
           {verified ? (
-            <span>kaynak: {sourceLabel(found)}</span>
+            <span>kaynak: {found}</span>
           ) : (
-            <Badge variant="outline" title="Alıntı modelin okuduğu ilan metninde bulunamadı; bu olgu karar için kullanılmadı.">
+            <Badge variant="outline" title="Alıntı modelin okuduğu ilan metninde ve dosyalarda bulunamadı; bu olgu karar için kullanılmadı.">
               doğrulanmadı, kararda kullanılmadı
             </Badge>
           )}

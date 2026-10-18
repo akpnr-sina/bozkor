@@ -4,14 +4,14 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vites
 import { facts, lot } from "../../tests/helpers/facts";
 import { loadFixture } from "../../tests/helpers/fixtures";
 import { createTestDb } from "../../tests/helpers/test-db";
-import { analyses, criteriaProfiles, tenderReviews, tenders } from "@/db/schema";
+import { analyses, criteriaProfiles, documents, tenderReviews, tenders } from "@/db/schema";
 import { rematch } from "@/matching/apply";
 import { profileRulesSchema } from "@/matching/rules";
 import { syncWindow } from "@/sources/sync";
 import type { SourceAdapter } from "@/sources/types";
 import { fatNoticeKeys, normalizeFatRelease } from "@/sources/uk-fat/normalize";
 import { readStoredFacts } from "./facts-evidence";
-import { extractFacts, FACTS_PROMPT_VERSION, parseFacts, pendingFacts, runFacts } from "./facts";
+import { extractFacts, FACTS_PROMPT_VERSION, loadFactsNotice, parseFacts, pendingFacts, runFacts } from "./facts";
 import type { LlmClient, LlmRequest, LlmResponse } from "./llm";
 
 function fakeAdapter(pages: unknown[][]): SourceAdapter {
@@ -157,6 +157,87 @@ describe("extracting facts", () => {
     // Written again, with no new notice (changed_at untouched).
     await db.update(tenders).set({ updatedAt: sql`now() + interval '1 minute'` }).where(eq(tenders.id, compressorId));
     expect(await pendingFacts(db, 10)).toEqual([compressorId]);
+  });
+
+  it("reads the text of the tender's files with the notice and records which it read", async () => {
+    const { db } = testDb;
+    const compressorId = await tenderIdOf(compressor);
+    const [spec] = await db
+      .insert(documents)
+      .values({
+        tenderId: compressorId,
+        origin: "manual",
+        filename: "BA Compressor Specification.pdf",
+        mime: "application/pdf",
+        sizeBytes: 1_000,
+        sha256: "a".repeat(64),
+        storagePath: `${compressorId}/spec.pdf`,
+        fetchStatus: "fetched",
+        pageCount: 2,
+        textContent: "1. Scope\fThe compressor shall be delivered with a 24-month warranty from commissioning.",
+        processedAt: new Date(),
+      })
+      .returning({ id: documents.id });
+    const fromFile = { ...compressorFacts, warranty: { years: 2, detail: "Devreye almadan itibaren 24 ay", quote: "delivered with a 24-month warranty from commissioning" } };
+    const { client, requests } = fakeLlm(() => reply(fromFile));
+
+    expect((await extractFacts(db, client, compressorId, MODEL, PROMPT)).status).toBe("valid");
+
+    expect(requests[0]!.user).toContain('<dosya sira="1" ad="BA Compressor Specification.pdf" tur="pdf">');
+    const [row] = await db.select().from(analyses).where(eq(analyses.tenderId, compressorId));
+    expect(row!.documentIds).toEqual([spec!.id]);
+    expect(readStoredFacts(row!.output)!.quoteChecks?.facts.warranty).toBe("file:1:p2");
+  });
+
+  it("reads a tender again once its files change, without waiting out the hour", async () => {
+    const { db } = testDb;
+    const compressorId = await tenderIdOf(compressor);
+    const { client } = fakeLlm(() => reply(compressorFacts));
+    expect((await extractFacts(db, client, compressorId, MODEL, PROMPT)).status).toBe("valid");
+    expect(await pendingFacts(db, 10)).toEqual([]);
+
+    // A file was read after the facts call; its notice did not change.
+    await db.update(tenders).set({ documentsChangedAt: sql`now()`, updatedAt: sql`${tenders.updatedAt}` }).where(eq(tenders.id, compressorId));
+    expect(await pendingFacts(db, 10, { settleMinutes: 0 })).toEqual([compressorId]);
+
+    // Read again with the files: answered until they change once more.
+    expect((await extractFacts(db, client, compressorId, MODEL, PROMPT)).status).toBe("valid");
+    expect(await pendingFacts(db, 10, { settleMinutes: 0 })).toEqual([]);
+  });
+
+  it("waits while a tender's files are being read, and a few minutes after they changed", async () => {
+    const { db } = testDb;
+    const compressorId = await tenderIdOf(compressor);
+    const [unread] = await db
+      .insert(documents)
+      .values({ tenderId: compressorId, origin: "manual", filename: "spec.pdf", storagePath: `${compressorId}/s.pdf`, fetchStatus: "fetched" })
+      .returning({ id: documents.id });
+    // Being read: another call would follow at once.
+    expect(await pendingFacts(db, 10, { settleMinutes: 0 })).toEqual([]);
+
+    await db.update(documents).set({ processedAt: sql`now()` }).where(eq(documents.id, unread!.id));
+    await db.update(tenders).set({ documentsChangedAt: sql`now() - interval '2 minutes'`, updatedAt: sql`${tenders.updatedAt}` }).where(eq(tenders.id, compressorId));
+    expect(await pendingFacts(db, 10)).toEqual([]);
+    await db.update(tenders).set({ documentsChangedAt: sql`now() - interval '6 minutes'`, updatedAt: sql`${tenders.updatedAt}` }).where(eq(tenders.id, compressorId));
+    expect(await pendingFacts(db, 10)).toEqual([compressorId]);
+  });
+
+  it("reads only the documents the notice gave, not uploaded files or ZIP members", async () => {
+    const { db } = testDb;
+    const compressorId = await tenderIdOf(compressor);
+    const before = await loadFactsNotice(db, compressorId);
+    const [zip] = await db
+      .insert(documents)
+      .values({ tenderId: compressorId, origin: "manual", filename: "ihale.zip", storagePath: `${compressorId}/a.zip`, fetchStatus: "fetched" })
+      .returning({ id: documents.id });
+    await db.insert(documents).values([
+      { tenderId: compressorId, origin: "manual", filename: "Şartname.pdf", parentDocumentId: zip!.id, fetchStatus: "fetched" },
+      { tenderId: compressorId, origin: "auto", filename: "spec.pdf", parentDocumentId: zip!.id, fetchStatus: "fetched" },
+    ]);
+
+    const after = await loadFactsNotice(db, compressorId);
+    expect(after!.notice.documents).toEqual(before!.notice.documents);
+    expect(after!.notice.documents!.length).toBeGreaterThan(0);
   });
 
   it("leaves a tender pending when it is written while the model answers", async () => {

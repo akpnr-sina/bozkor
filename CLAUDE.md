@@ -35,6 +35,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `pnpm assess` olgusu olan tüm ihaleleri yeterlilik politikasıyla yeniden değerlendirir, `--dry-run` hiçbir şey yazmadan kaç kararın değişeceğini gösterir (politika değerini değiştirdikten sonra), `--report` kayıtlı kararları özetler (ret nedenleri, ortak bulma süresine duyarlılık, örnek gerekçeler)
 - `pnpm triage --limit=50` emekli profil bazlı AI puanı (worker çalıştırmaz; SPEC 7.1)
 - `pnpm translate --limit=50` ekibin gördüğü ihalelerin Türkçe çevirisi (elle), `--tender=<id>` tek ihale
+- `pnpm documents --report` doküman durumları, portal siteleri ve son denenen linkler (Faz 5 kabulü için), `--fetch` / `--process` worker'ın indirme ve okuma işlerinden birer parti (her doküman sahiplenildiği için worker açıkken de güvenli)
 - `pnpm enrich-ted` eşleşmesi ya da kararı olan TED ihalelerinin ilanlarını TED_FIELDS'e sonradan eklenen alanlarla (süre, ödül ve seçim kriterleri) yeniden çeker ve ihaleleri günceller; "değişti" basmaz, tekrar çalıştırmak güvenli
 
 ## Klasör yapısı
@@ -81,7 +82,23 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0, 1, 2, 3 ve 4 tamam (16 Ekim 2026). Sıradaki: Faz 5 (dokümanlar). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0-5 tamam (18 Ekim 2026). Sıradaki (kullanıcı kararı): resmi portal API adaptörleri (Romanya SICAP, Polonya e-Zamówienia, Bulgaristan EOP, TenderNed, Belçika, Portekiz), sonra Faz 6 (derin analiz). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Faz 5 kabulü (Supabase üzerinde, 18 Ekim 2026):
+- Migration 0013-0016 uygulandı; Supabase Storage'da özel `tender-documents` kovası (dosya başına 50 MB). Worker işleri `fetch-documents` (saatte iki) ve `process-documents` (dakikada bir); `pnpm documents --report|--fetch|--process`.
+- 16 Ekim taraması: linklerin %2'si doğrudan dosya. Kullanıcı kabulde girişsiz açık portal dokümanlarının otomatik çekilmesini istedi (17 Ekim). Kural 1 gereği yalnız kullanım şartları okunmuş portalların sayfaları izleniyor (`src/documents/hosts.ts`: GIZ, Vergabemarktplatz NRW); şartları otomasyonu yasaklayanlara hiç istek yok (platformazakupowa.pl, Deutsche eVergabe); robots.txt'e her istekte uyuluyor; ilk istek ve her yönlendirme bekçiden geçiyor (şartlar, robots, site sırası). İnceleme tablosu SPEC 4.4'te. enarocanje.si kullanıcı kararıyla ilan linkinden otomatik.
+- Canlıda: 3 Slovenya ZIP'i 12 üyeye açıldı, GIZ'den 32 dosya, NRW'den doküman ZIP'i; 18 Ekim'de depoda 102 dosya (113 MB). PDF metni ve sayfa sayısı, DOCX ve XLSX metni çıkıyor; NUL ve kontrol karakterleri atılıyor.
+- Elle yükleme: sürükle bırak, tarayıcıda SHA-256, tek kullanımlık imzalı link, ihale başına kilit altında 200 MB ve toplam 950 MB sınırı, silme. Kullanıcı yükledi; dosya "Analize girecek" oldu ve değerlendirme güncellendi.
+- Dokümanlı olgular (17 Ekim ekip kararı, `prompts/facts.v5.md`): analize giren dosyaların metni olgu girdisine giriyor (en fazla 12 dosya, 240.000 karakter), alıntı kaynağı dosya ve sayfa olarak gösteriliyor. Slovenya ihalelerinde referans ve ciro şartları dosyalardan çıktı (ör. "dosya 5, sayfa 9"), durumlar "Teklif verilemez" oldu. Dosyası değişen ihale 5 dakika sonra yeniden çıkarılıyor; v5'e geçiş ~580 ihaleyi yeniden çıkardı (~2-3 USD).
+- 717 test. 63 indiriciyi, çerez kabını, robots.txt'i ve portal link çıkarmayı; 03 metin çıkarmayı, ayarlar kartını, gelen kutusu göstergesini, komutu ve dosyalı olgu girdisini yazdı. Dört salt okunur inceleme turu 40'tan fazla bulgu çıkardı (NUL'lu PDF'te sonsuz döngü, yönlendirmeyle yasak listenin atlatılması, sınır yarışları gibi); hepsi düzeltildi.
+
+Faz 5 bilinen eksikleri:
+- Otomatik açılabilen portallar ilanların ~%10'u. evergabe-online.de şartları izin verse de dosyaları yalnız tarayıcıya veriyor (oturum sıfırlanıyor, güvenlik duvarı); robots.txt'in yasakladıkları (~%11: ekr.gov.hu, uvo.gov.sk, eojn.hr, achatpublic, contrataciondelestado) ve giriş isteyenler elle yükleniyor.
+- Eksik ara sertifika zinciri sunan siteler (e-propublico.pl, leidos-supply.uk) okunamıyor; NODE_EXTRA_CA_CERTS ile çözülebilir. Türkiye'den zaman aşımına uğrayan siteler (sell2wales, NEN) Railway'den yeniden denenmeli.
+- Portal sayfası bir kez taranıyor; sonradan eklenen dokümanlar için yeniden tarama yok. Taranmış PDF'in metni yok, alıntıları doğrulanamaz.
+- Bazı dillerde olgu girdisi 100k token'ı aşabiliyor (Slovence bir ihale 121k, ~0,09 USD).
+- Bazı Slovence ZIP adları eski Windows kod sayfasıyla yazıldığı için harf bozuk görünüyor.
+- Faz 8 kısıtı: dört Alman platformu dokümanların üçüncü kişilere verilmesini yasaklıyor; üreticilere doküman değil analiz iletilmeli (SPEC 10).
 
 Faz 4 kabulü (Supabase üzerinde, 16 Ekim 2026):
 - Kapsam ekip geri bildirimiyle değişti: profil başına AI puanı (triage, rubrik V2) yüksek puanlı ihalelerin elle kontrolde Bozkor'a uymadığını gösterince yerini yeterlilik politikası aldı (`docs/qualification-policy-v1.md`). AI yalnız alıntılı olgu çıkarır (`prompts/facts.v4.md`), puan, kapı, durum ve Türkçe gerekçeyi kod hesaplar (`src/policy/`, policy.v3). Ekip kararları: yalnızca ürün teslimi (kurulum, basit montaj, yerinde servis, sahada devreye alma ya da eğitim isteyen lot elenir), hizmet ve yapım lotları kapsam dışı, ortak bulma süresi 10 iş günü, Bozkor'un istekli belgesi, kendi referansı ve hiçbir ülkede ortağı yok.

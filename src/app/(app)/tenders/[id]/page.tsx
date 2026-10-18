@@ -9,13 +9,16 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db";
 import { retryRead } from "@/db/retry";
-import { analyses, criteriaProfiles, documents, documentFetchStatus, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
+import { analyses, criteriaProfiles, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
 import { sourcesHash } from "@/analysis/evidence";
-import { factsDocumentOrder } from "@/analysis/facts";
-import { factsQuoteSources } from "@/analysis/facts-input";
+import { monthlyLlmSpend } from "@/analysis/budget";
+import { isFactsPending } from "@/analysis/facts";
 import { byLotNumber, toTriageNotice } from "@/analysis/notice";
 import { latestTranslations } from "@/analysis/translations";
 import { noticeQuoteSources } from "@/analysis/triage-input";
+import { isFetchWanted } from "@/documents/fetch-job";
+import { loadTenderDocuments } from "@/documents/queries";
+import { uploadsConfigured } from "@/documents/storage";
 import { assessOne } from "@/policy/assess";
 import { getCurrentUser } from "@/lib/auth/session";
 import {
@@ -35,18 +38,13 @@ import { describeReason, parseReasons } from "@/matching/describe";
 import { isProductScope } from "@/sources/scope";
 import { AssessmentCard } from "./assessment-card";
 import { DecisionForm } from "./decision-form";
+import { documentName } from "./document-state";
+import { DocumentUpload } from "./document-upload";
+import { DocumentsCard } from "./documents-card";
 
 export const metadata: Metadata = { title: "İhale" };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-const FETCH_STATUS_LABELS: Record<(typeof documentFetchStatus.enumValues)[number], string> = {
-  pending: "Henüz indirilmedi",
-  fetched: "İndirildi",
-  needs_manual: "Elle yüklenmeli",
-  failed: "İndirilemedi",
-  unsupported: "Desteklenmeyen biçim",
-};
 
 export default function TenderPage(props: PageProps<"/tenders/[id]">) {
   return (
@@ -67,10 +65,10 @@ async function loadTender(id: string) {
   const db = getDb();
   const [tender] = await db.select().from(tenders).where(eq(tenders.id, id));
   if (!tender) return null;
-  const [lotRows, documentRows, matchRows, reviewRows] = await Promise.all([
+  const [lotRows, documentList, matchRows, reviewRows] = await Promise.all([
     db.select().from(lots).where(eq(lots.tenderId, id)).orderBy(asc(lots.lotNumber)),
-    // In the order the facts stage reads them, so the fingerprints agree.
-    db.select().from(documents).where(eq(documents.tenderId, id)).orderBy(...factsDocumentOrder),
+    // The notice's links in the order the facts stage reads them, so the fingerprints agree.
+    loadTenderDocuments(db, id),
     db
       .select({
         profileId: profileMatches.profileId,
@@ -85,7 +83,7 @@ async function loadTender(id: string) {
       .orderBy(asc(criteriaProfiles.name)),
     db.select().from(tenderReviews).where(eq(tenderReviews.tenderId, id)).orderBy(desc(tenderReviews.decidedAt)),
   ]);
-  const [translations, assessed, [latestFactsAttempt]] = await Promise.all([
+  const [translations, assessed, [latestFactsAttempt], fetchWanted, factsPending, spend] = await Promise.all([
     latestTranslations(db, [id]),
     assessOne(db, id),
     // The newest facts attempt, to show a failure after the last valid result.
@@ -95,11 +93,19 @@ async function loadTender(id: string) {
       .where(and(eq(analyses.tenderId, id), eq(analyses.kind, "facts")))
       .orderBy(desc(analyses.createdAt))
       .limit(1),
+    isFetchWanted(db, id),
+    // The facts queue's own test: whether the stored facts wait to be extracted again.
+    isFactsPending(db, id),
+    monthlyLlmSpend(db),
   ]);
   return {
     tender,
     lots: lotRows.sort(byLotNumber),
-    documents: documentRows,
+    documents: documentList.documents,
+    storedBytes: documentList.storedBytes,
+    fetchWanted,
+    factsPending,
+    budgetExceeded: spend.exceeded,
     matches: matchRows,
     reviews: reviewRows,
     translation: translations.get(id) ?? null,
@@ -116,12 +122,11 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
   if (!data) notFound();
   const { tender, reviews } = data;
   const now = new Date();
+  const uploadsEnabled = uploadsConfigured();
   const current = reviews[0] ?? null;
   const cpvs = [tender.cpvMain, ...tender.cpvAdditional].filter((c): c is string => !!c);
   const notice = toTriageNotice(tender, data.lots);
   const noticeHash = sourcesHash(noticeQuoteSources(notice));
-  const factsHash = sourcesHash(factsQuoteSources({ ...notice, documents: data.documents }));
-  const factsHashStored = data.assessed?.latest.stored.sourcesHash ?? null;
   const { translation } = data;
   const lotTitlesTr = new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.title]) ?? []);
   const lotDescriptionsTr = new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.description]) ?? []);
@@ -284,31 +289,28 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
           <AssessmentCard
             result={data.assessed}
             latestAttempt={data.latestFactsAttempt}
-            stale={factsHashStored !== null && factsHashStored !== factsHash}
+            stale={!!data.assessed && data.factsPending}
+            budgetExceeded={data.budgetExceeded}
             details={tender.details ?? null}
             tenderId={tender.id}
+            fileNames={(data.assessed?.latest.documentIds ?? []).map((id) => {
+              const doc = data.documents.find((d) => d.id === id);
+              return doc ? documentName(doc) : "";
+            })}
           />
         </Section>
 
         <Section title={`Dokümanlar (${data.documents.length})`}>
-          {data.documents.length ? (
-            <ul className="flex flex-col gap-2 text-sm">
-              {data.documents.map((doc) => (
-                <li key={doc.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                  {doc.sourceUrl ? (
-                    <a href={doc.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4 wrap-anywhere">
-                      {doc.title ?? doc.filename ?? doc.sourceUrl}
-                    </a>
-                  ) : (
-                    <span>{doc.title ?? doc.filename ?? "Adsız doküman"}</span>
-                  )}
-                  <span className="text-muted-foreground">{FETCH_STATUS_LABELS[doc.fetchStatus]}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <Empty>İlanda doküman linki yok. Dokümanlar genelde doküman portalında.</Empty>
-          )}
+          <DocumentsCard
+            tenderId={tender.id}
+            documents={data.documents}
+            storedBytes={data.storedBytes}
+            portalUrl={tender.documentsPortalUrl}
+            fetchWanted={data.fetchWanted}
+            uploadsEnabled={uploadsEnabled}
+            now={now}
+            upload={<DocumentUpload tenderId={tender.id} disabledReason={uploadsEnabled ? null : "Dosya deposu henüz ayarlı değil; yükleme kapalı."} />}
+          />
         </Section>
 
         <Section title="Derin analiz">

@@ -3,6 +3,7 @@ import type { AppDb } from "@/db";
 import { criteriaProfiles, documents, profileMatches, reviewDecision, tenderAssessments, tenderReviews, tenders } from "@/db/schema";
 import type { ReviewDecision } from "@/lib/format";
 import { latestTranslations } from "@/analysis/translations";
+import { KIND_MIME } from "@/documents/sniff";
 import { openTender } from "@/matching/apply";
 import { sourceIds } from "@/matching/rules";
 import { STATUSES } from "@/policy/engine";
@@ -194,24 +195,61 @@ export async function loadInbox(db: AppDb, filters: Filters, pageSize = PAGE_SIZ
   const rows = await run(pageSize, (filters.page - 1) * pageSize);
   // A page past the end (tenders closed or got decided meanwhile) still reports the total.
   const total = rows[0]?.total ?? (filters.page > 1 ? ((await run(1, 0))[0]?.total ?? 0) : 0);
-  const extras = await pageExtras(db, rows.map((r) => r.tenderId));
-  const list = rows.map((row) => ({ ...row, ...(extras.get(row.tenderId) ?? { documentCount: 0, titleTr: null }) }));
+  const extras = await pageExtras(db, rows);
+  const list = rows.map((row) => ({ ...row, ...(extras.get(row.tenderId) ?? { documents: { state: "none" as const }, titleTr: null }) }));
   return { profiles, hasAnyProfile: profileCount > 0, list, total };
 }
 
-/** For the tenders on one page only: the number of document links and the Turkish title. */
-async function pageExtras(db: AppDb, tenderIds: string[]) {
-  const extras = new Map<string, { documentCount: number; titleTr: string | null }>();
-  if (!tenderIds.length) return extras;
+/** What the inbox says about a tender's documents (SPEC Faz 5). */
+export type DocumentSummary =
+  /** Files the deep analysis will read: the rule of analysisInputIds (src/documents/queries.ts). */
+  | { state: "files"; files: number }
+  /** Stored, not read by the worker yet. */
+  | { state: "reading" }
+  /** On the buyer's portal: a link answered with a portal page, or the notice names only the portal. */
+  | { state: "portal" }
+  | { state: "none" };
+
+type DocumentCounts = { files: number; reading: number; portal: boolean };
+
+function documentSummary(counts: DocumentCounts | undefined, portalUrl: string | null): DocumentSummary {
+  if (counts?.files) return { state: "files", files: counts.files };
+  if (counts?.reading) return { state: "reading" };
+  if (counts?.portal || (!counts && portalUrl)) return { state: "portal" };
+  return { state: "none" };
+}
+
+/** For the tenders on one page only: their documents and their Turkish title. */
+async function pageExtras(db: AppDb, rows: readonly { tenderId: string; documentsPortalUrl: string | null }[]) {
+  const extras = new Map<string, { documents: DocumentSummary; titleTr: string | null }>();
+  if (!rows.length) return extras;
+  const tenderIds = rows.map((r) => r.tenderId);
   const [counts, translations] = await Promise.all([
     db
-      .select({ tenderId: documents.tenderId, n: sql<number>`count(*)::int` })
+      .select({
+        tenderId: documents.tenderId,
+        // Each content once. octet_length reads a long text's stored size without loading it.
+        files: sql<number>`(count(distinct coalesce(${documents.sha256}, ${documents.id}::text)) filter (where
+          ${documents.fetchStatus} = 'fetched' and ${documents.storagePath} is not null and ${documents.processedAt} is not null
+          and case
+            when ${documents.mime} = ${KIND_MIME.pdf} then coalesce(${documents.pageCount}, 0) > 0
+            when ${documents.mime} in (${KIND_MIME.docx}, ${KIND_MIME.xlsx}) then coalesce(octet_length(${documents.textContent}), 0) > 0
+            else false
+          end))::int`,
+        reading: sql<number>`(count(*) filter (where ${documents.storagePath} is not null and ${documents.processedAt} is null))::int`,
+        portal: sql<boolean>`coalesce(bool_or(${documents.fetchStatus} = 'needs_manual'), false)`,
+      })
       .from(documents)
       .where(inArray(documents.tenderId, tenderIds))
       .groupBy(documents.tenderId),
     latestTranslations(db, tenderIds),
   ]);
-  for (const id of tenderIds) extras.set(id, { documentCount: 0, titleTr: translations.get(id)?.title ?? null });
-  for (const row of counts) extras.get(row.tenderId)!.documentCount = row.n;
+  const byTender = new Map(counts.map(({ tenderId, ...row }) => [tenderId, row]));
+  for (const row of rows) {
+    extras.set(row.tenderId, {
+      documents: documentSummary(byTender.get(row.tenderId), row.documentsPortalUrl),
+      titleTr: translations.get(row.tenderId)?.title ?? null,
+    });
+  }
   return extras;
 }

@@ -17,8 +17,12 @@ const sources = {
   description: "High quality contemporary external cafe furniture comprising chairs and matching tables. Delivery only. Minimum 15 year guarantee.",
 };
 
-function render(extracted: FactsOutput, lots: { lotNumber: string; valueEur: number | null }[] = []) {
-  const quoteChecks = checkFactsQuotes(extracted, sources);
+function render(
+  extracted: FactsOutput,
+  lots: { lotNumber: string; valueEur: number | null }[] = [],
+  files: { sources: Record<string, string>; names: string[] } = { sources: {}, names: [] },
+) {
+  const quoteChecks = checkFactsQuotes(extracted, { ...sources, ...files.sources });
   const evidenced = evidencedFacts(extracted, quoteChecks);
   const assessment = assessTender({
     tender: { valueEur: 14_000, submissionDeadline: new Date("2026-11-09T12:00:00Z"), buyerCountry: "GB", noticeLanguage: "EN", details: null },
@@ -28,11 +32,15 @@ function render(extracted: FactsOutput, lots: { lotNumber: string; valueEur: num
   });
   return renderToStaticMarkup(
     createElement(AssessmentCard, {
-      result: { assessment, latest: { analysisId: "a1", createdAt: REVIEWED, stored: { facts: extracted, quoteChecks, sourcesHash: "h" }, facts: evidenced } },
+      result: {
+        assessment,
+        latest: { analysisId: "a1", createdAt: REVIEWED, documentIds: [], stored: { facts: extracted, quoteChecks, sourcesHash: "h" }, facts: evidenced },
+      },
       latestAttempt: null,
       stale: false,
       details: null,
       tenderId: "t1",
+      fileNames: files.names,
     }),
   );
 }
@@ -72,6 +80,16 @@ describe("AssessmentCard", () => {
     expect(html).toContain("doğrulanmadı, kararda kullanılmadı");
     expect(html).toContain("Kapılar");
     expect(html).not.toContain("\u2014");
+  });
+
+  it("names the file and page a quote came from", () => {
+    const fromFile = { ...furniture, samples: { value: "YES" as const, quote: "Samples must be provided within 5 days." } };
+    const html = render(fromFile, [], {
+      sources: { "file:1:p12": "4.2 Samples must be provided within 5 days. Late samples are not assessed." },
+      names: ["Technical Specification.pdf"],
+    });
+    expect(html).toContain("kaynak: &quot;Technical Specification.pdf&quot;, sayfa 12");
+    expect(html).not.toContain("doğrulanmadı, kararda kullanılmadı");
   });
 
   it("adds a lot table for tenders with several lots", () => {

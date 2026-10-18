@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { DocumentsStatus } from "./documents-status";
 import { LlmUsage } from "./llm-usage";
 import { SourceStatus } from "./source-status";
 
@@ -11,7 +12,7 @@ export default function SettingsPage() {
       <header className="flex flex-col gap-2">
         <h1 className="text-xl font-semibold">Ayarlar</h1>
         <p className="text-sm text-muted-foreground">
-          Kaynakların senkron durumu ve AI kullanımı. Kategori yönetimi sonraki fazlarda eklenecek.
+          Kaynakların senkron durumu, doküman deposu ve AI kullanımı. Kategori yönetimi sonraki fazlarda eklenecek.
         </p>
       </header>
       <section aria-labelledby="sources-heading" className="flex flex-col gap-3">
@@ -23,6 +24,19 @@ export default function SettingsPage() {
         </div>
         <Suspense fallback={<p className="text-sm text-muted-foreground">Yükleniyor...</p>}>
           <SourceStatus />
+        </Suspense>
+      </section>
+      <section aria-labelledby="documents-heading" className="flex flex-col gap-3">
+        <div className="flex flex-col gap-1">
+          <h2 id="documents-heading" className="text-base font-semibold">
+            Dokümanlar
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            İlan linklerinden indirilen ve elle yüklenen dosyalar. Linklerin çoğu alıcının portalına gider; o dosyalar ihale sayfasından yüklenir.
+          </p>
+        </div>
+        <Suspense fallback={<p className="text-sm text-muted-foreground">Yükleniyor...</p>}>
+          <DocumentsStatus />
         </Suspense>
       </section>
       <section aria-labelledby="llm-usage-heading" className="flex flex-col gap-3">

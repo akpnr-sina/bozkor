@@ -31,7 +31,14 @@ export type RecordEntry = {
 
 export async function recordAnalysis(
   db: AppDb,
-  target: { tenderId: string; profileId: string | null; kind: (typeof analysisKind.enumValues)[number]; promptVersion: string },
+  target: {
+    tenderId: string;
+    profileId: string | null;
+    kind: (typeof analysisKind.enumValues)[number];
+    promptVersion: string;
+    /** The files the call read, in the order its input numbered them. */
+    documentIds?: string[];
+  },
   entry: RecordEntry,
 ): Promise<string> {
   const [row] = await db
@@ -42,6 +49,7 @@ export async function recordAnalysis(
       kind: target.kind,
       model: entry.model,
       promptVersion: target.promptVersion,
+      documentIds: target.documentIds ?? [],
       output: entry.output,
       valid: entry.valid,
       inputTokens: entry.usage.inputTokens,

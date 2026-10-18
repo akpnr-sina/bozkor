@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   check,
   date,
@@ -129,6 +130,11 @@ export const tenders = pgTable(
     details: jsonb("details").$type<NoticeDetails>(),
     /** Set when a later notice changes the tender; drives the "değişti" badge. */
     changedAt: timestamptz("changed_at"),
+    /**
+     * When the files the analysis reads last changed (a file read, deleted);
+     * the facts stage extracts again after it. updated_at stays the notice's.
+     */
+    documentsChangedAt: timestamptz("documents_changed_at"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -177,16 +183,32 @@ export const documents = pgTable(
     sha256: text("sha256"),
     storagePath: text("storage_path"),
     pageCount: integer("page_count"),
-    /** Extracted text for DOCX / XLSX; PDFs go to the model as files. */
+    /** Extracted text: DOCX and XLSX as text, PDF pages split by form feeds (\f). */
     textContent: text("text_content"),
+    /** The text was cut at DOCUMENT_LIMITS.textChars. */
+    textTruncated: boolean("text_truncated").notNull().default(false),
     fetchStatus: documentFetchStatus("fetch_status").notNull().default("pending"),
     fetchError: text("fetch_error"),
+    /**
+     * Failed attempts worth retrying of the current step: fetching the link
+     * (timeout, 429, 5xx), then reading the stored file (storage errors).
+     */
+    fetchAttempts: integer("fetch_attempts").notNull().default(0),
+    /** Earliest time of the next attempt after such a failure: hours later, or after the server's Retry-After. */
+    retryAt: timestamptz("retry_at"),
+    /** The ZIP this file came out of; deleted with it. */
+    parentDocumentId: uuid("parent_document_id").references((): AnyPgColumn => documents.id, { onDelete: "cascade" }),
+    /** Set once the stored file was read (text, pages, ZIP members) or found unreadable. */
+    processedAt: timestamptz("processed_at"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (t) => [
     index("documents_tender_id_idx").on(t.tenderId),
     index("documents_sha256_idx").on(t.sha256),
+    index("documents_unprocessed_idx")
+      .on(t.createdAt)
+      .where(sql`${t.storagePath} is not null and ${t.processedAt} is null`),
     uniqueIndex("documents_tender_id_source_url_auto_idx")
       .on(t.tenderId, t.sourceUrl)
       .where(sql`${t.origin} = 'auto'`),

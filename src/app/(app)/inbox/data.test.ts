@@ -2,7 +2,8 @@ import { eq, sql } from "drizzle-orm";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { loadFixture } from "../../../../tests/helpers/fixtures";
 import { createTestDb } from "../../../../tests/helpers/test-db";
-import { analyses, criteriaProfiles, profileMatches, tenderAssessments, tenderReviews, tenders } from "@/db/schema";
+import { analyses, criteriaProfiles, documents, profileMatches, tenderAssessments, tenderReviews, tenders } from "@/db/schema";
+import { KIND_MIME } from "@/documents/sniff";
 import { rematch } from "@/matching/apply";
 import { profileRulesSchema } from "@/matching/rules";
 import { syncWindow } from "@/sources/sync";
@@ -73,7 +74,44 @@ describe("loadInbox", () => {
     expect(profiles.map((p) => p.name)).toEqual(["Giyim", "Hepsi"]);
     const helmet = list.find((row) => row.title.includes("Helmet"));
     expect(helmet?.profiles.sort()).toEqual(["Giyim", "Hepsi"]);
-    expect(helmet).toMatchObject({ isNew: true, current: true, decision: null, documentCount: 0 });
+    // No document links, but the notice names the buyer's portal.
+    expect(helmet).toMatchObject({ isNew: true, current: true, decision: null, documents: { state: "portal" } });
+  });
+
+  it("summarises each tender's documents: files the analysis reads, files being read, the portal, or nothing", async () => {
+    const { db } = testDb;
+    const ids = new Map((await db.select({ id: tenders.id, externalId: tenders.externalId }).from(tenders)).map((t) => [t.externalId, t.id]));
+    const [a, b, c] = ["096156-2026", "096253-2026", "096315-2026"].map((n) => ids.get(n)!) as [string, string, string];
+    await db.delete(documents);
+    await db.update(tenders).set({ documentsPortalUrl: null });
+    const read = { fetchStatus: "fetched" as const, processedAt: new Date() };
+    await db.insert(documents).values([
+      // Two links to one PDF count once; a ZIP and a PDF without pages are not read by the analysis.
+      { tenderId: a, origin: "auto", sourceUrl: "https://buyer.example/spec.pdf", ...read, storagePath: "a/spec.pdf", mime: KIND_MIME.pdf, pageCount: 4, sha256: "s1" },
+      { tenderId: a, origin: "auto", sourceUrl: "https://buyer.example/spec-copy.pdf", ...read, storagePath: "a/spec.pdf", mime: KIND_MIME.pdf, pageCount: 4, sha256: "s1" },
+      { tenderId: a, origin: "manual", filename: "terms.docx", ...read, storagePath: "a/terms.docx", mime: KIND_MIME.docx, textContent: "Terms", sha256: "s2" },
+      { tenderId: a, origin: "auto", sourceUrl: "https://buyer.example/pack.zip", ...read, storagePath: "a/pack.zip", mime: KIND_MIME.zip, sha256: "s3" },
+      { tenderId: a, origin: "auto", sourceUrl: "https://buyer.example/empty.pdf", ...read, storagePath: "a/empty.pdf", mime: KIND_MIME.pdf, pageCount: 0, sha256: "s4" },
+      { tenderId: a, origin: "auto", sourceUrl: "https://portal.example/a", fetchStatus: "needs_manual" },
+      // A stored file not read yet comes before the portal.
+      { tenderId: b, origin: "manual", filename: "spec.pdf", fetchStatus: "fetched", storagePath: "b/spec.pdf", mime: KIND_MIME.pdf, sha256: "s5" },
+      { tenderId: b, origin: "auto", sourceUrl: "https://portal.example/b", fetchStatus: "needs_manual" },
+      { tenderId: c, origin: "auto", sourceUrl: "https://buyer.example/later.pdf", fetchStatus: "pending" },
+    ]);
+    const summaries = async () => new Map((await loadInbox(db, all)).list.map((row) => [row.tenderId, row.documents]));
+
+    let docs = await summaries();
+    expect(docs.get(a)).toEqual({ state: "files", files: 2 });
+    expect(docs.get(b)).toEqual({ state: "reading" });
+    expect(docs.get(c)).toEqual({ state: "none" });
+
+    // Read but without pages, the upload leaves only the portal; a notice may name nothing but the portal.
+    await db.update(documents).set({ processedAt: new Date() }).where(eq(documents.tenderId, b));
+    await db.delete(documents).where(eq(documents.tenderId, c));
+    await db.update(tenders).set({ documentsPortalUrl: "https://portal.example/c" }).where(eq(tenders.id, c));
+    docs = await summaries();
+    expect(docs.get(b)).toEqual({ state: "portal" });
+    expect(docs.get(c)).toEqual({ state: "portal" });
   });
 
   it("pages over tenders, not match rows, and counts all of them", async () => {
