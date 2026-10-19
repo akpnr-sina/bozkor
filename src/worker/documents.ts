@@ -1,6 +1,7 @@
 import "@/lib/load-env";
 import { parseArgs } from "node:util";
 import { closeDb, getDb } from "@/db";
+import { listPortalDocuments, portalDocumentKey } from "@/documents/adapters";
 import { extractFile } from "@/documents/extract";
 import { createCookieJar, createHostThrottle, fetchDocument } from "@/documents/fetch";
 import { fetchDocuments, type FetchStats } from "@/documents/fetch-job";
@@ -70,6 +71,8 @@ async function fetchBatch(limit: number) {
       wait: (url) => throttle.wait(url),
       robots: (url) => robots.check(url),
       extractLinks: (html, pageUrl) => extractDocumentLinks(html, pageUrl),
+      listDocuments: (url, guard) => listPortalDocuments(url, guard),
+      documentKey: (url) => portalDocumentKey(url),
       storage: createDocumentStorage(),
       log,
     },
@@ -79,7 +82,7 @@ async function fetchBatch(limit: number) {
   log("Bitti.");
   log(
     `  Denenen: ${stats.attempted}, indirilen: ${stats.fetched}, portal sayfası: ${stats.manual}, desteklenmeyen biçim: ${stats.unsupported}, ` +
-      `indirilemeyen: ${stats.failed}, yeniden denenecek: ${stats.retry}, portal sayfalarından alınan: ${stats.pageFiles}, robots.txt engeli: ${stats.blocked}, kullanım şartları engeli: ${stats.forbidden}`,
+      `indirilemeyen: ${stats.failed}, yeniden denenecek: ${stats.retry}, portal sayfaları ve API'lerinden alınan: ${stats.pageFiles}, robots.txt engeli: ${stats.blocked}, kullanım şartları engeli: ${stats.forbidden}`,
   );
   if (stats.stoppedBy) log(`  ${FETCH_STOPS[stats.stoppedBy]}`);
   if (!stats.attempted && !stats.stoppedBy) log("  İndirilecek link yok.");

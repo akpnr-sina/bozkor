@@ -120,6 +120,20 @@
       "when": 1792231646974,
       "tag": "0016_tender_documents_changed_at",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792404740725,
+      "tag": "0017_reopen_tenderned_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792408496993,
+      "tag": "0018_host_rests",
+      "breakpoints": true
     }
   ]
 }

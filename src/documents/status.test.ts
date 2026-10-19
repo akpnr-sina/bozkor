@@ -104,6 +104,19 @@ describe("report helpers", () => {
     ]);
   });
 
+  it("leaves out portal links whose files were taken", async () => {
+    const generators = await tender("Generators", 1);
+    const [page] = await testDb.db
+      .insert(documents)
+      .values({ tenderId: generators, origin: "auto", sourceUrl: "https://www.tenderned.nl/aankondigingen/overzicht/1", fetchStatus: "needs_manual" })
+      .returning({ id: documents.id });
+    await addDocuments(generators, [
+      { parentDocumentId: page!.id, sourceUrl: "https://www.tenderned.nl/papi/x/content", fetchStatus: "fetched", storagePath: "g/x.pdf", sizeBytes: 10 },
+      { sourceUrl: "https://www.tenderned.nl/aankondigingen/overzicht/2", fetchStatus: "needs_manual" },
+    ]);
+    expect(await portalHosts(testDb.db, 10)).toEqual([{ host: "www.tenderned.nl", count: 1 }]);
+  });
+
   it("lists the notice links that have been tried, the latest first", async () => {
     const { generators } = await seed();
     const links = await recentLinks(testDb.db, 4);

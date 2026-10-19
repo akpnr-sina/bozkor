@@ -1,0 +1,86 @@
+{
+  "publicatieId": 443745,
+  "kenmerk": 608806,
+  "aanbestedingNaam": "Levering van Bovenleidingmasten en Boorbuizen",
+  "opdrachtgeverNaam": "GVB Infra B.V.",
+  "numberOfDaysBeforeAanmeldenInschrijven": 8,
+  "opdrachtBeschrijving": "Deze opdracht omvat de continue, voorspelbare en tijdige levering van bovenleidingmasten en bijbehorende boorbuizen (buisfunderingen) ten behoeve van het bovenleidingnet van tram en metro, dat een omvang heeft van circa 250 kilometer.\n\nDoelstelling van de Opdracht: Het primaire doel is dat GVB gedurende de gehele looptijd van de Raamovereenkomst kan beschikken over de benodigde materialen. Dit dient te geschieden onder de volgende voorwaarden:\n\nMarktconforme en transparante prijzen: Prijzen dienen in lijn te zijn met de huidige markt en volledig inzichtelijk.\nVoldoen aan Programma van Eisen: Alle geleverde materialen moeten strikt voldoen aan de specificaties zoals vastgelegd in het Programma van Eisen.\nHoge leverbetrouwbaarheid: Een consistente en betrouwbare levering is cruciaal om de operationele continuïteit te waarborgen.\nNaleving overeengekomen levertijden: Leveringen moeten stipt binnen de af",
+  "publicatieDatum": "2026-10-08T21:38:00.573834",
+  "sluitingsDatum": "2026-10-27T23:59:00",
+  "typePublicatie": "Aankondiging van een opdracht - sectorale richtlijn, standaardregeling",
+  "publicatieCode": "EF17",
+  "juridischKaderCode": {
+    "code": "NAW",
+    "omschrijving": "Aanbestedingswet 2012"
+  },
+  "nationaalOfEuropeesCode": {
+    "code": "EU",
+    "omschrijving": "Europees"
+  },
+  "typeOpdrachtCode": {
+    "code": "L",
+    "omschrijving": "Leveringen"
+  },
+  "procedureCode": {
+    "code": "OPE",
+    "omschrijving": "Openbaar"
+  },
+  "cpvCodes": [
+    {
+      "isHoofdOpdracht": true,
+      "code": "44212250-6",
+      "omschrijving": "Masten"
+    }
+  ],
+  "nutsCodes": [
+    {
+      "code": "NL",
+      "omschrijving": "NEDERLAND"
+    }
+  ],
+  "afgerondeAanbesteding": false,
+  "isGeimporteerd": false,
+  "isVroegtijdigBeeindigd": false,
+  "publicatieIDLaatsteRectificatie": 443745,
+  "publicatiePdfId": 15013552,
+  "onlyGunningProcedure": false,
+  "isGegund": false,
+  "digitaalInschrijvenCode": {
+    "code": "TEN",
+    "omschrijving": "TenderNed"
+  },
+  "pbNummerTed": "700583-2026",
+  "trefwoord1": "\"Masten\"",
+  "trefwoord2": "\"Buizen\"",
+  "trefwoord3": "\"buisfunderingen\"",
+  "trefwoord4": "\"boorbuizen\"",
+  "trefwoord5": "\"bovenleidingmasten\"",
+  "referentieNummer": "2026-32",
+  "aankondigingCode": {
+    "code": "REC",
+    "omschrijving": "Rectificatie"
+  },
+  "opdrachtAardCode": {
+    "code": "RAA",
+    "omschrijving": "Raamovereenkomst"
+  },
+  "formType": "competition",
+  "links": {
+    "pdf": {
+      "href": "/papi/tenderned-rs-tns/v2/publicaties/443745/pdf",
+      "title": "pdf"
+    },
+    "keepInformed": {
+      "href": "https://www.tenderned.nl/aanbestedende-dienst/aankondigingen/443745?keepInformed=true",
+      "title": "keepInformed"
+    },
+    "addToTenders": {
+      "href": "https://www.tenderned.nl/ondernemersplatform/aankondigingen/443745?addToTenders=true",
+      "title": "addToTenders"
+    },
+    "shareOnLinkedIn": {
+      "href": "https://www.linkedin.com/sharing/share-offsite/?url=https://www.tenderned.nl/aankondigingen/overzicht/443745",
+      "title": "shareOnLinkedIn"
+    }
+  }
+}

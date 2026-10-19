@@ -12,8 +12,11 @@
 /** File types the platform reads. Everything else is stored as unsupported or not at all. */
 export type FileKind = "pdf" | "docx" | "xlsx" | "zip";
 
-/** Why a guard turns an address down (see FetchResult "blocked"). */
-export type BlockReason = "terms" | "robots" | "robots_unavailable";
+/**
+ * Why a guard turns an address down (see FetchResult "blocked"). "resting":
+ * a site resting after a 429 or 503 (host_rests); the guard refuses it.
+ */
+export type BlockReason = "terms" | "robots" | "robots_unavailable" | "resting";
 
 /** Asked before every request, the first and each redirect's: null to go on, or why not. */
 export type FetchGuard = (url: string) => Promise<BlockReason | null>;
@@ -35,15 +38,17 @@ export type FetchResult =
   /**
    * Not requested: the guard turned down `finalUrl`, the first address or one
    * a redirect led to (a portal whose terms forbid automated access, a path
-   * robots.txt closes, or a robots.txt that cannot be read now).
+   * robots.txt closes, a robots.txt that cannot be read now, or a site
+   * resting after a 429 or 503).
    */
   | { kind: "blocked"; finalUrl: string; reason: BlockReason }
   /**
    * No usable answer: network error, timeout, HTTP error. `retryable` for
    * timeouts, 408, 429 and 5xx; `retryAfterMs` from the Retry-After header
    * of a 429 or 503, which the next attempt waits out (CLAUDE.md rule 1).
+   * `finalUrl`: the address that answered (after redirects), when a response came.
    */
-  | { kind: "failed"; error: string; status: number | null; retryable: boolean; retryAfterMs: number | null };
+  | { kind: "failed"; error: string; status: number | null; retryable: boolean; retryAfterMs: number | null; finalUrl?: string };
 
 /** What extraction found in one file. */
 export type Extracted =
@@ -54,3 +59,16 @@ export type Extracted =
   | { kind: "zip"; entries: { name: string; bytes: Uint8Array }[]; skipped: { name: string; reason: string }[] }
   | { kind: "unsupported"; reason: string }
   | { kind: "failed"; error: string };
+
+/** What a portal API answered with (fetchJson): parsed JSON, or why there is none. */
+export type JsonResult =
+  | { kind: "json"; value: unknown; finalUrl: string }
+  | { kind: "blocked"; finalUrl: string; reason: BlockReason }
+  /** `finalUrl`: the address that answered (after redirects), when a response came. */
+  | { kind: "failed"; error: string; status: number | null; retryable: boolean; retryAfterMs: number | null; finalUrl?: string };
+
+/** A document a portal API lists; `skip` is why it is not to be fetched (in Turkish), e.g. flagged by a virus check. */
+export type ListedDocument = { url: string; name: string; sizeBytes: number | null; skip: string | null };
+
+/** What a portal API lists for a notice's link: its documents, or why not. */
+export type DocumentListing = { kind: "documents"; documents: ListedDocument[] } | Extract<JsonResult, { kind: "blocked" | "failed" }>;

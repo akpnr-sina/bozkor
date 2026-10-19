@@ -1,5 +1,5 @@
 import { isFetchableUrl } from "@/documents/fetch-job";
-import { hostPolicy } from "@/documents/hosts";
+import { takesDocuments } from "@/documents/hosts";
 import type { TenderDocument } from "@/documents/queries";
 import { KIND_MIME } from "@/documents/sniff";
 import { formatBytes, formatDateTime, formatNumber } from "@/lib/format";
@@ -45,8 +45,8 @@ export function documentState(doc: TenderDocument, ctx: StateContext): DocumentS
         : { label: "İndirilmedi", tone: "neutral", note: "Link otomatik denenecek." };
     }
     case "needs_manual":
-      // A page of a portal whose links are followed, not read to the end yet: the next runs go on.
-      if (!doc.processed && hostPolicy(doc.sourceUrl) === "follow") {
+      // A link of a portal whose documents are taken (its page's links or its API), not taken to the end yet: the next runs go on.
+      if (!doc.processed && takesDocuments(doc.sourceUrl)) {
         return ctx.fetchWanted
           ? { label: "Portaldan alınıyor", tone: "waiting", note: doc.fetchError }
           : { label: "Portaldan kısmen alındı", tone: "action", note: `İhale artık otomatik indirme kapsamında değil; eksikleri portaldan ${takeIt}` };

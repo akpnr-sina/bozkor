@@ -4,6 +4,7 @@ import { runFacts } from "@/analysis/facts";
 import { createLlmClient } from "@/analysis/llm";
 import type { RunStats } from "@/analysis/runner";
 import { runTranslation } from "@/analysis/translate";
+import { listPortalDocuments, portalDocumentKey } from "@/documents/adapters";
 import { extractFile } from "@/documents/extract";
 import { createCookieJar, createHostThrottle, fetchDocument } from "@/documents/fetch";
 import { fetchDocuments, type FetchStats } from "@/documents/fetch-job";
@@ -276,6 +277,8 @@ const jobs: JobDefinition[] = [
           wait: (url) => throttle.wait(url),
           robots: (url) => robots.check(url),
           extractLinks: (html, pageUrl) => extractDocumentLinks(html, pageUrl),
+          listDocuments: (url, guard) => listPortalDocuments(url, guard),
+          documentKey: (url) => portalDocumentKey(url),
           storage: documentStorage(),
           log: (m) => console.warn(m),
         },

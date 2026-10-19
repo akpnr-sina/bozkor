@@ -106,12 +106,17 @@ export async function loadDocumentsStatus(db: AppDb, now: Date): Promise<Documen
 /** A link's host in lower case, from the URL as stored. */
 const linkHost = sql<string>`coalesce(lower(substring(${documents.sourceUrl} from '^[a-zA-Z][a-zA-Z0-9+.-]*://([^/?#:]+)')), '?')`;
 
-/** Links that answered with a portal page, per host, the most first. */
+/** Links that answered with a portal page and gave no file (through the page's links or the portal's API), per host, the most first. */
 export async function portalHosts(db: AppDb, limit: number): Promise<{ host: string; count: number }[]> {
   return db
     .select({ host: linkHost, count: sql<number>`count(*)::int` })
     .from(documents)
-    .where(eq(documents.fetchStatus, "needs_manual"))
+    .where(
+      and(
+        eq(documents.fetchStatus, "needs_manual"),
+        sql`not exists (select 1 from ${documents} c where c.parent_document_id = ${documents.id} and c.fetch_status = 'fetched')`,
+      ),
+    )
     .groupBy(linkHost)
     .orderBy(desc(sql`count(*)`), linkHost)
     .limit(limit);

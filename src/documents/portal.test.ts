@@ -211,6 +211,132 @@ describe("createRobots", () => {
     await robots.allowed("https://portal.example.gov/c");
     expect(server.requests).toHaveLength(2);
   });
+
+  const MINUTE = 60 * 1000;
+  const HOUR = 60 * MINUTE;
+  const DAY = 24 * HOUR;
+
+  it("keeps to the copy last read while the server or the network fails, asking again minutes later", async () => {
+    let clock = 0;
+    let answer: (init?: RequestInit) => Response | Promise<Response> = text("User-agent: *\nDisallow: /private\n");
+    const requests: string[] = [];
+    const fetch: typeof globalThis.fetch = async (input, init) => {
+      requests.push(String(input));
+      return answer(init);
+    };
+    const robots = createRobots({ fetch, now: () => clock, timeoutMs: 20 });
+    expect(await robots.check("https://portal.example.gov/public")).toBe("allowed");
+
+    // A day later the server fails (RFC 9309 2.4): the copy read stands, its allows and its disallows.
+    clock += 25 * HOUR;
+    answer = text("", 503);
+    expect(await robots.check("https://portal.example.gov/public")).toBe("allowed");
+    expect(await robots.check("https://portal.example.gov/private/1")).toBe("disallowed");
+    expect(requests).toHaveLength(2);
+
+    // Asked again after a few minutes; offline or silent, the copy still stands.
+    clock += 4 * MINUTE;
+    expect(await robots.check("https://portal.example.gov/x")).toBe("allowed");
+    expect(requests).toHaveLength(2);
+    clock += 2 * MINUTE;
+    answer = () => {
+      throw new TypeError("fetch failed");
+    };
+    expect(await robots.check("https://portal.example.gov/private/2")).toBe("disallowed");
+    expect(requests).toHaveLength(3);
+    clock += 6 * MINUTE;
+    answer = (init) => new Promise((_, reject) => init?.signal?.addEventListener("abort", () => reject(init.signal?.reason)));
+    expect(await robots.check("https://portal.example.gov/public")).toBe("allowed");
+    expect(requests).toHaveLength(4);
+
+    // Read again: its new rules decide, for a day.
+    clock += 6 * MINUTE;
+    answer = text("User-agent: *\nDisallow: /public\n");
+    expect(await robots.check("https://portal.example.gov/public")).toBe("disallowed");
+    expect(await robots.check("https://portal.example.gov/private/1")).toBe("allowed");
+    expect(requests).toHaveLength(5);
+    clock += 23 * HOUR;
+    expect(await robots.check("https://portal.example.gov/public")).toBe("disallowed");
+    expect(requests).toHaveLength(5);
+  });
+
+  it("allows nothing while robots.txt answers 429, whatever was read before, and asks again minutes later", async () => {
+    let clock = 0;
+    let busy = false;
+    const tooMany = () => new Response(null, { status: 429, headers: { "Retry-After": "3600" } });
+    const server = robotsServer({
+      "https://portal.example.gov/robots.txt": () => (busy ? tooMany() : text("User-agent: *\nDisallow: /private\n")()),
+      "https://open.example.gov/robots.txt": () => (busy ? tooMany() : text("", 404)()),
+    });
+    const robots = createRobots({ fetch: server.fetch, now: () => clock });
+    expect(await robots.check("https://portal.example.gov/public")).toBe("allowed");
+    expect(await robots.check("https://open.example.gov/public")).toBe("allowed");
+
+    // A 429 asks us to wait: neither the rules nor the "no robots.txt" read before stand in.
+    busy = true;
+    clock += 25 * HOUR;
+    expect(await robots.check("https://portal.example.gov/public")).toBe("unavailable");
+    expect(await robots.check("https://open.example.gov/public")).toBe("unavailable");
+    expect(server.requests).toHaveLength(4);
+    clock += 4 * MINUTE;
+    expect(await robots.check("https://portal.example.gov/public")).toBe("unavailable");
+    expect(server.requests).toHaveLength(4);
+
+    busy = false;
+    clock += 2 * MINUTE;
+    expect(await robots.check("https://portal.example.gov/public")).toBe("allowed");
+    expect(await robots.check("https://portal.example.gov/private/1")).toBe("disallowed");
+    expect(server.requests).toHaveLength(5);
+  });
+
+  it("does not let the copy stand in when robots.txt now leads to an address it does not ask, or nowhere", async () => {
+    let clock = 0;
+    let location: string | null = null;
+    const server = robotsServer({
+      "https://portal.example.gov/robots.txt": () =>
+        location === null ? text("User-agent: *\nDisallow:\n")() : new Response(null, { status: 301, headers: { Location: location } }),
+    });
+    const robots = createRobots({ fetch: server.fetch, now: () => clock });
+    expect(await robots.check("https://portal.example.gov/a")).toBe("allowed");
+    clock += 25 * HOUR;
+    location = "http://127.0.0.1/robots.txt";
+    expect(await robots.check("https://portal.example.gov/b")).toBe("unavailable");
+    clock += 6 * MINUTE;
+    location = "http://[";
+    expect(await robots.check("https://portal.example.gov/c")).toBe("unavailable");
+    expect(server.requests.map((r) => r.url)).toEqual(Array(3).fill("https://portal.example.gov/robots.txt"));
+  });
+
+  it("allows nothing where no copy was read, or the copy is over 30 days old", async () => {
+    let clock = 0;
+    let up = true;
+    const server = robotsServer({
+      "https://portal.example.gov/robots.txt": () => (up ? text("User-agent: *\nDisallow:\n") : text("", 503))(),
+      "https://open.example.gov/robots.txt": () => (up ? text("", 404) : text("", 503))(),
+      "https://other.example.gov/robots.txt": text("", 503),
+    });
+    const robots = createRobots({ fetch: server.fetch, now: () => clock });
+    expect(await robots.check("https://portal.example.gov/a")).toBe("allowed");
+    expect(await robots.check("https://open.example.gov/a")).toBe("allowed");
+    // Never read: another site's copy does not stand in.
+    expect(await robots.check("https://other.example.gov/a")).toBe("unavailable");
+
+    up = false;
+    clock += 29 * DAY;
+    // No robots.txt (4xx) was a reading too: it still allows everything.
+    expect(await robots.check("https://portal.example.gov/b")).toBe("allowed");
+    expect(await robots.check("https://open.example.gov/b")).toBe("allowed");
+    expect(await robots.check("https://other.example.gov/b")).toBe("unavailable");
+
+    clock += DAY + 6 * MINUTE;
+    expect(await robots.check("https://portal.example.gov/c")).toBe("unavailable");
+    expect(await robots.check("https://open.example.gov/c")).toBe("unavailable");
+
+    // Read again, it decides once more.
+    up = true;
+    clock += 6 * MINUTE;
+    expect(await robots.check("https://portal.example.gov/d")).toBe("allowed");
+  });
 });
 
 describe("extractDocumentLinks on recorded portal pages", () => {

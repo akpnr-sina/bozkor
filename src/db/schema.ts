@@ -215,6 +215,20 @@ export const documents = pgTable(
   ],
 ).enableRLS();
 
+/**
+ * Sites that asked the document fetcher to slow down (429 or 503): none of
+ * their links is requested before `until` (CLAUDE.md rule 1), whichever row
+ * a link is on and whenever it became due. `host` as fetch-job reads it from
+ * a link (lower case).
+ */
+export const hostRests = pgTable("host_rests", {
+  host: text("host").primaryKey(),
+  until: timestamptz("until").notNull(),
+  status: integer("status").notNull(),
+  createdAt: createdAt(),
+  updatedAt: updatedAt(),
+}).enableRLS();
+
 /** Shared CPV taxonomy used by profiles now and manufacturers later. */
 export const categories = pgTable("categories", {
   id: text("id").primaryKey(),

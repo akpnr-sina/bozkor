@@ -1,7 +1,7 @@
 import { parseRetryAfter, sleep, type Sleep } from "@/sources/http";
 import { DOCUMENT_LIMITS, DOCUMENT_USER_AGENT } from "./limits";
 import { KIND_MIME, OLE2, sniffKind } from "./sniff";
-import type { BlockReason, FetchGuard, FetchResult } from "./types";
+import type { BlockReason, FetchGuard, FetchResult, JsonResult } from "./types";
 
 // Fetches what a document link answers with. Never a login, a form or a
 // captcha (CLAUDE.md rule 1): a page comes back with its HTML, and the
@@ -10,7 +10,8 @@ import type { BlockReason, FetchGuard, FetchResult } from "./types";
 // Redirects are followed by hand, so every hop is checked before it is
 // requested: local addresses are refused, and the caller's guard (a site's
 // terms, its robots.txt) is asked for each one. Retrying is left to the
-// caller (FetchResult.retryable).
+// caller (FetchResult.retryable). fetchJson reads a portal API's answer
+// (adapters/) under the same rules.
 
 export type FetchDocumentOptions = {
   maxBytes?: number;
@@ -44,12 +45,21 @@ const OLE2_MIME: Record<string, string> = {
   msg: "application/vnd.ms-outlook",
 };
 
-const failed = (error: string, status: number | null, retryable: boolean, retryAfterMs: number | null = null): FetchResult => ({
+export type FetchJsonOptions = Pick<FetchDocumentOptions, "maxBytes" | "timeoutMs" | "userAgent" | "fetch" | "guard">;
+
+/** A portal API's answer is read this far; a document listing is a few kilobytes. */
+const JSON_BYTES = 2 * 1024 * 1024;
+
+type Failure = Extract<FetchResult, { kind: "failed" }>;
+
+/** `finalUrl` when a response came: the address that answered, which a 429 or 503 rests. */
+const failed = (error: string, status: number | null, retryable: boolean, more: { retryAfterMs?: number | null; finalUrl?: string } = {}): Failure => ({
   kind: "failed",
   error,
   status,
   retryable,
-  retryAfterMs,
+  retryAfterMs: more.retryAfterMs ?? null,
+  ...(more.finalUrl === undefined ? {} : { finalUrl: more.finalUrl }),
 });
 
 /**
@@ -69,65 +79,136 @@ export async function fetchDocument(url: string, options: FetchDocumentOptions =
     cookies,
     guard,
   } = options;
+  return withinTimeout(timeoutMs, async (signal): Promise<FetchResult> => {
+    const followed = await follow(url, { accept: "*/*", userAgent, fetch: fetchImpl, cookies, guard }, signal);
+    // Still going round with the same cookies, or redirecting on and on:
+    // such a portal works only in a browser.
+    if (followed.kind === "loop") return { kind: "page", finalUrl: followed.finalUrl, login: false, html: "" };
+    if (followed.kind !== "answer") return followed;
+    const { response, finalUrl } = followed;
+    if (!response.ok) {
+      await discard(response);
+      return httpAnswer(response.status, response.headers.get("retry-after"), finalUrl);
+    }
+    return await readAnswer(response, finalUrl, maxBytes, signal);
+  });
+}
+
+/**
+ * GETs a portal API's address and parses the JSON it answers with. Never
+ * throws. Redirects, refused addresses, the guard and the timeout work as in
+ * fetchDocument. What a passing outage looks like is tried again: 408, 429
+ * and 5xx, a page instead of JSON or an empty answer (maintenance, a
+ * firewall), a refusal (401, 403) and a redirect loop; the caller limits the
+ * attempts. A missing record (404, 410), other 4xx, an answer larger than
+ * `maxBytes` and a broken redirect fail for good.
+ */
+export async function fetchJson(url: string, options: FetchJsonOptions = {}): Promise<JsonResult> {
+  const {
+    maxBytes = JSON_BYTES,
+    timeoutMs = DOCUMENT_LIMITS.fetchTimeoutMs,
+    userAgent = DOCUMENT_USER_AGENT,
+    fetch: fetchImpl = fetch,
+    guard,
+  } = options;
+  return withinTimeout(timeoutMs, async (signal): Promise<JsonResult> => {
+    const followed = await follow(url, { accept: "application/json", userAgent, fetch: fetchImpl, guard }, signal);
+    if (followed.kind === "loop") return failed("Yönlendirmeler bir sonuca varmadı.", null, true, { finalUrl: followed.finalUrl });
+    if (followed.kind !== "answer") return followed;
+    const { response, finalUrl } = followed;
+    if (!response.ok) {
+      await discard(response);
+      return apiHttpFailure(response.status, response.headers.get("retry-after"), finalUrl);
+    }
+    const tooLarge = () => failed(`Yanıt beklenenden büyük (sınır ${byteSize(maxBytes)}).`, response.status, false, { finalUrl });
+    const declared = contentLength(response.headers.get("content-length"));
+    if (declared !== null && declared > maxBytes) {
+      await discard(response);
+      return tooLarge();
+    }
+    const body = await readBody(response, maxBytes, signal, () => false);
+    if (body === "too_large") return tooLarge();
+    if (!body.length) return failed("Boş yanıt geldi.", response.status, true, { finalUrl });
+    try {
+      return { kind: "json", value: JSON.parse(new TextDecoder().decode(body)) as unknown, finalUrl };
+    } catch {
+      const type = mediaType(response.headers.get("content-type"));
+      return failed(`Yanıt JSON değil (${type ?? "türü belirtilmemiş"}).`, response.status, true, { finalUrl });
+    }
+  });
+}
+
+/**
+ * Runs a request under one timeout, which covers the guard, the redirects
+ * and the whole body. A timeout or a network error is a failure to try again.
+ */
+async function withinTimeout<T>(timeoutMs: number, request: (signal: AbortSignal) => Promise<T>): Promise<T | Failure> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    let current = url;
-    // An address with the cookies sent to it: a portal that sets a cookie and
-    // sends us back to the same address is answered with the cookie next time.
-    const visited = new Set<string>();
-    const visit = (address: string) => `${new URL(address).href}\n${cookies?.header(address) ?? ""}`;
-    for (let hop = 0; ; hop++) {
-      const refusal = urlRefusal(current);
-      if (refusal) return failed(refusal, null, false);
-      if (guard) {
-        let reason: BlockReason | null;
-        try {
-          // Within the same timeout: a guard that hangs must not hold the run.
-          reason = await untilAborted(guard(current), controller.signal);
-        } catch (error) {
-          if (controller.signal.aborted) throw error;
-          return failed(`Erişim kontrolü yapılamadı (${networkDetail(error)}).`, null, true);
-        }
-        // Not requested: a redirect to a site we may not fetch ends here.
-        if (reason) return { kind: "blocked", finalUrl: current, reason };
-      }
-      visited.add(visit(current));
-      const cookie = cookies?.header(current);
-      const response = await fetchImpl(current, {
-        method: "GET",
-        redirect: "manual",
-        headers: { "User-Agent": userAgent, Accept: "*/*", ...(cookie ? { Cookie: cookie } : {}) },
-        signal: controller.signal,
-      });
-      cookies?.store(current, response.headers.getSetCookie());
-      if (REDIRECT_STATUSES.has(response.status)) {
-        await discard(response);
-        const location = response.headers.get("location");
-        if (!location) return failed(`Yönlendirme adresi gelmedi (HTTP ${response.status}).`, response.status, false);
-        let next: string;
-        try {
-          next = new URL(location, current).href;
-        } catch {
-          return failed("Geçersiz yönlendirme adresi.", response.status, false);
-        }
-        // Still going round with the same cookies, or redirecting on and on:
-        // such a portal works only in a browser.
-        if (visited.has(visit(next)) || hop >= MAX_REDIRECTS) return { kind: "page", finalUrl: current, login: false, html: "" };
-        current = next;
-        continue;
-      }
-      if (!response.ok) {
-        await discard(response);
-        return httpAnswer(response.status, response.headers.get("retry-after"), current);
-      }
-      return await readAnswer(response, current, maxBytes, controller.signal);
-    }
+    return await request(controller.signal);
   } catch (error) {
     if (controller.signal.aborted) return failed(`Zaman aşımı: ${Math.round(timeoutMs / 1000)} saniyede yanıt tamamlanmadı.`, null, true);
     return failed(`Bağlantı kurulamadı (${networkDetail(error)}).`, null, true);
   } finally {
     clearTimeout(timer);
+  }
+}
+
+type Hop = { accept: string; userAgent: string; fetch: typeof fetch; cookies?: CookieJar; guard?: FetchGuard };
+
+/** Where a link's redirects led: the answer of the last address, or why they stopped before one. */
+type Followed =
+  | { kind: "answer"; response: Response; finalUrl: string }
+  | Extract<FetchResult, { kind: "blocked" }>
+  | Failure
+  /** Round and round with the same cookies, or more than MAX_REDIRECTS hops; `finalUrl` is the last address answered. */
+  | { kind: "loop"; finalUrl: string };
+
+/** Requests `url`, following redirects by hand: every address is refused or allowed (urlRefusal, the guard) before it is asked. */
+async function follow(url: string, hop: Hop, signal: AbortSignal): Promise<Followed> {
+  const { accept, userAgent, fetch: fetchImpl, cookies, guard } = hop;
+  let current = url;
+  // An address with the cookies sent to it: a portal that sets a cookie and
+  // sends us back to the same address is answered with the cookie next time.
+  const visited = new Set<string>();
+  const visit = (address: string) => `${new URL(address).href}\n${cookies?.header(address) ?? ""}`;
+  for (let hops = 0; ; hops++) {
+    const refusal = urlRefusal(current);
+    if (refusal) return failed(refusal, null, false);
+    if (guard) {
+      let reason: BlockReason | null;
+      try {
+        // Within the same timeout: a guard that hangs must not hold the run.
+        reason = await untilAborted(guard(current), signal);
+      } catch (error) {
+        if (signal.aborted) throw error;
+        return failed(`Erişim kontrolü yapılamadı (${networkDetail(error)}).`, null, true);
+      }
+      // Not requested: a redirect to a site we may not fetch ends here.
+      if (reason) return { kind: "blocked", finalUrl: current, reason };
+    }
+    visited.add(visit(current));
+    const cookie = cookies?.header(current);
+    const response = await fetchImpl(current, {
+      method: "GET",
+      redirect: "manual",
+      headers: { "User-Agent": userAgent, Accept: accept, ...(cookie ? { Cookie: cookie } : {}) },
+      signal,
+    });
+    cookies?.store(current, response.headers.getSetCookie());
+    if (!REDIRECT_STATUSES.has(response.status)) return { kind: "answer", response, finalUrl: current };
+    await discard(response);
+    const location = response.headers.get("location");
+    if (!location) return failed(`Yönlendirme adresi gelmedi (HTTP ${response.status}).`, response.status, false, { finalUrl: current });
+    let next: string;
+    try {
+      next = new URL(location, current).href;
+    } catch {
+      return failed("Geçersiz yönlendirme adresi.", response.status, false, { finalUrl: current });
+    }
+    if (visited.has(visit(next)) || hops >= MAX_REDIRECTS) return { kind: "loop", finalUrl: current };
+    current = next;
   }
 }
 
@@ -180,19 +261,35 @@ function isLocalV4(a: number, b: number): boolean {
   );
 }
 
-/**
- * An HTTP error. A 429 or 503 may say when to come back (Retry-After, in
- * seconds or as a date); rule 1 asks for that wait, which the caller keeps.
- */
+/** A document link's HTTP error, from `finalUrl`. */
 function httpAnswer(status: number, retryAfter: string | null, finalUrl: string): FetchResult {
-  if (status === 404 || status === 410) return failed(`Dosya bulunamadı (HTTP ${status}).`, status, false);
-  // 408 is the server's own timeout, as transient as ours.
-  const retryable = status === 408 || status === 429 || status >= 500;
-  if (status >= 400 && status < 500 && !retryable) {
+  if (status === 404 || status === 410) return failed(`Dosya bulunamadı (HTTP ${status}).`, status, false, { finalUrl });
+  if (status >= 400 && status < 500 && !retryableStatus(status)) {
     // A portal login or a bot block (401, 403), or a server that takes
     // requests from browsers only (400, 405, 406...): the team opens the link.
     return { kind: "page", finalUrl, login: status === 401 || status === 403, html: "" };
   }
+  return httpFailure(status, retryAfter, finalUrl);
+}
+
+/** A portal API's HTTP error, from `finalUrl`: a record that is not there fails for good; a refusal may be a firewall's for a while. */
+function apiHttpFailure(status: number, retryAfter: string | null, finalUrl: string): Failure {
+  if (status === 404 || status === 410) return failed(`Kayıt bulunamadı (HTTP ${status}).`, status, false, { finalUrl });
+  if (status === 401 || status === 403) return failed(`Erişim reddedildi (HTTP ${status}).`, status, true, { finalUrl });
+  return httpFailure(status, retryAfter, finalUrl);
+}
+
+/** 408 is the server's own timeout, as transient as ours. */
+const retryableStatus = (status: number) => status === 408 || status === 429 || status >= 500;
+
+/**
+ * An HTTP error from `finalUrl` as a failure, to be tried again for 408, 429
+ * and 5xx. A 429 or 503 may say when to come back (Retry-After, in seconds
+ * or as a date); rule 1 asks for that wait, which the caller keeps, at the
+ * site that answered.
+ */
+function httpFailure(status: number, retryAfter: string | null, finalUrl: string): Failure {
+  const retryable = retryableStatus(status);
   const retryAfterMs = status === 429 || status === 503 ? parseRetryAfter(retryAfter, Date.now()) : null;
   const reason =
     status === 429
@@ -202,7 +299,7 @@ function httpAnswer(status: number, retryAfter: string | null, finalUrl: string)
         : status >= 500
           ? "Sunucu hatası"
           : "Beklenmeyen yanıt";
-  return failed(`${reason} (HTTP ${status}).`, status, retryable, retryAfterMs);
+  return failed(`${reason} (HTTP ${status}).`, status, retryable, { retryAfterMs, finalUrl });
 }
 
 function networkDetail(error: unknown): string {
@@ -226,7 +323,7 @@ async function readAnswer(response: Response, finalUrl: string, maxBytes: number
   const body = await readBody(response, maxBytes, signal, (head) => sniffKind(head) === null && isPage(contentType, head));
   // The server's length, if any, was within the limit, so it was not the real one.
   if (body === "too_large") return { kind: "too_large", sizeBytes: null, finalUrl };
-  if (!body.length) return failed("Boş yanıt geldi.", response.status, false);
+  if (!body.length) return failed("Boş yanıt geldi.", response.status, false, { finalUrl });
 
   const filename = filenameOf(response.headers.get("content-disposition"), finalUrl);
   const fileKind = sniffKind(body, filename);
@@ -311,6 +408,13 @@ const latin1 = (bytes: Uint8Array) => new TextDecoder("latin1").decode(bytes);
 function contentLength(header: string | null): number | null {
   const value = header?.trim() ?? "";
   return /^\d+$/.test(value) ? Number(value) : null;
+}
+
+/** 2097152 as "2 MB", for messages. */
+function byteSize(bytes: number): string {
+  if (bytes >= 1024 * 1024) return `${Number((bytes / 1024 / 1024).toFixed(1))} MB`;
+  if (bytes >= 1024) return `${Number((bytes / 1024).toFixed(1))} KB`;
+  return `${bytes} bayt`;
 }
 
 /** "text/html; charset=utf-8" as "text/html". */

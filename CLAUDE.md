@@ -82,7 +82,21 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0-5 tamam (18 Ekim 2026). Sıradaki (kullanıcı kararı): resmi portal API adaptörleri (Romanya SICAP, Polonya e-Zamówienia, Bulgaristan EOP, TenderNed, Belçika, Portekiz), sonra Faz 6 (derin analiz). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Sıradaki (kullanıcı kararı): Faz 6 (derin analiz). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Faz 5b, resmi portal API'leri (19 Ekim 2026):
+- Araştırma (SPEC 4.4): TenderNed'in anahtarsız TNS servisi belge veriyor, uygulandı. Belçika başvuru istiyor (kullanıcı: şimdilik gerek yok). Vortal, SICAP, e-Zamówienia ve EOP'ta belge API'si yok; SICAP ve Vortal şartları otomasyonu yasaklıyor, onlara hiç istek gitmiyor.
+- TenderNed adaptörü (`src/documents/adapters/`): ilan linkindeki yayın numarasıyla belge listesi (son düzeltme önce, ilan PDF'leri hariç, Zod denetimi). Dosyalar sayfa linkleriyle aynı yoldan iniyor (bekçi, robots.txt, kalan yer, tekilleştirme). API'nin listeleyip inmeyen her belge nedeniyle görünüyor; geçici hata alan dosya kendi linki olarak yeniden deneniyor. Liste son tarihe kadar günde bir yeniden okunuyor; başka yayının yolundan gelen aynı belge indirme kimliğiyle tanınıyor.
+- robots.txt: 5xx ya da ağ kesintisinde son okunan kopya geçerli (RFC 9309 2.4, en çok 30 gün), 429'da değil. Hiç okunamamış sitenin linki 1 saat, sonra 6 saat sonra deneniyor. TenderNed'in /robots.txt'i aralıklı 503 veriyor.
+- Canlıda ilk turda 4 TenderNed ihalesinden 60 dosya indi ve okundu. Olgular dosyalardan yeniden çıkarıldı (0,33 USD): yüksek gerilim skid ihalesi sahada kurulum istediği için "Ticari olarak uygun değil", dördü lot başına referans istediği için "Teklif verilemez" oldu; kalan dosyaları tasarım gereği indirilmiyor.
+- Migration 0017: robots.txt okunamadığı için ekibe kalmış 5 TenderNed linki yeniden açılıyor. Migration 0018: `host_rests`; 429 ya da 503 veren siteye (yanıtı veren adres; API portalında alt alan adları dahil) süre bitene kadar hiçbir linkten ya da yönlendirmeden istek gitmiyor (kural 1).
+- 779 test. 63 adaptörü, fetchJson'ı, belge kimliğini ve robots yedeğini yazdı. 03'ün dört inceleme turu 21 bulgu çıkardı (inmeyen belgenin izsiz kalması, 429'da sitenin satır satır bekletilmesi, 429'da robots yedeği, yeniden listelemede boşuna istenen satırlar ve ezilen notlar, beklemeye alınan listede virüs işaretli belgenin inmesi gibi); hepsi düzeltildi.
+
+Faz 5b bilinen eksikleri:
+- TNS haber vermeden değişebilir; biçim değişirse link "servis değişmiş olabilir" notuyla kalır.
+- Aynı belgenin sürümleri (v1.0, v1.1, izlenen değişiklikler) birlikte olgu girdisine girebiliyor.
+- Portal sayfaları (GIZ, NRW) bir kez okunuyor; günlük yeniden okuma yalnız API'lerde.
+- Portalın virüs şüphesiyle işaretlediği ya da ihalenin alanı dolu olduğu için alınmayan belge, işaret kalksa ya da yer açılsa da yeniden denenmiyor.
 
 Faz 5 kabulü (Supabase üzerinde, 18 Ekim 2026):
 - Migration 0013-0016 uygulandı; Supabase Storage'da özel `tender-documents` kovası (dosya başına 50 MB). Worker işleri `fetch-documents` (saatte iki) ve `process-documents` (dakikada bir); `pnpm documents --report|--fetch|--process`.

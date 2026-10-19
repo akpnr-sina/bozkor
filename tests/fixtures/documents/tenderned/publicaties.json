@@ -1,0 +1,89 @@
+{
+  "content": [
+    {
+      "publicatieId": "445097",
+      "publicatieDatum": "2026-10-18",
+      "typePublicatie": {
+        "code": "AAO",
+        "omschrijving": "Aankondiging opdracht"
+      },
+      "aanbestedingNaam": "WOZ Waarderingsapplicatie",
+      "opdrachtgeverNaam": "Belastingsamenwerking Gouwe-Rijnland",
+      "sluitingsDatum": "2026-12-09T10:00:00",
+      "aantalDagenTotSluitingsDatum": 51,
+      "procedure": {
+        "code": "OPE",
+        "omschrijving": "Openbaar"
+      },
+      "typeOpdracht": {
+        "code": "D",
+        "omschrijving": "Diensten"
+      },
+      "digitaal": true,
+      "europees": true,
+      "publicatiecode": {
+        "code": "EF16",
+        "omschrijving": "Aankondiging van een opdracht - algemene richtlijn, standaardregeling"
+      },
+      "publicatiestatus": {
+        "code": "PUB",
+        "omschrijving": "Gepubliceerd"
+      },
+      "isVroegtijdigeBeeindiging": false,
+      "opdrachtBeschrijving": "De Aanbesteding is gericht op het contracteren van één Opdrachtnemer (eventueel met één of meerdere onder-aannemers) voor de levering van een WOZ Waarderingsapplicatie als SaaS-dienst, inclusief de implementatie, de conversie van gegevens, de koppelingen met het applicatielandschap van BSGR, opleiding en adoptie, en het be-heer en de doorontwikkeling gedurende de looptijd van de Overeenkomst.",
+      "isEformsWijziging": false,
+      "score": null,
+      "kenmerk": 616452,
+      "link": {
+        "href": "https://www.tenderned.nl/aankondigingen/overzicht/445097",
+        "title": "self"
+      }
+    },
+    {
+      "publicatieId": "445093",
+      "publicatieDatum": "2026-10-18",
+      "typePublicatie": {
+        "code": "AAO",
+        "omschrijving": "Aankondiging opdracht"
+      },
+      "aanbestedingNaam": "31219804 – Oliegeleidende schermen",
+      "opdrachtgeverNaam": "Rijkswaterstaat Programma's, Projecten en Onderhoud",
+      "sluitingsDatum": "2026-11-27T15:00:00",
+      "aantalDagenTotSluitingsDatum": 39,
+      "procedure": {
+        "code": "OPE",
+        "omschrijving": "Openbaar"
+      },
+      "typeOpdracht": {
+        "code": "L",
+        "omschrijving": "Leveringen"
+      },
+      "digitaal": true,
+      "europees": true,
+      "publicatiecode": {
+        "code": "EF16",
+        "omschrijving": "Aankondiging van een opdracht - algemene richtlijn, standaardregeling"
+      },
+      "publicatiestatus": {
+        "code": "PUB",
+        "omschrijving": "Gepubliceerd"
+      },
+      "isVroegtijdigeBeeindiging": false,
+      "opdrachtBeschrijving": "De inkoop van oliegeleidende schermen met toebehoren voor het bestrijden van waterverontreinigingen op de Nederlandse binnenwateren, de Nederlandse territoriale zee en de Nederlandse Exclusieve Economische Zone (EEZ).",
+      "isEformsWijziging": false,
+      "score": null,
+      "kenmerk": 619193,
+      "link": {
+        "href": "https://www.tenderned.nl/aankondigingen/overzicht/445093",
+        "title": "self"
+      }
+    }
+  ],
+  "first": true,
+  "last": false,
+  "totalElements": 146487,
+  "totalPages": 73244,
+  "size": 2,
+  "numberOfElements": 2,
+  "number": 0
+}

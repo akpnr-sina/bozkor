@@ -16,11 +16,25 @@ const ROBOTS_REDIRECTS = 5;
 const ROBOTS_TTL_MS = 24 * 60 * 60 * 1000;
 /** A robots.txt that could not be read is asked for again after this, so the next run tries again. */
 const UNREACHABLE_TTL_MS = 5 * 60 * 1000;
+/**
+ * While a site's server or the network fails, the copy of its robots.txt
+ * last read stands in for it (RFC 9309 2.4: a day at most, "unless the
+ * robots.txt file is unreachable"), up to this long after it was read;
+ * 2.3.1.4 names 30 days as a reasonably long time.
+ */
+const LAST_READ_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 const ROBOTS_TIMEOUT_MS = 15_000;
 
 type Rule = { allow: boolean; pattern: string; regex: RegExp };
 /** "all" without a robots.txt, "unreachable" while it cannot be read (RFC 9309 2.3.1.4). */
 type Policy = Rule[] | "all" | "unreachable";
+/**
+ * What asking for robots.txt gave. "outage" when the server or the network
+ * failed (5xx, a timeout, a network error), which the copy last read may see
+ * us through; "unreachable" for a 429, which asks us to wait, and for an
+ * address we do not ask.
+ */
+type Reading = Policy | "outage";
 
 export type RobotsOptions = {
   fetch?: typeof fetch;
@@ -34,8 +48,9 @@ export type RobotsOptions = {
 
 /**
  * "unavailable": robots.txt could not be read just now (429, 5xx, a timeout,
- * a network error; RFC 9309 calls this unreachable). Nothing may be fetched
- * meanwhile, and a later run asks again.
+ * a network error; RFC 9309 calls this unreachable), and no copy read in the
+ * last 30 days stands in for it, as one does only for a server or network
+ * failure. Nothing may be fetched meanwhile, and a later run asks again.
  */
 export type RobotsVerdict = "allowed" | "disallowed" | "unavailable";
 
@@ -132,9 +147,11 @@ async function readText(response: Response, max: number): Promise<string> {
 
 /**
  * Asks robots.txt before each request, read once a day per site. A missing
- * robots.txt (4xx) allows everything; one that cannot be read (5xx, 429, a
- * timeout, a network error) allows nothing and is asked for again after
- * UNREACHABLE_TTL_MS.
+ * robots.txt (4xx) allows everything; one that cannot be read is asked for
+ * again after UNREACHABLE_TTL_MS. While the server or the network fails (5xx,
+ * a timeout, a network error), the copy last read decides, if it was read in
+ * the last 30 days; after a 429, or without such a copy, nothing is allowed.
+ * Copies live as long as the process.
  */
 export function createRobots(options: RobotsOptions = {}): Robots {
   const {
@@ -144,9 +161,11 @@ export function createRobots(options: RobotsOptions = {}): Robots {
     wait = async () => {},
     timeoutMs = ROBOTS_TIMEOUT_MS,
   } = options;
-  const cache = new Map<string, { policy: Promise<Policy>; expiresAt: number }>();
+  const cache = new Map<string, { policy: Promise<Policy>; expiry: { at: number } }>();
+  /** Each site's robots.txt as last read, and when. */
+  const lastRead = new Map<string, { policy: Exclude<Policy, "unreachable">; readAt: number }>();
 
-  async function load(origin: string): Promise<Policy> {
+  async function load(origin: string): Promise<Reading> {
     let target = `${origin}/robots.txt`;
     for (let hop = 0; hop <= ROBOTS_REDIRECTS; hop++) {
       if (urlRefusal(target)) return "unreachable";
@@ -169,15 +188,21 @@ export function createRobots(options: RobotsOptions = {}): Robots {
           await response.body?.cancel().catch(() => {});
           const location = response.headers.get("location");
           if (!location) return "all";
-          target = new URL(location, target).href;
+          try {
+            target = new URL(location, target).href;
+          } catch {
+            return "unreachable";
+          }
           continue;
         }
         if (response.ok) return robotsRules(await readText(response, ROBOTS_BYTES));
         await response.body?.cancel().catch(() => {});
         // Unavailable (RFC 9309 2.3.1.3) allows; unreachable (2.3.1.4) does not, and 429 asks us to wait.
-        return response.status === 429 || response.status >= 500 ? "unreachable" : "all";
+        if (response.status === 429) return "unreachable";
+        return response.status >= 500 ? "outage" : "all";
       } catch {
-        return "unreachable";
+        // A timeout, or the network failed.
+        return "outage";
       } finally {
         clearTimeout(timer);
       }
@@ -186,16 +211,26 @@ export function createRobots(options: RobotsOptions = {}): Robots {
     return "all";
   }
 
-  /** The site's policy, read again a day after it was read, or minutes after it could not be. */
+  /**
+   * The site's policy, read again a day after it was read, or minutes after
+   * it could not be. Through an outage the copy last read stands, while
+   * recent enough; a 429 is waited out with nothing allowed.
+   */
   function policyOf(origin: string): Promise<Policy> {
     const cached = cache.get(origin);
-    if (cached && now() < cached.expiresAt) return cached.policy;
-    const entry = { policy: load(origin), expiresAt: now() + ROBOTS_TTL_MS };
-    void entry.policy.then((policy) => {
-      if (policy === "unreachable") entry.expiresAt = now() + UNREACHABLE_TTL_MS;
+    if (cached && now() < cached.expiry.at) return cached.policy;
+    const expiry = { at: now() + ROBOTS_TTL_MS };
+    const policy = load(origin).then((reading): Policy => {
+      if (reading !== "outage" && reading !== "unreachable") {
+        lastRead.set(origin, { policy: reading, readAt: now() });
+        return reading;
+      }
+      expiry.at = now() + UNREACHABLE_TTL_MS;
+      const last = reading === "outage" ? lastRead.get(origin) : undefined;
+      return last && now() - last.readAt <= LAST_READ_MAX_AGE_MS ? last.policy : "unreachable";
     });
-    cache.set(origin, entry);
-    return entry.policy;
+    cache.set(origin, { policy, expiry });
+    return policy;
   }
 
   async function check(url: string): Promise<RobotsVerdict> {

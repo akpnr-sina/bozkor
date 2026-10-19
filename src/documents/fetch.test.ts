@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { createCookieJar, createHostThrottle, fetchDocument } from "./fetch";
+import { createCookieJar, createHostThrottle, fetchDocument, fetchJson } from "./fetch";
 import { DOCUMENT_LIMITS, DOCUMENT_USER_AGENT } from "./limits";
 import { KIND_MIME } from "./sniff";
+import type { BlockReason } from "./types";
 
 const bytes = (...parts: (string | number[])[]) =>
   new Uint8Array(parts.flatMap((p) => (typeof p === "string" ? [...new TextEncoder().encode(p)] : p)));
@@ -272,9 +273,15 @@ describe("fetchDocument redirects", () => {
 
   it("fails on a redirect without an address or with a broken one", async () => {
     const nowhere = await fetchOne(answer(null, {}, 302));
-    expect(nowhere.result).toMatchObject({ kind: "failed", status: 302, retryable: false, retryAfterMs: null });
+    expect(nowhere.result).toMatchObject({ kind: "failed", status: 302, retryable: false, retryAfterMs: null, finalUrl: `${BASE}/download/spec.pdf` });
     const broken = await fetchOne(answer(null, { Location: "http://[" }, 302));
-    expect(broken.result).toMatchObject({ kind: "failed", error: "Geçersiz yönlendirme adresi.", status: 302, retryable: false });
+    expect(broken.result).toMatchObject({
+      kind: "failed",
+      error: "Geçersiz yönlendirme adresi.",
+      status: 302,
+      retryable: false,
+      finalUrl: `${BASE}/download/spec.pdf`,
+    });
   });
 });
 
@@ -291,8 +298,43 @@ describe("fetchDocument failures", () => {
     ];
     for (const [status, retryable] of cases) {
       const { result } = await fetchOne(answer("error", {}, status));
-      expect(result).toEqual({ kind: "failed", error: expect.stringContaining(`HTTP ${status}`), status, retryable, retryAfterMs: null });
+      expect(result).toEqual({
+        kind: "failed",
+        error: expect.stringContaining(`HTTP ${status}`),
+        status,
+        retryable,
+        retryAfterMs: null,
+        finalUrl: `${BASE}/download/spec.pdf`,
+      });
     }
+  });
+
+  it("names the address that answered, past redirects, so that a 429 rests that site", async () => {
+    const server = fakeServer({
+      "https://buyer.example.gov/docs/7": answer(null, { Location: "https://cdn.example.net/files/7.pdf" }, 302),
+      "https://cdn.example.net/files/7.pdf": answer(null, { "Retry-After": "60" }, 429),
+    });
+    expect(await fetchDocument("https://buyer.example.gov/docs/7", { fetch: server.fetch })).toEqual({
+      kind: "failed",
+      error: "Sunucu çok fazla istek geldiğini bildirdi (HTTP 429).",
+      status: 429,
+      retryable: true,
+      retryAfterMs: 60_000,
+      finalUrl: "https://cdn.example.net/files/7.pdf",
+    });
+
+    const gone = fakeServer({
+      "https://buyer.example.gov/docs/8": answer(null, { Location: "https://cdn.example.net/files/8.pdf" }, 301),
+      "https://cdn.example.net/files/8.pdf": answer("", {}, 404),
+    });
+    expect(await fetchDocument("https://buyer.example.gov/docs/8", { fetch: gone.fetch })).toMatchObject({
+      kind: "failed",
+      status: 404,
+      finalUrl: "https://cdn.example.net/files/8.pdf",
+    });
+
+    const empty = await fetchOne(answer(null, { "Content-Type": "application/pdf" }));
+    expect(empty.result).toMatchObject({ kind: "failed", error: "Boş yanıt geldi.", finalUrl: `${BASE}/download/spec.pdf` });
   });
 
   it("calls a login or a bot block a page that needs a login", async () => {
@@ -359,19 +401,25 @@ describe("fetchDocument failures", () => {
     });
     const halfWay = await fetchOne(() => new Response(stalled, { headers: { "Content-Type": "application/pdf" } }), undefined, { timeoutMs: 30 });
     expect(halfWay.result).toMatchObject({ kind: "failed", status: null, retryable: true, retryAfterMs: null, error: expect.stringContaining("Zaman aşımı") });
+    // A timeout names no site, even one that began to answer.
+    expect(silent.result).not.toHaveProperty("finalUrl");
+    expect(halfWay.result).not.toHaveProperty("finalUrl");
   });
 
   it("can try again after a network error", async () => {
     const refused = () => {
       throw new TypeError("fetch failed", { cause: Object.assign(new Error("connect ECONNREFUSED 203.0.113.7:443"), { code: "ECONNREFUSED" }) });
     };
-    expect((await fetchOne(refused)).result).toEqual({
+    const { result } = await fetchOne(refused);
+    expect(result).toEqual({
       kind: "failed",
       error: "Bağlantı kurulamadı (ECONNREFUSED).",
       status: null,
       retryable: true,
       retryAfterMs: null,
     });
+    // No site answered, so none is named.
+    expect(result).not.toHaveProperty("finalUrl");
   });
 
   it("sends nothing for links it must not fetch", async () => {
@@ -386,7 +434,9 @@ describe("fetchDocument failures", () => {
       "http://[fe80::1]/spec.pdf",
       "dokuman.pdf",
     ]) {
-      expect(await fetchDocument(url, { fetch: server.fetch })).toMatchObject({ kind: "failed", status: null, retryable: false, retryAfterMs: null });
+      const result = await fetchDocument(url, { fetch: server.fetch });
+      expect(result).toMatchObject({ kind: "failed", status: null, retryable: false, retryAfterMs: null });
+      expect(result).not.toHaveProperty("finalUrl");
     }
     expect(server.requests).toEqual([]);
   });
@@ -394,7 +444,7 @@ describe("fetchDocument failures", () => {
 
 describe("fetchDocument guard", () => {
   /** A guard that turns down some hosts and records every address it is asked about. */
-  const guardFor = (blocked: Record<string, "terms" | "robots" | "robots_unavailable">) => {
+  const guardFor = (blocked: Record<string, BlockReason>) => {
     const asked: string[] = [];
     const guard = async (url: string) => {
       asked.push(url);
@@ -419,11 +469,26 @@ describe("fetchDocument guard", () => {
   });
 
   it("sends nothing when the first address is turned down, and passes the reason on", async () => {
-    for (const reason of ["robots", "robots_unavailable"] as const) {
+    for (const reason of ["robots", "robots_unavailable", "resting"] as const) {
       const { result, requests } = await fetchOne(answer(PDF), undefined, { guard: guardFor({ "ihale.example.gov": reason }).guard });
       expect(result).toEqual({ kind: "blocked", finalUrl: `${BASE}/download/spec.pdf`, reason });
       expect(requests).toEqual([]);
     }
+  });
+
+  it("does not follow a redirect to a site that is resting after a 429 or 503", async () => {
+    const server = fakeServer({
+      "https://buyer.example.gov/docs/7": answer(null, { Location: "https://cdn.example.net/files/7.pdf" }, 302),
+      "https://cdn.example.net/files/7.pdf": answer(PDF, { "Content-Type": "application/pdf" }),
+    });
+    const { guard, asked } = guardFor({ "cdn.example.net": "resting" });
+    expect(await fetchDocument("https://buyer.example.gov/docs/7", { fetch: server.fetch, guard })).toEqual({
+      kind: "blocked",
+      finalUrl: "https://cdn.example.net/files/7.pdf",
+      reason: "resting",
+    });
+    expect(server.requests.map((r) => r.url)).toEqual(["https://buyer.example.gov/docs/7"]);
+    expect(asked).toEqual(["https://buyer.example.gov/docs/7", "https://cdn.example.net/files/7.pdf"]);
   });
 
   it("asks before every hop on the same site too", async () => {
@@ -451,6 +516,7 @@ describe("fetchDocument guard", () => {
       },
     });
     expect(result).toEqual({ kind: "failed", error: "Erişim kontrolü yapılamadı (database down).", status: null, retryable: true, retryAfterMs: null });
+    expect(result).not.toHaveProperty("finalUrl");
     expect(requests).toEqual([]);
 
     const stuck = await fetchOne(answer(PDF), undefined, { guard: () => new Promise(() => {}), timeoutMs: 30 });
@@ -497,6 +563,214 @@ describe("fetchDocument cookies", () => {
     });
     expect(await fetchDocument(`${BASE}/d/1`, { fetch: server.fetch, cookies: createCookieJar() })).toMatchObject({ kind: "file" });
     expect(new Headers(server.requests[1]!.init?.headers).get("cookie")).toBe("portal=1");
+  });
+});
+
+describe("fetchJson", () => {
+  const API = `${BASE}/api/v2/publicaties/443745/documenten`;
+  const json = (value: unknown, status = 200) => answer(JSON.stringify(value), { "Content-Type": "application/json;charset=UTF-8" }, status);
+
+  async function fetchApi(route: Route, options: Parameters<typeof fetchJson>[1] = {}) {
+    const server = fakeServer({ [API]: route });
+    return { result: await fetchJson(API, { fetch: server.fetch, ...options }), requests: server.requests };
+  }
+
+  it("parses the answer, asking for JSON in a plain GET that names us", async () => {
+    const { result, requests } = await fetchApi(json({ documenten: [{ documentId: "3cef2143", documentNaam: "Bestek" }] }));
+    expect(result).toEqual({ kind: "json", value: { documenten: [{ documentId: "3cef2143", documentNaam: "Bestek" }] }, finalUrl: API });
+    expect(requests).toHaveLength(1);
+    const init = requests[0]!.init!;
+    expect(init.method).toBe("GET");
+    expect(init.redirect).toBe("manual");
+    const headers = new Headers(init.headers);
+    expect(headers.get("accept")).toBe("application/json");
+    expect(headers.get("user-agent")).toBe(DOCUMENT_USER_AGENT);
+    expect(headers.get("cookie")).toBeNull();
+  });
+
+  it("follows redirects, asking the guard before every hop, and requests nothing it turns down", async () => {
+    const routes = {
+      [`${BASE}/api/old`]: answer(null, { Location: "/api/new" }, 301),
+      [`${BASE}/api/new`]: json({ ok: true }),
+    };
+    const asked: string[] = [];
+    const server = fakeServer(routes);
+    const guard = async (url: string) => {
+      asked.push(url);
+      return null;
+    };
+    expect(await fetchJson(`${BASE}/api/old`, { fetch: server.fetch, guard })).toEqual({ kind: "json", value: { ok: true }, finalUrl: `${BASE}/api/new` });
+    expect(asked).toEqual([`${BASE}/api/old`, `${BASE}/api/new`]);
+
+    const robots = fakeServer(routes);
+    const unavailable = async (url: string) => (url.endsWith("/new") ? ("robots_unavailable" as const) : null);
+    expect(await fetchJson(`${BASE}/api/old`, { fetch: robots.fetch, guard: unavailable })).toEqual({
+      kind: "blocked",
+      finalUrl: `${BASE}/api/new`,
+      reason: "robots_unavailable",
+    });
+    expect(robots.requests.map((r) => r.url)).toEqual([`${BASE}/api/old`]);
+
+    const terms = fakeServer(routes);
+    expect(await fetchJson(`${BASE}/api/old`, { fetch: terms.fetch, guard: async () => "terms" })).toMatchObject({ kind: "blocked", reason: "terms" });
+    expect(terms.requests).toEqual([]);
+  });
+
+  it("does not ask a site that is resting after a 429 or 503, at the first address or past a redirect", async () => {
+    const routes = {
+      "https://api.example.gov/v2/list": answer(null, { Location: "https://cdn.example.net/v2/list" }, 302),
+      "https://cdn.example.net/v2/list": json({ ok: true }),
+    };
+    const first = fakeServer(routes);
+    expect(await fetchJson("https://api.example.gov/v2/list", { fetch: first.fetch, guard: async () => "resting" })).toEqual({
+      kind: "blocked",
+      finalUrl: "https://api.example.gov/v2/list",
+      reason: "resting",
+    });
+    expect(first.requests).toEqual([]);
+
+    const past = fakeServer(routes);
+    const resting = async (url: string) => (new URL(url).hostname === "cdn.example.net" ? ("resting" as const) : null);
+    expect(await fetchJson("https://api.example.gov/v2/list", { fetch: past.fetch, guard: resting })).toEqual({
+      kind: "blocked",
+      finalUrl: "https://cdn.example.net/v2/list",
+      reason: "resting",
+    });
+    expect(past.requests.map((r) => r.url)).toEqual(["https://api.example.gov/v2/list"]);
+  });
+
+  it("names the address that answered, past redirects, so that a 429 rests that site", async () => {
+    const server = fakeServer({
+      "https://api.example.gov/v2/list": answer(null, { Location: "https://cdn.example.net/v2/list" }, 302),
+      "https://cdn.example.net/v2/list": answer(null, { "Retry-After": "120" }, 429),
+    });
+    expect(await fetchJson("https://api.example.gov/v2/list", { fetch: server.fetch })).toEqual({
+      kind: "failed",
+      error: "Sunucu çok fazla istek geldiğini bildirdi (HTTP 429).",
+      status: 429,
+      retryable: true,
+      retryAfterMs: 120_000,
+      finalUrl: "https://cdn.example.net/v2/list",
+    });
+  });
+
+  it("sends nothing to an address it must not ask, and tries a redirect loop again but not a broken redirect", async () => {
+    const server = fakeServer({});
+    for (const url of ["http://127.0.0.1/api", "https://user:secret@ihale.example.gov/api", "ftp://ihale.example.gov/api"]) {
+      const result = await fetchJson(url, { fetch: server.fetch });
+      expect(result).toMatchObject({ kind: "failed", status: null, retryable: false });
+      expect(result).not.toHaveProperty("finalUrl");
+    }
+    expect(server.requests).toEqual([]);
+
+    // Going round may be a firewall's challenge for a while.
+    const loop = fakeServer({ [API]: answer(null, { Location: API }, 302) });
+    expect(await fetchJson(API, { fetch: loop.fetch })).toEqual({
+      kind: "failed",
+      error: "Yönlendirmeler bir sonuca varmadı.",
+      status: null,
+      retryable: true,
+      retryAfterMs: null,
+      finalUrl: API,
+    });
+    expect(loop.requests).toHaveLength(1);
+
+    for (const location of ["http://[", null]) {
+      const broken = fakeServer({ [API]: answer(null, location ? { Location: location } : {}, 302) });
+      expect(await fetchJson(API, { fetch: broken.fetch })).toMatchObject({ kind: "failed", status: 302, retryable: false, finalUrl: API });
+    }
+  });
+
+  it("tries again after a page instead of JSON or an empty answer, as maintenance or a firewall gives", async () => {
+    const maintenance = answer("<!doctype html><html><body>Onderhoud</body></html>", { "Content-Type": "text/html" });
+    expect((await fetchApi(maintenance)).result).toEqual({
+      kind: "failed",
+      error: "Yanıt JSON değil (text/html).",
+      status: 200,
+      retryable: true,
+      retryAfterMs: null,
+      finalUrl: API,
+    });
+    expect((await fetchApi(answer(bytes("{ yarım")))).result).toEqual({
+      kind: "failed",
+      error: "Yanıt JSON değil (türü belirtilmemiş).",
+      status: 200,
+      retryable: true,
+      retryAfterMs: null,
+      finalUrl: API,
+    });
+    expect((await fetchApi(answer(null))).result).toEqual({
+      kind: "failed",
+      error: "Boş yanıt geldi.",
+      status: 200,
+      retryable: true,
+      retryAfterMs: null,
+      finalUrl: API,
+    });
+  });
+
+  it("fails for good on an answer past the limit", async () => {
+    const declared = endless(bytes('{"documenten":['));
+    const announced = await fetchApi(() => new Response(declared.stream, { headers: { "Content-Length": String(3 * 1024 * 1024) } }));
+    expect(announced.result).toMatchObject({ kind: "failed", error: "Yanıt beklenenden büyük (sınır 2 MB).", retryable: false, finalUrl: API });
+    expect(declared.stats.cancelled).toBe(true);
+
+    const unannounced = endless(bytes('{"documenten":['));
+    const streamed = await fetchApi(() => new Response(unannounced.stream, { headers: { "Content-Type": "application/json" } }), { maxBytes: 100 * 1024 });
+    expect(streamed.result).toMatchObject({ kind: "failed", error: "Yanıt beklenenden büyük (sınır 100 KB).", retryable: false, finalUrl: API });
+    expect(unannounced.stats.cancelled).toBe(true);
+    expect(unannounced.stats.pulled).toBeLessThan(100 * 1024 + 2 * 64 * 1024);
+
+    expect((await fetchApi(json([1, 2]), { maxBytes: 5 })).result).toEqual({ kind: "json", value: [1, 2], finalUrl: API });
+  });
+
+  it("fails on HTTP errors, to be tried again for refusals, 408, 429 and 5xx, with the wait a 429 asks for", async () => {
+    const cases: [number, string, boolean][] = [
+      [404, "Kayıt bulunamadı (HTTP 404).", false],
+      [410, "Kayıt bulunamadı (HTTP 410).", false],
+      // A firewall may refuse for a while.
+      [401, "Erişim reddedildi (HTTP 401).", true],
+      [403, "Erişim reddedildi (HTTP 403).", true],
+      [400, "Beklenmeyen yanıt (HTTP 400).", false],
+      [405, "Beklenmeyen yanıt (HTTP 405).", false],
+      [408, "Sunucu zaman aşımı bildirdi (HTTP 408).", true],
+      [500, "Sunucu hatası (HTTP 500).", true],
+      [503, "Sunucu hatası (HTTP 503).", true],
+    ];
+    for (const [status, error, retryable] of cases) {
+      expect((await fetchApi(json({ error: "x" }, status))).result).toEqual({ kind: "failed", error, status, retryable, retryAfterMs: null, finalUrl: API });
+    }
+    expect((await fetchApi(answer(null, { "Retry-After": "30" }, 429))).result).toEqual({
+      kind: "failed",
+      error: "Sunucu çok fazla istek geldiğini bildirdi (HTTP 429).",
+      status: 429,
+      retryable: true,
+      retryAfterMs: 30_000,
+      finalUrl: API,
+    });
+  });
+
+  it("times out, and can try again after a network error, naming no site", async () => {
+    const silent = (await fetchApi(hanging, { timeoutMs: 30 })).result;
+    expect(silent).toMatchObject({
+      kind: "failed",
+      status: null,
+      retryable: true,
+      error: expect.stringContaining("Zaman aşımı"),
+    });
+    expect(silent).not.toHaveProperty("finalUrl");
+    const refused = () => {
+      throw new TypeError("fetch failed", { cause: Object.assign(new Error("connect ECONNREFUSED 203.0.113.7:443"), { code: "ECONNREFUSED" }) });
+    };
+    const offline = (await fetchApi(refused)).result;
+    expect(offline).toEqual({
+      kind: "failed",
+      error: "Bağlantı kurulamadı (ECONNREFUSED).",
+      status: null,
+      retryable: true,
+      retryAfterMs: null,
+    });
+    expect(offline).not.toHaveProperty("finalUrl");
   });
 });
 
