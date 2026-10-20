@@ -14,7 +14,7 @@ Bu sürümde kapsam içi:
 - Doküman indirme ve manuel yükleme
 - Derin doküman analizi
 - İnsan kararı (GO / REVIEW / NO_GO / WATCH) ve notlar
-- Günlük özet e-postası
+- Günlük özet e-postası: kullanıcı kararıyla (20 Ekim 2026) yapılmayacak (bölüm 9, Faz 7)
 
 Şimdilik kapsam dışı: teklif hazırlama, RFQ yönetimi, maliyet hesabı, sözleşme yönetimi, NSPA / DLA / Körfez kaynakları, çok kiracılı yapı.
 
@@ -50,7 +50,7 @@ Zamanlayıcı (pg-boss)
   -> teklif verilebilecek ihalelerde: fetch-documents job, saatte iki kez (bölüm 4.4);
      portal linkleri elle yüklenir; process-documents dosyaları okur (dakikada bir)
   -> profil autoAnalyze açıksa ya da kullanıcı "Analiz et" derse: deep_analysis job
-  -> günlük özet e-postası (08:00 İstanbul)
+  -> (günlük özet e-postası kullanıcı kararıyla yapılmayacak, 20 Ekim 2026)
 ```
 
 İlan güncellenirse (düzeltme ilanı, son tarih değişikliği, iptal) tender kaydı güncellenir, `changed_at` set edilir, eşleşme tekrar hesaplanır ve UI'da "değişti" etiketi gösterilir.
@@ -413,41 +413,29 @@ Ekibin gördüğü her ilan Türkçe gösterilir (ekip kararı, 15 Ekim 2026): a
 - Maliyet: ihale başına ~0,002-0,01 USD.
 - Akışsız çağrı kullanıldığı için çıktı sınırı en fazla 21.000 token (SDK daha yükseğini reddeder); tekrar denemede sınır ikiye katlanırken bu eşiği aşmaz.
 
-### 7.2 Derin analiz
+### 7.2 Derin analiz (Faz 6)
 
-Model: `LLM_ANALYSIS_MODEL`. Girdi: ilan, indirilen dokümanlar (PDF'ler Files API ile doğrudan, DOCX / XLSX metin olarak) ve profil soruları. Doküman sırası: teknik şartname, teklif talimatları, sözleşme şartları, fiyat cetveli, diğerleri. Toplam 100 sayfayı aşarsa önce belge başına analiz, sonra birleştirme adımı.
+Model `LLM_ANALYSIS_MODEL` (varsayılan claude-sonnet-5-5). Promptlar `prompts/deep.v1.md` (analiz) ve `prompts/deep-merge.v1.md` (parçaların birleştirilmesi). Şema `src/analysis/deep-schema.ts`, girdi `src/analysis/deep-input.ts`, iş `src/analysis/deep.ts`, kuyruk `src/analysis/deep-requests.ts` (`deep_requests`, migration 0019), sayfa verisi `src/analysis/deep-view.ts`, kart `src/app/(app)/tenders/[id]/deep-analysis-card.tsx`.
 
-Çıktı şeması (özet):
-
-```json
-{
-  "summaryTr": "",
-  "items": [{ "lot": "", "description": "", "quantity": "", "unit": "", "specs": [], "standards": [], "certifications": [], "source": {} }],
-  "delivery": { "location": "", "country": "", "incoterm": "", "leadTime": "", "schedule": "", "sources": [] },
-  "eligibility": {
-    "supplierLocation": "", "productOrigin": "", "minTurnover": "", "references": "",
-    "qualityCerts": [], "insurance": [], "securityRequirements": "", "localPresence": "", "sources": []
-  },
-  "commercial": { "contractType": "", "duration": "", "pricingBasis": "", "paymentTerms": "", "bonds": "", "penalties": "", "warranty": "", "sources": [] },
-  "servicesScope": { "installation": "", "maintenance": "", "training": "", "sources": [] },
-  "evaluation": [{ "criterion": "", "weight": "", "source": {} }],
-  "timeline": { "clarificationDeadline": "", "submissionDeadline": "", "siteVisit": "", "sources": [] },
-  "redFlags": [{ "issue": "", "severity": "high", "source": {} }],
-  "profileAnswers": [{ "question": "", "answer": "", "source": {} }],
-  "missingInfo": [],
-  "suggestedDecision": { "decision": "REVIEW", "reasons": [] }
-}
-```
-
-`source` biçimi: `{ "documentId": "...", "page": 12, "quote": "kısa alıntı, orijinal dilde" }` ya da `{ "noticeField": "tender.tenderPeriod.endDate" }`.
-
-Kurallar:
-
-- Belirlenemeyen alan boş bırakılır ve `missingInfo`'ya yazılır; tahmin yapılmaz.
-- Alıntılar PDF metninde (pdfjs-dist, boşluk ve harf normalizasyonuyla) aranır; bulunamayanlar `unverified` işaretlenir.
-- Promptlar `prompts/` altında versiyonlu dosyalardır; versiyon `analyses.prompt_version`'a yazılır.
-- Aynı ihalenin dokümanları tekrar analizde prompt caching ile cache'lenir.
-- AI çıktılarında em dash karakteri (U+2014) yasaktır; prompt bunu açıkça söyler.
+- Tetik: ihale sayfasındaki "Analiz et" düğmesi, isteği `deep_requests`'e yazar (ihale başına bir açık istek). `autoAnalyze` açık bir profilin güncel eşleşmesi olan ihale için ilk analiz kendiliğinden istenir: açık ve indirme kapsamında (bölüm 4.4), okunacak dosyası olan, okunmayı bekleyen dosyası olmayan, dosyaları 5 dakikadır değişmeyen ve hiç analiz edilmemiş ihale. Sonraki analizleri ekip ister; sayfa, ilan ya da dosyalar analizden sonra değiştiyse bunu söyler. Başarısız otomatik analiz 24 saat yeniden istenmez; iki başarısız otomatik analizden sonra sıradakini ekip ister (her deneme parçalarının bedelini öder).
+- Worker işi `deep-analysis` dakikada bir en fazla iki isteği işler, ekibin istekleri önce. Ölen bir çalıştırmanın bıraktığı istek 60 dakika sonra yeniden alınır. Aylık bütçe dolunca yalnız ekibin istekleri çalışır (kural 7); sayfa düğmenin yanında uyarır. `pnpm deep --tender=<id>` bir ihaleyi hemen analiz eder ve kabul kontrolünün alanlarını (asgari ciro, ürün menşei, tedarikçi yeri, teklif son tarihi) kaynaklarıyla yazar; `--queue` işi bir kez çalıştırır; `--report` son analizleri listeler.
+- Girdi:
+  - Olgu aşamasının ilan metni (`<ilan>`, dosyalar hariç).
+  - İhalenin analize giren dosyaları (`analysisInputIds`: depoda, okunmuş, PDF / DOCX / XLSX, her içerik bir kez; metni olmayan PDF de), olgu aşamasının sırasıyla: yüklenenler, şartname, teklif talimatı, sözleşme, fiyat cetveli, diğerleri.
+  - `<dosya_listesi>`: bütün dosyalar, sıra numarası, türü ve sayfa sayısıyla; alınmayanlar nedeniyle.
+  - Eşleşen aktif profillerin soruları (`analysisQuestions`, tekrarsız, en çok 20).
+- Dosyalar dosya olarak gider. PDF'ler istekte base64 doküman bloğu olur; model metni, tabloları ve sayfa görüntülerini okur. Files API kullanılmaz: dosyalar Anthropic'te saklanmaz, aynı içerik prompt önbelleğinden okunur (son dosyada önbellek noktası). DOCX ve XLSX metin bloğu olarak gider (doküman bloğu bu biçimleri almaz). Her bloğun başlığı "Dosya n: ad"; alıntı n'yi ve PDF'in kendi sayfa sırasını kaynak gösterir. Uzun süren istekler akışlı çağrıyla yapılır (SDK'nın akışsız sınırı 10 dakika).
+- Parçalar: resmi sınırlar istek başına 32 MB ve 100 PDF sayfasıdır (bağlam 1M'nin altındaysa); sayfa 1.500-3.000 token. Bir parçaya en çok 140.000 tahmini token (PDF sayfası 2.500), 18 MB PDF ve 90 PDF sayfası girer; sığmayan dosyalar sırayla yeni parçalara geçer (en çok 6 parça, 40 dosya). 90 sayfa ve 18 MB'a kadar bir PDF, tahmini token sınırı aşsa da PDF olarak kendi parçasında gider (tahmin kaba). Daha büyük PDF metniyle (`<sayfa no>`) gider; metni yoksa alınmaz. API isteği çok uzun bulursa (400 "prompt is too long", 413) parça ikiye bölünür. Tek başına çok uzun bulunan PDF metniyle yeniden gönderilir; metni yoksa alınmaz ve okunacak başka dosya kalmadıysa ilan tek başına analiz edilir. Parçalar deneme sırasıyla numaralanır. Birden çok parça varsa her parça aynı şemada analiz yazar (eksik bilgiyi boş bırakır), sonra dosyasız bir birleştirme çağrısı tek analiz yazar: alıntıları parçalardan aynen taşır, çelişkiyi risk olarak yazar, eksik bilgiyi bütün parçalara göre belirler.
+- Çıktı:
+  - Türkçe özet ve kalemler (lot, tanım, miktar, birim, özellikler, standartlar, belgeler).
+  - Teslimat; yeterlilik (tedarikçi yeri, ürün menşei, asgari ciro, referans, kalite belgeleri, sigorta, güvenlik, yerel varlık); ticari koşullar; hizmet kapsamı; değerlendirme kriterleri; takvim.
+  - Riskler (önemiyle), profil sorularının cevapları ve eksik bilgiler.
+  - Öneri (GO / REVIEW / NO_GO / WATCH, gerekçeleriyle). Karar ekibindir (kural 4); sayfa öneriyi insan kararından ayrı gösterir.
+  - Önceki taslaktaki bölüm düzeyinde `sources` listeleri yerine her iddia kendi kaynağını taşır: `{ value, quote, file, page }` (ilandan alıntıda file ve page 0). Belirlenemeyen alan boş kalır ve teklif kararı için önemliyse eksik bilgiye yazılır; tahmin yapılmaz.
+- Alıntı kontrolü (kural 5): her alıntı önce modelin verdiği sayfada, sonra o dosyada, sonra okunan her metinde aranır (ilan ve dosyaların pdfjs metni). İlanın yapılandırılmış satırları (`<bilgiler>`, `<lot_bilgileri>`: son tarih, değer gibi) da alıntılanabilir (`notice:info`, `notice:lot-info:<n>`). Eşleştirme olgulardakiyle aynıdır, ayrıca satır sonunda bölünmüş kelime de eşleşir. Bulunduğu yer (`file:<n>:p<k>`, `file:<n>`, `notice:<anahtar>`) ya da bulunamadığı sonuçla saklanır; sayfa bulunamayanı "doğrulanmadı" diye işaretler. Metni olmayan (taranmış) PDF'ten alıntı doğrulanamaz.
+- Kayıt: her çağrı `analyses`'e yazılır (kind `deep`; parçalar ve tek parçalı analiz `deep.v1`, birleştirme `deep-merge.v1`), maliyetiyle (kural 7). Sonuç, çıktısı `StoredDeep` olan çağrıdır: çıktı, alıntı kontrolleri, parça sayısı, alınmayan dosyalar ve girdinin okunduğu an. Geçersiz yanıt bir kez tekrar denenir (kural 6); geçersiz kalan parçanın dosyaları alınmamış sayılır, dosya listesinde ve sayfada yalnız alınmayan olarak görünür (numaraları boş kalır). Hiçbir parça geçerli değilse ya da birleştirme geçersizse istek başarısız olur. Sayfadaki maliyet, sonucu veren isteğin başladığı andan sonucun yazıldığı ana kadarki derin analiz çağrılarının toplamıdır (`pnpm deep` ile yapılan sonuçta, önceki sonuçtan bu yana).
+- Gösterim: ihale sayfasında değerlendirmeden sonra "Derin analiz" kartı. Kart durumu (sırada, analiz ediliyor, başarısız, eski) gösterir ve çalışırken sayfayı yeniler. Sonuç bölüm bölüm gelir; her iddianın yanında kaynak (dosya adı ve sayfa ya da ilan metni) ya da "doğrulanmadı" rozeti bulunur, alıntı açılınca orijinal dilde görünür. Kartta eksik bilgiler, AI önerisi, model, maliyet, okunan ve alınmayan dosyalar da yer alır. Asgari ciro, ürün menşei, tedarikçi yeri ve teklif son tarihi boşsa "Dokümanlarda yok" olarak görünür.
+- Promptlar em dash kullanmamayı açıkça söyler; Türkçe alanlardaki em dash kodda virgüle çevrilir, alıntılar dokunulmadan kalır.
 
 ## 8. Ekranlar
 
@@ -522,7 +510,10 @@ Her faz kendi kabul kriterleri sağlanınca kapanır. Faz bitince CLAUDE.md'deki
 - Alıntı doğrulama ve UI'da kaynak gösterimi.
 - Kabul: 10 gerçek ihalede tüm çıktılar şemaya uygun; kullanıcı spot kontrolünde ciro şartı, menşe kısıtı ve son tarihi en az 8 ihalede doğru buluyor.
 
-### Faz 7: Günlük özet e-postası
+### Faz 7: Günlük özet e-postası (yapılmayacak)
+
+Kullanıcı kararı (20 Ekim 2026): bu faz yapılmayacak. Aşağıdaki tanım kayıt için duruyor.
+
 
 - Her sabah 08:00 (İstanbul): yeni eşleşmeler (skora göre), son tarihine 7 gün kalan GO ve REVIEW ihaleler (eşleşmeden bağımsız, `tender_reviews`'taki son karara göre), "değişti" etiketli ihaleler.
 - Profilde `notify` kapalıysa o profilin eşleşmeleri gönderilmez.
@@ -541,6 +532,6 @@ Bu sürümde inşa edilmez; şema ve kategori taksonomisi buna hazır kurulur.
 ## 11. Varsayımlar (değiştirilebilir)
 
 - Barındırma: web Vercel, worker Railway, veritabanı ve storage Supabase (EU bölgesi)
-- E-posta: Resend, alıcı rfq@bozkor.com
+- E-posta: Resend, alıcı rfq@bozkor.com (günlük özet yapılmayacağı için kullanılmıyor; giriş e-postaları için SMTP olarak düşünülebilir)
 - Saat dilimi: Europe/Istanbul
 - Arayüz: Türkçe, tek dil

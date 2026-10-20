@@ -205,7 +205,7 @@ const SCRIPT_SAMPLE = 5_000;
  * What one character of the file costs against the character limits: 2 when
  * most letters at its start are Cyrillic or Greek, 1 otherwise.
  */
-function charCost(text: string): number {
+export function charCost(text: string): number {
   const sample = text.slice(0, SCRIPT_SAMPLE);
   const letters = sample.match(/\p{L}/gu)?.length ?? 0;
   const dense = sample.match(/[\p{Script=Cyrillic}\p{Script=Greek}]/gu)?.length ?? 0;
@@ -217,8 +217,8 @@ function typeRank(documentType: string | null): number {
   return rank === -1 ? DOCUMENT_TYPES.length : rank;
 }
 
-/** Uploads first (the team picked them), then by the notice's document type, the name, and age. */
-function compareCandidates(a: FactsFileCandidate, b: FactsFileCandidate): number {
+/** Uploads first (the team picked them), then by the notice's document type, the name, and age. The deep analysis reads in this order too. */
+export function compareCandidates(a: FactsFileCandidate, b: FactsFileCandidate): number {
   return (
     Number(a.origin !== "manual") - Number(b.origin !== "manual") ||
     typeRank(a.documentType) - typeRank(b.documentType) ||

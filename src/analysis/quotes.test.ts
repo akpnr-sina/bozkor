@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findQuote, normalizeQuoteText } from "./quotes";
+import { findQuote, normalizeQuoteText, quoteFinder } from "./quotes";
 
 const sources = {
   title: "Supply of Diesel Generating Sets \u2013 500 kVA",
@@ -84,5 +84,27 @@ describe("findQuote", () => {
 
   it("finds nothing in empty sources", () => {
     expect(findQuote("installation and commissioning", {})).toBeNull();
+  });
+});
+
+describe("quoteFinder", () => {
+  const find = quoteFinder({
+    "notice:description": "Supply of protective clothing for the fire brigade.",
+    "file:1:p1": "General terms of the contract.",
+    "file:1:p2": "The minimum annual turnover is EUR 500.000 in each of the last three years.",
+    "file:2:p4": "The tenderer shall be the manu- facturer or an authorised distributor.",
+  });
+
+  it("finds a quote, the cited page first, and words broken at a line end", () => {
+    expect(find("minimum annual turnover is EUR 500.000")).toBe("file:1:p2");
+    expect(find("protective clothing for the fire brigade", ["file:1:p2"])).toBe("notice:description");
+    expect(find("the manufacturer or an authorised distributor")).toBe("file:2:p4");
+    expect(find("“The minimum annual turnover is EUR 500.000”", ["file:9:p1"])).toBe("file:1:p2");
+  });
+
+  it("finds nothing for a paraphrase, a short quote or an empty one", () => {
+    expect(find("turnover of at least half a million")).toBeNull();
+    expect(find("EUR 500")).toBeNull();
+    expect(find("")).toBeNull();
   });
 });

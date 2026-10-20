@@ -1,6 +1,7 @@
 import type { PgBoss, Queue } from "pg-boss";
 import { getDb } from "@/db";
 import { runFacts } from "@/analysis/facts";
+import { queueAutoDeep, runDeepRequests } from "@/analysis/deep";
 import { createLlmClient } from "@/analysis/llm";
 import type { RunStats } from "@/analysis/runner";
 import { runTranslation } from "@/analysis/translate";
@@ -132,6 +133,8 @@ const robots = createRobots({ wait: (url) => throttle.wait(url) });
 const FETCH_BATCH = 30;
 /** Files per processing run; a full run queues the next at once. */
 const PROCESS_BATCH = 20;
+/** Deep analyses per run: each takes minutes (SPEC 7.2). */
+const DEEP_BATCH = 2;
 
 function formatFetchStats(stats: FetchStats): string {
   return (
@@ -304,6 +307,28 @@ const jobs: JobDefinition[] = [
       const handled = stats.processed + stats.skipped + stats.failed;
       if (handled) console.log(`[process-documents] ${formatProcessStats(stats)}`);
       if (handled >= PROCESS_BATCH && !stats.stoppedBy) await runAgain("process-documents");
+    },
+  },
+  {
+    // Deep analyses the team asked for on the tender page, and the first one
+    // of tenders a profile with autoAnalyze matches (SPEC 7.2). Past the
+    // monthly budget only the team's requests run (CLAUDE.md rule 7).
+    name: "deep-analysis",
+    cron: "* * * * *",
+    runOnStart: true,
+    queue: syncQueue,
+    handler: async () => {
+      if (!hasStorage("deep-analysis")) return;
+      const db = getDb();
+      const queued = await queueAutoDeep(db);
+      const stats = await runDeepRequests(db, { llm: createLlmClient(), storage: documentStorage(), log: (m) => console.warn(m) }, { limit: DEEP_BATCH });
+      if (queued || stats.analysed || stats.failed) {
+        console.log(
+          `[deep-analysis] queued=${queued} analysed=${stats.analysed} failed=${stats.failed} cost=${stats.costUsd.toFixed(4)}` +
+            (stats.stoppedBy ? ` stoppedBy=${stats.stoppedBy}` : ""),
+        );
+      }
+      if (stats.analysed + stats.failed >= DEEP_BATCH && !stats.stoppedBy) await runAgain("deep-analysis");
     },
   },
   {

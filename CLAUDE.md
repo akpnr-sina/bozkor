@@ -18,7 +18,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - LLM: `@anthropic-ai/sdk`. Triage modeli `LLM_TRIAGE_MODEL` (varsayılan claude-haiku-5-5), derin analiz modeli `LLM_ANALYSIS_MODEL` (varsayılan claude-sonnet-5-5)
 - Doğrulama: Zod (API payload'ları, kriter kuralları, LLM çıktıları)
 - Doküman dönüştürme: mammoth (DOCX), SheetJS (XLSX), pdfjs-dist (PDF metni ve sayfa sayısı, alıntı doğrulama)
-- E-posta: Resend
+- E-posta: Resend (günlük özet e-postası, yani Faz 7, kullanıcı kararıyla yapılmayacak; 20 Ekim 2026)
 - Test: Vitest
 
 ## Komutlar
@@ -82,7 +82,16 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 ## Mevcut durum
 
-Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Sıradaki (kullanıcı kararı): Faz 6 (derin analiz). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor. Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Sıradaki (kullanıcı kararı): arayüz yenilemesi, kullanıcının verdiği BOZKOR arayüz tasarım dilinden; Faz 6 kabulüyle paralel. Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Faz 6, derin analiz (kod 20 Ekim 2026, `faz-6` dalı; kabul bitince main'e):
+- SPEC 7.2'deki gibi: PDF'ler istekte doküman bloğu (Files API yok), DOCX ve XLSX metin; sınırları aşan dosyalar parçalara bölünüp birleştiriliyor; her iddia dosya ve sayfayla, alıntılar pdfjs metninde doğrulanıyor. Migration 0019 (`deep_requests`) uygulandı; worker işi `deep-analysis`, komut `pnpm deep`, ihale sayfasında "Derin analiz" kartı.
+- Canlı kabul turu: 10 ihalenin 7'si analiz edildi (ihale başına 0,28-1,19 USD, 1-4 parça, alıntıların %82-100'ü doğrulandı). API kredisi bitince kalan 3 durdu; kredi ve kullanıcının spot kontrolü (ciro, menşe, son tarih; en az 8 ihalede doğru) bekleniyor.
+- 831 test. 63 akışlı LLM çağrısını ve süre sınırını, 03 derin analiz kartını yazdı. 03'ün iki inceleme turu 7 bulgu ve 3 not çıkardı (geçersiz parçanın dosyalarının hem okunan hem alınmayan görünmesi, başarısız otomatik analizin her gün yeniden istenmesi, 57-90 sayfalık PDF'in metne düşmesi gibi); hepsi düzeltildi.
+
+Faz 6 bilinen eksikleri:
+- Derin analiz yeterlilik politikasına bağlı değil; ikisi çelişebilir (GIZ jeneratörü: politika şartnamedeki "ON-SITE SERVICE" başlığıyla eledi, derin analiz "yalnız teslim" dedi ve belirsizliği eksik bilgiye yazdı).
+- Model doküman ile ilan verisi arasındaki tarih farkını işaretliyor, hangisinin doğru olduğuna karar vermiyor. Taranmış PDF'ten alıntı doğrulanamıyor.
 
 Faz 5b, resmi portal API'leri (19 Ekim 2026):
 - Araştırma (SPEC 4.4): TenderNed'in anahtarsız TNS servisi belge veriyor, uygulandı. Belçika başvuru istiyor (kullanıcı: şimdilik gerek yok). Vortal, SICAP, e-Zamówienia ve EOP'ta belge API'si yok; SICAP ve Vortal şartları otomasyonu yasaklıyor, onlara hiç istek gitmiyor.

@@ -8,10 +8,11 @@ import { FormattedText } from "@/components/formatted-text";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getDb } from "@/db";
-import { retryRead } from "@/db/retry";
+import { isConnectionLost, retryRead } from "@/db/retry";
 import { analyses, criteriaProfiles, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
 import { sourcesHash } from "@/analysis/evidence";
 import { monthlyLlmSpend } from "@/analysis/budget";
+import { loadDeepView } from "@/analysis/deep-view";
 import { isFactsPending } from "@/analysis/facts";
 import { byLotNumber, toTriageNotice } from "@/analysis/notice";
 import { latestTranslations } from "@/analysis/translations";
@@ -37,6 +38,7 @@ import {
 import { describeReason, parseReasons } from "@/matching/describe";
 import { isProductScope } from "@/sources/scope";
 import { AssessmentCard } from "./assessment-card";
+import { DeepAnalysisCard } from "./deep-analysis-card";
 import { DecisionForm } from "./decision-form";
 import { documentName } from "./document-state";
 import { DocumentUpload } from "./document-upload";
@@ -83,7 +85,7 @@ async function loadTender(id: string) {
       .orderBy(asc(criteriaProfiles.name)),
     db.select().from(tenderReviews).where(eq(tenderReviews.tenderId, id)).orderBy(desc(tenderReviews.decidedAt)),
   ]);
-  const [translations, assessed, [latestFactsAttempt], fetchWanted, factsPending, spend] = await Promise.all([
+  const [translations, assessed, [latestFactsAttempt], fetchWanted, factsPending, spend, deep] = await Promise.all([
     latestTranslations(db, [id]),
     assessOne(db, id),
     // The newest facts attempt, to show a failure after the last valid result.
@@ -97,6 +99,12 @@ async function loadTender(id: string) {
     // The facts queue's own test: whether the stored facts wait to be extracted again.
     isFactsPending(db, id),
     monthlyLlmSpend(db),
+    // The deep analysis card only: should it fail to read (its tables not migrated yet, say), the rest of the page shows.
+    loadDeepView(db, id).catch((error: unknown) => {
+      if (isConnectionLost(error)) throw error;
+      console.error("[tender page] deep analysis view:", error);
+      return null;
+    }),
   ]);
   return {
     tender,
@@ -111,6 +119,7 @@ async function loadTender(id: string) {
     translation: translations.get(id) ?? null,
     assessed,
     latestFactsAttempt: latestFactsAttempt ?? null,
+    deep,
   };
 }
 
@@ -300,6 +309,10 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
           />
         </Section>
 
+        <Section title="Derin analiz">
+          <DeepAnalysisCard view={data.deep} tenderId={tender.id} />
+        </Section>
+
         <Section title={`Dokümanlar (${data.documents.length})`}>
           <DocumentsCard
             tenderId={tender.id}
@@ -311,10 +324,6 @@ async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["pa
             now={now}
             upload={<DocumentUpload tenderId={tender.id} disabledReason={uploadsEnabled ? null : "Dosya deposu henüz ayarlı değil; yükleme kapalı."} />}
           />
-        </Section>
-
-        <Section title="Derin analiz">
-          <Empty>Henüz yok. Doküman analizi ilerleyen aşamada eklenecek.</Empty>
         </Section>
       </div>
 

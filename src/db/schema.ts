@@ -278,6 +278,36 @@ export const analyses = pgTable(
   ],
 ).enableRLS();
 
+/** Where a request for a tender's deep analysis stands. */
+export const deepRequestStatus = pgEnum("deep_request_status", ["queued", "running", "done", "failed"]);
+
+/**
+ * Requests for a tender's deep analysis (SPEC 7.2), from the tender page or
+ * from a profile that analyses its matches itself (autoAnalyze); the worker
+ * takes them in order. One open request per tender.
+ */
+export const deepRequests = pgTable(
+  "deep_requests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tenderId: uuid("tender_id")
+      .notNull()
+      .references(() => tenders.id, { onDelete: "cascade" }),
+    status: deepRequestStatus("status").notNull().default("queued"),
+    /** Who asked: a team member's email, or null when a profile asked (autoAnalyze). */
+    requestedBy: text("requested_by"),
+    requestedAt: timestamptz("requested_at").notNull().defaultNow(),
+    startedAt: timestamptz("started_at"),
+    finishedAt: timestamptz("finished_at"),
+    analysisId: uuid("analysis_id").references(() => analyses.id, { onDelete: "set null" }),
+    error: text("error"),
+  },
+  (t) => [
+    index("deep_requests_status_idx").on(t.status, t.requestedAt),
+    uniqueIndex("deep_requests_open_idx").on(t.tenderId).where(sql`status in ('queued', 'running')`),
+  ],
+).enableRLS();
+
 export const profileMatches = pgTable(
   "profile_matches",
   {

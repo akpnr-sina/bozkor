@@ -109,6 +109,8 @@ export function schemaError(issues: readonly { path: PropertyKey[]; message: str
 
 /** Highest output limit the SDK accepts for a non-streaming call (it rejects ~21,333 and up). */
 export const MAX_NON_STREAMING_TOKENS = 21_000;
+/** Highest output limit of a streamed call: the analysis model's output ceiling. */
+export const MAX_STREAMING_TOKENS = 64_000;
 
 export type CallResult<T> =
   | { status: "valid"; output: T; analysisId: string; costUsd: number }
@@ -160,7 +162,7 @@ export async function completeValidated<T>(
     await args.record({ ...base, output: checked.raw, valid: false, error });
     // The same input would most likely be refused again.
     if (attempt >= 2 || response.stopReason === "refusal") return { status: "invalid", costUsd };
-    if (response.stopReason === "max_tokens") maxTokens = Math.min(maxTokens * 2, MAX_NON_STREAMING_TOKENS);
+    if (response.stopReason === "max_tokens") maxTokens = Math.min(maxTokens * 2, args.request.stream ? MAX_STREAMING_TOKENS : MAX_NON_STREAMING_TOKENS);
   }
 }
 

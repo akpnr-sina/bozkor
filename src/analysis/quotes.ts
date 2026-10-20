@@ -43,3 +43,27 @@ export function findQuote(quote: string, sources: QuoteSources): string | null {
   }
   return null;
 }
+
+/** A word broken at a line end ("manu- facturer"): a PDF's text keeps the break, a quote read from the page does not. */
+const joinBrokenWords = (text: string) => text.replace(/(\p{L})- (\p{Ll})/gu, "$1$2");
+
+/**
+ * findQuote for many quotes over long texts (a tender's files): the sources
+ * are normalized once. The keys in `prefer` (the page the model cited, say)
+ * are looked in first, then all in insertion order; a word broken at a line
+ * end in the source still matches.
+ */
+export function quoteFinder(sources: QuoteSources): (quote: string, prefer?: readonly string[]) => string | null {
+  const texts = new Map(Object.entries(sources).map(([key, text]) => [key, normalizeQuoteText(text)] as const));
+  const joined = new Map([...texts].map(([key, text]) => [key, joinBrokenWords(text)] as const));
+  return (quote, prefer = []) => {
+    const needle = unwrap(normalizeQuoteText(quote));
+    if (needle.length < MIN_QUOTE_LENGTH) return null;
+    const joinedNeedle = joinBrokenWords(needle);
+    const order = [...prefer.filter((key) => texts.has(key)), ...texts.keys()];
+    for (const key of order) {
+      if (texts.get(key)!.includes(needle) || joined.get(key)!.includes(joinedNeedle)) return key;
+    }
+    return null;
+  };
+}

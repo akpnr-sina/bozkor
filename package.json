@@ -18,6 +18,7 @@
     "facts": "tsx src/worker/facts.ts",
     "assess": "tsx src/worker/assess.ts",
     "documents": "tsx src/worker/documents.ts",
+    "deep": "tsx src/worker/deep.ts",
     "enrich-ted": "tsx src/worker/enrich-ted.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
