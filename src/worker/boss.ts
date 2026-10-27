@@ -8,7 +8,7 @@ export const TIMEZONE = "Europe/Istanbul";
  * direct or session-mode connection, not Supabase's transaction pooler.
  */
 export function createBoss(): PgBoss {
-  return new PgBoss({
+  const options = {
     connectionString: requireEnv("DATABASE_URL"),
     schema: "pgboss",
     application_name: "bozkor-worker",
@@ -21,5 +21,10 @@ export function createBoss(): PgBoss {
     // serves parent and child jobs, which this worker does not use.
     queueCacheIntervalSeconds: 600,
     flowIntervalSeconds: 300,
-  });
+    // pg's pool option, which pg-boss passes on (its types leave it out). pg
+    // closes a connection idle for 10 seconds, so every 30-second poll opened
+    // new ones, each with a TLS handshake: about 7 a minute, 50 MB of egress a day.
+    idleTimeoutMillis: 5 * 60_000,
+  };
+  return new PgBoss(options);
 }

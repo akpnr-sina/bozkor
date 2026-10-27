@@ -89,6 +89,7 @@ Supabase ücretsiz planında aylık 5 GB veri çıkışı (egress) var: veritaba
 - Senkron az önce yazdığı ham kayıtları geri okumaz (`storeRawNotices` sonucu `applyProcedures`'a `fresh` olarak gider).
 - Kredi yokken LLM işleri yarım saatte bir tek ihaleyle dener (`src/worker/credit-pause.ts`); her deneme dosya metinlerini okur.
 - pg-boss kuyrukları 30 saniyede bir yoklar (varsayılan 2 saniye günde yaklaşık 500.000 sorgu demekti).
+- Worker boştaki bağlantıları 5 dakika açık tutar (`configureDb`, pg-boss'a `idleTimeoutMillis`). Her yeni bağlantı bir TLS el sıkışması demek, uygulamanınkiler ayrıca tip kataloğunu okuyor. Varsayılan 10-20 saniyede dakikada yaklaşık 7 bağlantı açılıyordu; worker şimdi sürekli 7 bağlantı tutuyor (pg-boss 4, uygulama 3).
 - Web süreci eşleştirme adaylarını bellekte tutar; profil önizlemesi ve profil kaydı paylaşır (`src/matching/apply.ts`). İlk yükleme metinleriyle okur (yaklaşık 36 MB), sonrakiler yalnız `updated_at` ve EUR değerini okur (yaklaşık 1 MB) ve metni yalnız yeni ya da yeniden yazılmış ihaleler için ister.
 - İhale sayfası dosya okunurken ve derin analiz sürerken sayfayı değil `/api/tenders/[id]/progress`'i yoklar (sayfanın yeniden çizimi yaklaşık 250 KB okur); değişince bir kez yeniler.
 - Tekrarlanan bir yere büyük okuma (binlerce satır, metin sütunları, `payload`, `text_content`) ekleyen kod önce ölçülür ve yalnız gereken sütunları seçer. Ölçmek için `extensions.pg_stat_statements` (satır ve çağrı sayısı) ya da soket bayt sayımı kullanılır.

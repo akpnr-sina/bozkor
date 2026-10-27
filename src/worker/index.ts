@@ -1,8 +1,11 @@
 import "@/lib/load-env";
+import { configureDb } from "@/db";
 import { createBoss } from "./boss";
 import { registerJobs } from "./jobs";
 
 async function main() {
+  // Jobs run every minute: their connections stay open in between (src/db/index.ts).
+  configureDb({ idleTimeoutSeconds: 5 * 60 });
   const boss = createBoss();
   boss.on("error", (error) => console.error("[pg-boss]", error));
 
