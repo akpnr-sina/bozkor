@@ -11,7 +11,7 @@ import { POLICY } from "@/policy/policy";
 
 // Usage: pnpm assess [--dry-run] [--report]
 // Applies the qualification policy to every tender with facts, as the worker
-// does every 15 minutes. With --dry-run nothing is written: it shows how many
+// does once a day. With --dry-run nothing is written: it shows how many
 // verdicts would change, e.g. after editing src/policy/policy.ts. --report
 // writes nothing either: it summarises the stored verdicts for calibration,
 // with why tenders are rejected and how the partner lead time weighs.

@@ -5,7 +5,7 @@ import { loadFixture } from "../../tests/helpers/fixtures";
 import { criteriaProfiles, documents, lots, profileMatches, rawNotices, sources, tenderReviews, tenders } from "@/db/schema";
 import { profileRulesSchema } from "@/matching/rules";
 import { foldNotices } from "./fold";
-import { applyProcedures, scopeReport, storeRawNotices, upsertTender } from "./store";
+import { applyProcedures, planProcedures, scopeReport, storeRawNotices, upsertTender } from "./store";
 import { backfill, syncIncremental, syncWindow } from "./sync";
 import type { SourceAdapter } from "./types";
 import { fatNoticeKeys, normalizeFatRelease } from "./uk-fat/normalize";
@@ -205,6 +205,29 @@ describe("sync", () => {
     const [source] = await db.select().from(sources).where(eq(sources.id, "uk_fat"));
     expect(source?.lastError).toBeNull();
     expect(new Date(source?.cursor ?? 0).getTime()).toBeGreaterThan(Date.parse("2026-10-13T10:00:00Z"));
+  });
+});
+
+describe("planProcedures", () => {
+  it("takes the rows a run has just stored from memory and reads only the procedure's earlier rows", async () => {
+    const { db } = testDb;
+    const before = fixture("uk4-goods-before-change");
+    const change = fixture("uk4-goods-change");
+    const keys = (payload: unknown) => fatNoticeKeys(payload)!;
+    expect(keys(change).procedureKey).toBe(keys(before).procedureKey);
+    const first = await storeRawNotices(db, "uk_fat", [{ keys: keys(before), payload: before }]);
+    const second = await storeRawNotices(db, "uk_fat", [{ keys: keys(change), payload: change }]);
+    expect(second.fresh).toEqual([{ id: expect.any(String), procedureKey: keys(change).procedureKey, externalId: keys(change).externalId, payload: change }]);
+
+    // A title only memory has: had the row been read back, the stored one would be folded.
+    const edited = structuredClone(change) as { tender: { title: string } };
+    edited.tender.title = "Edited in memory";
+    const { plans } = await planProcedures(db, "uk_fat", [keys(change).procedureKey!], normalizeFatRelease, () => {}, [
+      { ...second.fresh[0]!, payload: edited },
+    ]);
+    expect(plans).toHaveLength(1);
+    expect(plans[0]!.rawIds).toEqual([first.fresh[0]!.id, second.fresh[0]!.id]);
+    expect(plans[0]!.folded?.title).toBe("Edited in memory");
   });
 });
 

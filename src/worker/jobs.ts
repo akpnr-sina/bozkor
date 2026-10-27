@@ -13,15 +13,16 @@ import { createRobots, extractDocumentLinks } from "@/documents/portal";
 import { processDocuments, type ProcessStats } from "@/documents/process-job";
 import { createDocumentStorage, type DocumentStorage, storageConfigured } from "@/documents/storage";
 import { syncEcbRates } from "@/fx/sync";
-import { rematch } from "@/matching/apply";
 import { assessTenders, type AssessStats } from "@/policy/assess";
 import { createTedAdapter } from "@/sources/eu-ted";
 import { createTedClient } from "@/sources/eu-ted/client";
 import { enrichTedNotices } from "@/sources/eu-ted/enrich";
 import { syncIncremental, type SyncStats } from "@/sources/sync";
+import { databaseNow } from "@/sources/store";
 import { createFatAdapter } from "@/sources/uk-fat";
-import { fillValueEur } from "@/sources/value-eur";
 import { TIMEZONE } from "./boss";
+import { createCreditPause, type CreditOutcome } from "./credit-pause";
+import { createTenderChanges, matchedThroughAtStart, onceADay, WRITE_MARGIN_MS } from "./incremental";
 
 type JobDefinition = {
   name: string;
@@ -59,6 +60,14 @@ const syncQueue: Omit<Queue, "name"> = {
   heartbeatSeconds: 60,
 };
 
+/**
+ * How often an idle worker asks pg-boss for a job, per queue. pg-boss's 2
+ * seconds made a dozen queues poll about 500,000 times a day, each answer
+ * counting against Supabase's egress quota; scheduled jobs start up to this
+ * much later instead.
+ */
+const POLL_SECONDS = 30;
+
 /** LLM runs stay short (a few minutes), so a restart cuts little off. */
 const LLM_BATCH = 60;
 /** Calls in flight per LLM job; the SDK waits out a rate limit (429) by itself. */
@@ -86,18 +95,18 @@ function formatRunStats(stats: RunStats): string {
   );
 }
 
-let warnedNoCredit = false;
+/** The Anthropic account's credit as the LLM jobs last found it; without it they pause (see createCreditPause). */
+const creditPause = createCreditPause();
 
-/** Says once, in Turkish, what to do when the Anthropic account is out of credit. */
-function warnNoCredit(job: string, stats: RunStats) {
-  if (stats.stoppedBy !== "credit") {
-    if (stats.valid) warnedNoCredit = false;
-    return;
+/** Notes what a run found; says in Turkish, once, what to do when the account is out of credit. */
+function noteCredit(job: string, outcome: CreditOutcome) {
+  const change = creditPause.record(outcome);
+  if (change === "ran-out") {
+    console.log(
+      `[${job}] Anthropic hesabının kredisi bitti; console.anthropic.com > Plans & Billing'den kredi yükleyin. Yüklenince işler en geç yarım saat içinde kendiliğinden devam eder.`,
+    );
   }
-  if (!warnedNoCredit) {
-    console.log(`[${job}] Anthropic hesabının kredisi bitti; console.anthropic.com > Plans & Billing'den kredi yükleyin. Yüklenince işler kendiliğinden devam eder.`);
-  }
-  warnedNoCredit = true;
+  if (change === "back") console.log(`[${job}] Anthropic hesabında yine kredi var; işler devam ediyor.`);
 }
 
 function formatAssessStats(stats: AssessStats): string {
@@ -205,26 +214,34 @@ const jobs: JobDefinition[] = [
     queue: syncQueue,
     handler: async () => {
       if (!hasApiKey("facts", "olgu çıkarma")) return;
+      const limits = creditPause.limits(LLM_BATCH, FACTS_CONCURRENCY);
+      if (!limits) return;
       const db = getDb();
-      const stats = await runFacts(db, createLlmClient(), { limit: LLM_BATCH, concurrency: FACTS_CONCURRENCY, log: (m) => console.warn(m) });
+      const startedAt = await databaseNow(db);
+      const stats = await runFacts(db, createLlmClient(), { limit: limits.limit, concurrency: limits.concurrency, log: (m) => console.warn(m) });
       if (stats.attempted || stats.stoppedBy) console.log(`[facts] ${formatRunStats(stats)}`);
-      warnNoCredit("facts", stats);
-      if (stats.valid) console.log(`[facts] assess ${formatAssessStats(await assessTenders(db))}`);
-      // Drain a backlog without waiting for the schedule.
-      if (stats.attempted >= LLM_BATCH && !stats.stoppedBy) await runAgain("facts");
+      noteCredit("facts", stats);
+      if (stats.valid) {
+        const assessed = await assessTenders(db, { changedSince: new Date(startedAt.getTime() - WRITE_MARGIN_MS) });
+        console.log(`[facts] assess ${formatAssessStats(assessed)}`);
+      }
+      // Drain a backlog without waiting for the schedule (also right after a try finds credit again).
+      if (stats.attempted >= limits.limit && !stats.stoppedBy) await runAgain("facts");
     },
   },
   {
-    // The time left changes verdicts (deadlines pass, partners can no longer
-    // be found in time), and a new policy version reassesses everything. The
-    // detail page works verdicts out live; the inbox lags by at most this.
+    // Every tender, when the worker starts (a new policy version) and once an
+    // Istanbul day: the time left changes verdicts by the day (working days to
+    // the deadline). Facts runs and syncs assess the tenders they change right
+    // away. The hourly check reads nothing until the day turns, so a Mac that
+    // slept through midnight catches up when it wakes. The detail page works
+    // verdicts out live.
     name: "assess",
-    cron: "*/15 * * * *",
+    cron: "5 * * * *",
     runOnStart: true,
     queue: syncQueue,
     handler: async () => {
-      const stats = await assessTenders(getDb());
-      if (stats.changed) console.log(`[assess] ${formatAssessStats(stats)}`);
+      await assessDaily();
     },
   },
   {
@@ -235,14 +252,16 @@ const jobs: JobDefinition[] = [
     queue: syncQueue,
     handler: async () => {
       if (!hasApiKey("translate", "çeviri")) return;
+      const limits = creditPause.limits(LLM_BATCH, TRANSLATE_CONCURRENCY);
+      if (!limits) return;
       const stats = await runTranslation(getDb(), createLlmClient(), {
-        limit: LLM_BATCH,
-        concurrency: TRANSLATE_CONCURRENCY,
+        limit: limits.limit,
+        concurrency: limits.concurrency,
         log: (m) => console.warn(m),
       });
       if (stats.attempted || stats.stoppedBy) console.log(`[translate] ${formatRunStats(stats)}`);
-      warnNoCredit("translate", stats);
-      if (stats.attempted >= LLM_BATCH && !stats.stoppedBy) await runAgain("translate");
+      noteCredit("translate", stats);
+      if (stats.attempted >= limits.limit && !stats.stoppedBy) await runAgain("translate");
     },
   },
   {
@@ -321,7 +340,9 @@ const jobs: JobDefinition[] = [
       if (!hasStorage("deep-analysis")) return;
       const db = getDb();
       const queued = await queueAutoDeep(db);
+      // The team's requests run without credit too, so the page says why one failed; the others hear of it.
       const stats = await runDeepRequests(db, { llm: createLlmClient(), storage: documentStorage(), log: (m) => console.warn(m) }, { limit: DEEP_BATCH });
+      noteCredit("deep-analysis", { stoppedBy: stats.stoppedBy, attempted: stats.analysed + stats.failed });
       if (queued || stats.analysed || stats.failed) {
         console.log(
           `[deep-analysis] queued=${queued} analysed=${stats.analysed} failed=${stats.failed} cost=${stats.costUsd.toFixed(4)}` +
@@ -341,28 +362,34 @@ const jobs: JobDefinition[] = [
       const db = getDb();
       const fx = await syncEcbRates(db);
       console.log(`[fx-ecb] ${fx.source} latest=${fx.latestDate} rows=${fx.rows} new=${fx.inserted} updated=${fx.updated}`);
-      // New rates can turn unknown EUR values into known ones; weekends and
-      // holidays bring none, so there is nothing to recompute.
-      if (fx.inserted + fx.updated > 0) await afterTenderChanges(db, "fx-ecb");
+      // New rates can turn unknown EUR values into known ones and change those
+      // worked out from an earlier day's rate; weekends and holidays bring
+      // none, so there is nothing to recompute.
+      if (fx.inserted + fx.updated > 0) await afterTenderChanges(db, "fx-ecb", { recheckValues: true });
     },
   },
 ];
 
-/**
- * EUR values first, then matching, so value filters see fresh values. Both
- * look at everything rather than only this run's changes, so work left by an
- * earlier run that failed half way is picked up too.
- */
-async function afterTenderChanges(db: ReturnType<typeof getDb>, job: string): Promise<void> {
-  const value = await fillValueEur(db);
-  const match = await rematch(db, { log: (m) => console.warn(m) });
+const assessDaily = onceADay(async () => {
+  console.log(`[assess] ${formatAssessStats(await assessTenders(getDb()))}`);
+});
+
+/** EUR values, matching and verdicts after tender writes, only for what changed (see createTenderChanges); set by registerJobs. */
+let tenderChanges = createTenderChanges();
+
+async function afterTenderChanges(db: ReturnType<typeof getDb>, job: string, options: { recheckValues?: boolean } = {}): Promise<void> {
+  const { full, value, match, assess } = await tenderChanges(db, options);
   console.log(
     `[${job}] valueEur checked=${value.checked} updated=${value.updated} unconverted=${value.unconverted}` +
-      ` | matching profiles=${match.profiles} matched=${match.matched} new=${match.created} unmatched=${match.unmatched}`,
+      ` | matching ${full ? "all" : "changed"} tenders=${match.tenders} profiles=${match.profiles} matched=${match.matched}` +
+      ` new=${match.created} unmatched=${match.unmatched}` +
+      (assess.assessed ? ` | assess ${formatAssessStats(assess)}` : ""),
   );
 }
 
 export async function registerJobs(boss: PgBoss): Promise<void> {
+  // Before this process's syncs move last_synced_at (see matchedThroughAtStart).
+  tenderChanges = createTenderChanges({ log: (m) => console.warn(m), handledThrough: await matchedThroughAtStart(getDb()) });
   // The stately policy keeps it to one queued run while one is active.
   runAgain = async (name) => {
     await boss.send(name, {});
@@ -384,7 +411,7 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
     if (job.cron) {
       await boss.schedule(job.name, job.cron, null, { tz: TIMEZONE });
     }
-    await boss.work(job.name, async (batch) => {
+    await boss.work(job.name, { pollingIntervalSeconds: POLL_SECONDS }, async (batch) => {
       for (const { id, data } of batch) {
         await job.handler(id, data);
       }

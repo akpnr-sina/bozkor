@@ -23,7 +23,13 @@ export function valueInEur(
   return toEur(amount, currency, beforeRange ? new Date(`${oldest.date}T12:00:00Z`) : null, table);
 }
 
-export type ValueEurStats = { checked: number; updated: number; unconverted: number };
+export type ValueEurStats = {
+  checked: number;
+  updated: number;
+  unconverted: number;
+  /** Tenders whose EUR value changed: updated_at stays, so matching is told about them by id. */
+  changedIds: string[];
+};
 
 const BATCH = 500;
 
@@ -33,7 +39,7 @@ const BATCH = 500;
  * Writes only rows whose value changes and leaves updated_at alone.
  */
 export async function fillValueEur(db: AppDb, options: { since?: Date } = {}): Promise<ValueEurStats> {
-  const stats: ValueEurStats = { checked: 0, updated: 0, unconverted: 0 };
+  const stats: ValueEurStats = { checked: 0, updated: 0, unconverted: 0, changedIds: [] };
   const needsValue = and(isNotNull(tenders.valueAmount), isNull(tenders.valueEur))!;
   // A correction that removes the amount must also clear the EUR value.
   const stale = and(isNull(tenders.valueAmount), isNotNull(tenders.valueEur))!;
@@ -72,5 +78,6 @@ export async function fillValueEur(db: AppDb, options: { since?: Date } = {}): P
     );
   }
   stats.updated = changes.length;
+  stats.changedIds = changes.map((c) => c.id);
   return stats;
 }

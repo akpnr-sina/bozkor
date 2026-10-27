@@ -9,6 +9,9 @@ export type AppDb = PgDatabase<PgQueryResultHKT, typeof schema>;
 
 function createDb() {
   const client = postgres(requireEnv("DATABASE_URL"), {
+    // The pooler is reached over the internet, so the connection is encrypted.
+    // Without Supabase's CA certificate the server is not verified ("require").
+    ssl: "require",
     // Keeps this working behind Supabase's transaction pooler too.
     prepare: false,
     // Supabase's session pooler gives the whole project 15 connections (free

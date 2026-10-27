@@ -62,7 +62,7 @@ export async function syncWindow(
       return keys ? [{ keys, payload }] : [];
     });
     const stored = await storeRawNotices(db, adapter.id, rows);
-    const applied = await applyProcedures(db, adapter.id, stored.procedureKeys, adapter.normalize, startedAt, options.log);
+    const applied = await applyProcedures(db, adapter.id, stored.procedureKeys, adapter.normalize, startedAt, options.log, stored.fresh);
     const pageStats = { ...applied, fetched: page.length, rawInserted: stored.inserted };
     options.onPage?.(pageStats);
     stats = addStats(stats, pageStats);

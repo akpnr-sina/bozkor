@@ -76,11 +76,13 @@ describe("fillValueEur", () => {
   it("fills every tender with a value and writes nothing on a second run", async () => {
     const first = await fillValueEur(testDb.db);
     expect(first).toMatchObject({ checked: 2, updated: 2, unconverted: 0 });
+    const ids = (await testDb.db.select({ id: tenders.id }).from(tenders)).map((r) => r.id);
+    expect([...first.changedIds].sort()).toEqual(ids.sort());
     // 6,000,000 GBP / 0.85 and 58,000 GBP / 0.85, published on 12 October.
     expect(await valueOf("096253-2026")).toBe(7_058_823.53);
     expect(await valueOf("096156-2026")).toBe(68_235.29);
 
-    expect(await fillValueEur(testDb.db)).toMatchObject({ updated: 0 });
+    expect(await fillValueEur(testDb.db)).toMatchObject({ updated: 0, changedIds: [] });
   });
 
   it("only rechecks recently upserted tenders and those still missing a value", async () => {

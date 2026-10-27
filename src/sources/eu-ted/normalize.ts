@@ -151,7 +151,10 @@ function textsIn(texts: Record<string, string[]>, order: string[]): string[] {
     const found = texts[language];
     if (found?.length) return found;
   }
-  return Object.values(texts)[0] ?? [];
+  // Otherwise the first language by code, as jsonb orders the keys: the same whether the
+  // payload comes straight from the API or back from the database.
+  const first = Object.keys(texts).sort()[0];
+  return first ? (texts[first] ?? []) : [];
 }
 
 /** The value at a lot's position when the field has one value per lot, otherwise null. */

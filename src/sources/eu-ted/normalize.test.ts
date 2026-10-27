@@ -112,6 +112,13 @@ describe("normalizeTedNotice", () => {
     });
   });
 
+  it("falls back to the first language by code when neither English nor the notice's own language has a text", () => {
+    const raw = fixture("ted-cn-english");
+    // Keys against code order: the payload's order (API or jsonb) must not decide.
+    const n = normalizeTedNotice({ ...raw, "official-language": ["POL"], "title-proc": { ita: ["Ricambi"], deu: ["Ersatzteile"] } });
+    expect(n?.title).toBe("Ersatzteile");
+  });
+
   it("keeps the notice currency", () => {
     expect(normalized("ted-cn-non-eur-currency")).toMatchObject({ valueAmount: 4_000_000, valueCurrency: "DKK", cpvMain: "18110000" });
   });

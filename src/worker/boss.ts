@@ -12,7 +12,14 @@ export function createBoss(): PgBoss {
     connectionString: requireEnv("DATABASE_URL"),
     schema: "pgboss",
     application_name: "bozkor-worker",
+    // Encrypted, as the app's connection is (src/db/index.ts).
+    ssl: { rejectUnauthorized: false },
     // Supabase session pooler slots are limited; leave room for the web app.
     max: 4,
+    // Every answer counts against Supabase's egress quota. The queue list
+    // (with its stats) was read every minute; the flow check, every 5 seconds,
+    // serves parent and child jobs, which this worker does not use.
+    queueCacheIntervalSeconds: 600,
+    flowIntervalSeconds: 300,
   });
 }

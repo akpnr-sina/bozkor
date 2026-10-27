@@ -1,4 +1,4 @@
-import { and, asc, eq, gt, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
 import { evidencedFacts, readStoredFacts, type ReadFacts } from "@/analysis/facts-evidence";
 import type { FactsOutput } from "@/analysis/facts-schema";
 import type { AppDb } from "@/db";
@@ -8,14 +8,19 @@ import { valueInEur } from "@/sources/value-eur";
 import { assessTender, type GateId, type PolicyInput, type Status, type TenderAssessment } from "./engine";
 import { POLICY, type Policy } from "./policy";
 
-// Applies the qualification policy to every tender with facts and keeps the
-// verdict in tender_assessments. Cheap and pure apart from the reads, so it
-// runs after each facts run and every hour: the time left changes statuses
-// (a deadline passes, a partner can no longer be found in time), and a new
-// policy version reassesses everything on its next run.
+// Applies the qualification policy to tenders with facts and keeps the verdict
+// in tender_assessments. Pure apart from the reads. The worker assesses the
+// tenders a facts run or a sync changed right after it, and every tender once
+// an Istanbul day: the time left changes statuses by the day (working days to
+// the deadline), and a new policy version reassesses everything on the first
+// run after the worker restarts.
+
+/** The tender and lot columns the policy reads; the runs select only these (long texts are most of a row). */
+type PolicyTender = Pick<Tender, "valueEur" | "submissionDeadline" | "buyerCountry" | "noticeLanguage" | "details" | "publishedAt">;
+type PolicyLot = Pick<Lot, "lotNumber" | "valueAmount" | "valueCurrency">;
 
 /** The engine's input from stored rows; lot values in EUR at the ECB rate of the publication day. */
-export function policyInputOf(tender: Tender, lotRows: readonly Lot[], facts: FactsOutput, rates: RateTable, now: Date): PolicyInput {
+export function policyInputOf(tender: PolicyTender, lotRows: readonly PolicyLot[], facts: FactsOutput, rates: RateTable, now: Date): PolicyInput {
   return {
     tender: {
       valueEur: tender.valueEur,
@@ -152,16 +157,39 @@ const ASSESS_LOCK = sql.raw("select pg_advisory_xact_lock(7301101944)");
 
 type AssessContext = { now: Date; policy: Policy; rates: RateTable; dryRun: boolean; log: (message: string) => void };
 
+/** Tenders with valid facts whose facts were extracted, or whose notice was written, since then. */
+async function changedSince(db: AppDb, since: Date): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ id: analyses.tenderId })
+    .from(analyses)
+    .innerJoin(tenders, eq(tenders.id, analyses.tenderId))
+    .where(and(eq(analyses.kind, "facts"), eq(analyses.valid, true), or(gte(analyses.createdAt, since), gte(tenders.updatedAt, since))));
+  return rows.map((r) => r.id);
+}
+
 /**
- * Assesses tenders with valid facts: the given ones, or all. Writes a row only
- * when the verdict changed, and a history row when the status, the lot or the
- * policy version did. With `dryRun` nothing is written.
+ * Assesses tenders with valid facts: the given ones (tenderIds) and those
+ * changed since `changedSince`, or all when neither is given. Writes a row
+ * only when the verdict changed, and a history row when the status, the lot
+ * or the policy version did. With `dryRun` nothing is written.
  */
 export async function assessTenders(
   db: AppDb,
-  options: { now?: Date; policy?: Policy; tenderIds?: readonly string[]; dryRun?: boolean; log?: (message: string) => void } = {},
+  options: {
+    now?: Date;
+    policy?: Policy;
+    tenderIds?: readonly string[];
+    changedSince?: Date;
+    dryRun?: boolean;
+    log?: (message: string) => void;
+  } = {},
 ): Promise<AssessStats> {
   const stats: AssessStats = { assessed: 0, changed: 0, statusChanged: 0, errors: 0, removed: 0, byStatus: {} };
+  const targeted = options.tenderIds || options.changedSince;
+  const ids = targeted ? new Set(options.tenderIds) : null;
+  if (ids && options.changedSince) for (const id of await changedSince(db, options.changedSince)) ids.add(id);
+  // Nothing changed: not even the rate table is read (runs after every sync and facts run).
+  if (ids && !ids.size) return stats;
   const context: AssessContext = {
     now: options.now ?? new Date(),
     policy: options.policy ?? POLICY,
@@ -169,9 +197,10 @@ export async function assessTenders(
     dryRun: options.dryRun ?? false,
     log: options.log ?? ((message) => console.warn(message)),
   };
-  if (options.tenderIds) {
-    for (let i = 0; i < options.tenderIds.length; i += BATCH) {
-      await assessBatch(db, options.tenderIds.slice(i, i + BATCH), context, stats);
+  if (ids) {
+    const list = [...ids];
+    for (let i = 0; i < list.length; i += BATCH) {
+      await assessBatch(db, list.slice(i, i + BATCH), context, stats);
     }
     return stats;
   }
@@ -205,10 +234,24 @@ async function evaluate(
 ): Promise<{ summaries: Map<string, Summary>; unreadable: string[] }> {
   const [factsByTender, tenderRows, lotRows] = await Promise.all([
     latestFacts(db, ids),
-    db.select().from(tenders).where(inArray(tenders.id, [...ids])),
-    db.select().from(lots).where(inArray(lots.tenderId, [...ids])),
+    db
+      .select({
+        id: tenders.id,
+        valueEur: tenders.valueEur,
+        submissionDeadline: tenders.submissionDeadline,
+        buyerCountry: tenders.buyerCountry,
+        noticeLanguage: tenders.noticeLanguage,
+        details: tenders.details,
+        publishedAt: tenders.publishedAt,
+      })
+      .from(tenders)
+      .where(inArray(tenders.id, [...ids])),
+    db
+      .select({ tenderId: lots.tenderId, lotNumber: lots.lotNumber, valueAmount: lots.valueAmount, valueCurrency: lots.valueCurrency })
+      .from(lots)
+      .where(inArray(lots.tenderId, [...ids])),
   ]);
-  const lotsByTender = new Map<string, Lot[]>();
+  const lotsByTender = new Map<string, PolicyLot[]>();
   for (const lot of lotRows) lotsByTender.set(lot.tenderId, [...(lotsByTender.get(lot.tenderId) ?? []), lot]);
 
   const summaries = new Map<string, Summary>();

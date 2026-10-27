@@ -29,31 +29,42 @@ export async function databaseNow(db: AppDb): Promise<Date> {
 
 export type RawRow = { keys: RawNoticeKeys; payload: unknown };
 
+/** A raw row this run has just stored, with its payload still in memory. */
+export type FreshRaw = { id: string; procedureKey: string | null; externalId: string; payload: unknown };
+
 /**
  * Writes raw payloads. Re-fetching an identical payload is a no-op; a changed
- * payload for the same notice adds a row. Returns the procedures that got new rows.
+ * payload for the same notice adds a row. Returns the procedures that got new
+ * rows, and the new rows themselves for applyProcedures.
  */
 export async function storeRawNotices(
   db: AppDb,
   source: SourceId,
   rows: RawRow[],
-): Promise<{ inserted: number; procedureKeys: string[] }> {
-  if (!rows.length) return { inserted: 0, procedureKeys: [] };
+): Promise<{ inserted: number; procedureKeys: string[]; fresh: FreshRaw[] }> {
+  if (!rows.length) return { inserted: 0, procedureKeys: [], fresh: [] };
+  const values = rows.map(({ keys, payload }) => ({
+    source,
+    externalId: keys.externalId,
+    procedureKey: keys.procedureKey,
+    payload,
+    sha256: sha256Hex(stableStringify(payload)),
+  }));
   const inserted = await db
     .insert(rawNotices)
-    .values(
-      rows.map(({ keys, payload }) => ({
-        source,
-        externalId: keys.externalId,
-        procedureKey: keys.procedureKey,
-        payload,
-        sha256: sha256Hex(stableStringify(payload)),
-      })),
-    )
+    .values(values)
     .onConflictDoNothing()
-    .returning({ procedureKey: rawNotices.procedureKey });
+    // Not the payload: sending it back would double what a sync reads from the database.
+    .returning({ id: rawNotices.id, procedureKey: rawNotices.procedureKey, externalId: rawNotices.externalId, sha256: rawNotices.sha256 });
+  const payloads = new Map(values.map((v) => [`${v.externalId}\u0000${v.sha256}`, v.payload]));
+  const fresh = inserted.map(({ id, procedureKey, externalId, sha256 }) => ({
+    id,
+    procedureKey,
+    externalId,
+    payload: payloads.get(`${externalId}\u0000${sha256}`),
+  }));
   const procedureKeys = [...new Set(inserted.map((r) => r.procedureKey).filter((k): k is string => !!k))];
-  return { inserted: inserted.length, procedureKeys };
+  return { inserted: inserted.length, procedureKeys, fresh };
 }
 
 const excluded = (column: PgColumn): SQL => sql.raw(`excluded."${column.name}"`);
@@ -335,9 +346,12 @@ export async function planProcedures(
   procedureKeys: readonly string[],
   normalize: (raw: unknown) => NormalizedNotice | null,
   log: (message: string) => void = console.warn,
+  fresh: readonly FreshRaw[] = [],
 ): Promise<{ plans: ProcedurePlan[]; normalizeErrors: number }> {
   if (!procedureKeys.length) return { plans: [], normalizeErrors: 0 };
-  const rows = await db
+  // Rows this run has just stored are taken from memory; only the procedures' earlier rows are read.
+  const freshIds = fresh.map((r) => r.id);
+  const stored = await db
     .select({
       id: rawNotices.id,
       procedureKey: rawNotices.procedureKey,
@@ -345,8 +359,17 @@ export async function planProcedures(
       payload: rawNotices.payload,
     })
     .from(rawNotices)
-    .where(and(eq(rawNotices.source, source), inArray(rawNotices.procedureKey, [...procedureKeys])))
+    .where(
+      and(
+        eq(rawNotices.source, source),
+        inArray(rawNotices.procedureKey, [...procedureKeys]),
+        freshIds.length ? notInArray(rawNotices.id, freshIds) : undefined,
+      ),
+    )
     .orderBy(asc(rawNotices.fetchedAt), asc(rawNotices.id));
+  // The fresh rows were fetched last, all at once, so they come after the stored ones in id
+  // order, where the query would have put them (uuids compare like their lowercase text).
+  const rows = [...stored, ...[...fresh].sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))];
 
   // Latest fetched payload per notice, grouped by procedure, plus every row id read.
   type Group = { payloads: Map<string, unknown>; rawIds: string[] };
@@ -389,6 +412,7 @@ export async function planProcedures(
 /**
  * Re-folds each procedure from all of its stored raw notices and upserts the
  * result. Safe to repeat: the same raw rows always produce the same tender.
+ * `fresh`: rows storeRawNotices has just written, whose payloads need no read.
  */
 export async function applyProcedures(
   db: AppDb,
@@ -397,9 +421,10 @@ export async function applyProcedures(
   normalize: (raw: unknown) => NormalizedNotice | null,
   runStartedAt: Date,
   log: (message: string) => void = console.warn,
+  fresh: readonly FreshRaw[] = [],
 ): Promise<ApplyStats> {
   const stats = emptyApplyStats();
-  const { plans, normalizeErrors } = await planProcedures(db, source, procedureKeys, normalize, log);
+  const { plans, normalizeErrors } = await planProcedures(db, source, procedureKeys, normalize, log, fresh);
   stats.normalizeErrors = normalizeErrors;
 
   await forEachConcurrent(plans, APPLY_CONCURRENCY, async ({ procedureKey, rawIds, folded, inScope, unreadable }) => {

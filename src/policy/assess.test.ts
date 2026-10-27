@@ -153,6 +153,27 @@ describe("assessTenders", () => {
     expect(await assessTenders(db, { now: REVIEWED, tenderIds: [id] })).toMatchObject({ assessed: 1, changed: 1 });
   });
 
+  it("assesses only what changed since: new facts or a notice written again, and the tenders it is given", async () => {
+    const { db } = testDb;
+    const id = await tenderIdOf("ocds-h6vhtk-07867f");
+    await storeFacts(id, compressorFacts);
+    const age = () => db.execute(sql`update analyses set created_at = now() - interval '1 hour'`);
+    await age();
+    await db.execute(sql`update tenders set updated_at = now() - interval '1 hour'`);
+    const before = new Date(Date.now() - 1_000);
+    expect(await assessTenders(db, { now: REVIEWED, changedSince: before })).toMatchObject({ assessed: 0 });
+
+    await storeFacts(id, compressorFacts);
+    expect(await assessTenders(db, { now: REVIEWED, changedSince: before })).toMatchObject({ assessed: 1 });
+    await age();
+    // Drizzle's update stamps updated_at, as the sync's upsert does.
+    await db.update(tenders).set({ title: "Replacement BA Compressor" }).where(eq(tenders.id, id));
+    expect(await assessTenders(db, { now: REVIEWED, changedSince: before })).toMatchObject({ assessed: 1 });
+    const later = new Date(Date.now() + 60_000);
+    expect(await assessTenders(db, { now: REVIEWED, changedSince: later })).toMatchObject({ assessed: 0 });
+    expect(await assessTenders(db, { now: REVIEWED, changedSince: later, tenderIds: [id] })).toMatchObject({ assessed: 1 });
+  });
+
   it("writes one history row when two runs overlap", async () => {
     const { db } = testDb;
     await storeFacts(await tenderIdOf("ocds-h6vhtk-07867f"), compressorFacts);
@@ -206,6 +227,16 @@ describe("assessTenders", () => {
     // 12,500 GBP at 0.87 GBP per EUR.
     expect(one!.assessment.best.valueEur).toBeCloseTo(14_367.8, 0);
     expect(one!.assessment.best.segment).toBe("B");
+    // The runs read only the columns the policy needs, and come to the same verdict as the whole rows.
+    const best = one!.assessment.best;
+    expect(row).toMatchObject({
+      explanation: best.explanation,
+      fitLow: best.scores.fit.low,
+      fitHigh: best.scores.fit.high,
+      preliminaryLow: best.scores.preliminary.low,
+      preliminaryHigh: best.scores.preliminary.high,
+      confidence: best.confidence,
+    });
     expect(one!.assessment.best.dimensions.H.notes[0]).toBe("Fiyat ve kalite birlikte değerlendiriliyor: Price %60, Quality %40.");
     expect(one!.latest.stored.quoteChecks?.lots[0]?.category).toBe("description");
     expect(await assessOne(db, await tenderIdOf("ocds-h6vhtk-07867f"))).toBeNull();

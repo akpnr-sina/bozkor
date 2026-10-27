@@ -17,6 +17,7 @@
     "translate": "tsx src/worker/translate.ts",
     "facts": "tsx src/worker/facts.ts",
     "assess": "tsx src/worker/assess.ts",
+    "rematch": "tsx src/worker/rematch.ts",
     "documents": "tsx src/worker/documents.ts",
     "deep": "tsx src/worker/deep.ts",
     "enrich-ted": "tsx src/worker/enrich-ted.ts",
