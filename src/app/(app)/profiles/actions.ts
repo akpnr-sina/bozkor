@@ -1,14 +1,16 @@
 "use server";
 
 import { eq, sql } from "drizzle-orm";
+import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { triageInputsChanged } from "@/analysis/profile-inputs";
 import { getDb } from "@/db";
 import { categories, criteriaProfiles } from "@/db/schema";
 import { requireUser } from "@/lib/auth/session";
-import { previewRules, rematch, type PreviewResult } from "@/matching/apply";
+import { rematch } from "@/matching/apply";
 import { profileRulesSchema } from "@/matching/rules";
+import { setProfileActive, type ProfileActiveResult } from "./active";
 
 const payloadSchema = z.object({
   id: z.uuid().optional(),
@@ -89,14 +91,15 @@ export async function saveProfile(_prev: SaveProfileState, formData: FormData): 
   };
 }
 
-export type PreviewState = { status: "ok"; result: PreviewResult } | { status: "invalid"; message: string };
+const activeInput = z.object({ profileId: z.uuid(), active: z.boolean() });
 
-/** Live preview for the profile form: how the rules would have done over the last 30 days. */
-export async function previewProfile(rules: unknown): Promise<PreviewState> {
+/** The list's switch: turns a profile on or off with what saving its form does (setProfileActive), then refreshes the page. */
+export async function toggleProfileActive(profileId: string, active: boolean): Promise<ProfileActiveResult> {
   await requireUser();
-  const parsed = profileRulesSchema.safeParse(rules);
-  if (!parsed.success) {
-    return { status: "invalid", message: parsed.error.issues[0]?.message ?? "Kurallar geçersiz." };
-  }
-  return { status: "ok", result: await previewRules(getDb(), parsed.data) };
+  const parsed = activeInput.safeParse({ profileId, active });
+  if (!parsed.success) return { status: "error", message: "Geçersiz istek. Sayfayı yenileyip tekrar deneyin." };
+  const result = await setProfileActive(getDb(), parsed.data.profileId, parsed.data.active);
+  // The list's figures and the menu's count of active profiles follow.
+  if (result.status === "saved") refresh();
+  return result;
 }

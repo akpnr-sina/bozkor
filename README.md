@@ -104,7 +104,8 @@ Sonrasında `pnpm worker` açık olduğu sürece yeni ilanlar 2 saatte bir otoma
 | `pnpm backfill --source=uk_fat --days=30` | Geriye dönük yükleme (`--source=eu_ted` TED için) |
 | `pnpm renormalize --source=uk_fat` | İhaleleri saklanan ham ilanlardan yeniden hesaplar (API çağırmaz). `--dry-run` sadece neyin silineceğini yazar. İhaleleri yeniden yazdığı için worker eşleşen ve kararlı ihalelerin olgularını yeniden çıkarır (ihale başına ~0,002 USD) |
 | `pnpm facts --limit=50` | Bekleyen ihalelerden alıntılı olgu çıkarır ve yeterlilik politikasıyla değerlendirir; `--tender=<id>` ya da `--notice=ted:<ilan no>,fat:<ilan no>` seçilen ihaleleri yeniden işler ve kararlarını yazdırır. Worker bunu 10 dakikada bir kendisi yapar |
-| `pnpm assess` | Olgusu olan tüm ihaleleri politikayla yeniden değerlendirir (worker 15 dakikada bir yapar); `--dry-run` hiçbir şey yazmaz |
+| `pnpm assess` | Olgusu olan tüm ihaleleri politikayla yeniden değerlendirir (worker açılışta ve günde bir kez yapar, değişen ihaleleri hemen); `--dry-run` hiçbir şey yazmaz |
+| `pnpm rematch` | Tüm açık ihaleleri aktif profillerle yeniden eşleştirir; eşleştirme kodu değişince gerekir (yaklaşık 30 MB Supabase veri çıkışı) |
 | `pnpm translate --limit=50` | Ekibin gördüğü ihalelerin Türkçe çevirisi; `--tender=<id>` tek ihale. Worker bunu da 10 dakikada bir yapar |
 | `pnpm enrich-ted` | Eşleşmesi ya da kararı olan TED ihalelerinin ilanlarını sonradan eklenen alanlarla (süre, ödül ve seçim kriterleri) yeniden çeker. Tekrar çalıştırmak güvenli |
 | `pnpm documents --report` | Doküman durumları, elle yüklenmesi gereken siteler ve son denenen linkler (`--limit=20`). `--fetch` ve `--process` worker'ın indirme ve okuma işlerinden birer parti çalıştırır; worker açıkken de güvenli |

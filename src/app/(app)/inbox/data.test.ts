@@ -9,7 +9,7 @@ import { profileRulesSchema } from "@/matching/rules";
 import { syncWindow } from "@/sources/sync";
 import type { SourceAdapter } from "@/sources/types";
 import { fatNoticeKeys, normalizeFatRelease } from "@/sources/uk-fat/normalize";
-import { inboxQuery, loadInbox, readFilters, type Filters } from "./data";
+import { inboxCounts, inboxQuery, loadInbox, readFilters, type Filters } from "./data";
 
 function fakeAdapter(pages: unknown[][]): SourceAdapter {
   return {
@@ -22,7 +22,7 @@ function fakeAdapter(pages: unknown[][]): SourceAdapter {
   };
 }
 
-const all: Filters = { profile: "", source: "", status: "open", decision: "", assessment: "", sort: "deadline", page: 1 };
+const all: Filters = { profile: "", source: "", status: "open", decision: "", assessment: "", sort: "deadline", q: "", page: 1 };
 
 let testDb: Awaited<ReturnType<typeof createTestDb>>;
 let wide: string;
@@ -255,6 +255,94 @@ describe("loadInbox", () => {
     expect((await loadInbox(db, all)).total).toBe(2);
     expect((await loadInbox(db, { ...all, status: "closed" })).total).toBe(1);
     expect((await loadInbox(db, { ...all, status: "all" })).total).toBe(3);
+  });
+});
+
+describe("search and counts", () => {
+  const idOf = async (externalId: string) =>
+    (await testDb.db.select({ id: tenders.id }).from(tenders).where(eq(tenders.externalId, externalId)))[0]!.id;
+  const verdict = async (tenderId: string, status: "NEEDS_DOCUMENTS" | "COMMERCIAL_NO_BID" | "HARD_REJECT") => {
+    const { db } = testDb;
+    const [facts] = await db
+      .insert(analyses)
+      .values({ tenderId, kind: "facts", model: "claude-haiku-5-5", promptVersion: "facts.v1", output: {}, valid: true })
+      .returning({ id: analyses.id });
+    await db.insert(tenderAssessments).values({
+      tenderId,
+      factsAnalysisId: facts!.id,
+      policyVersion: "policy.v1",
+      status,
+      bestLot: "",
+      explanation: "",
+      fitLow: 40,
+      fitHigh: 60,
+      preliminaryLow: 40,
+      preliminaryHigh: 60,
+      confidence: 50,
+    });
+  };
+
+  it("searches the title, its Turkish translation, the buyer and the notice number", async () => {
+    const { db } = testDb;
+    const helmet = await idOf("096315-2026");
+    const [row] = await db.select({ title: tenders.title, buyerName: tenders.buyerName }).from(tenders).where(eq(tenders.id, helmet));
+    const ids = async (q: string) => (await loadInbox(db, { ...all, q })).list.map((r) => r.tenderId);
+
+    expect(await ids(row!.title.slice(2, 14).toUpperCase())).toContain(helmet);
+    expect(await ids(row!.buyerName!.slice(0, 8))).toContain(helmet);
+    expect(await ids("096315")).toEqual([helmet]);
+    expect(await ids("Kask alımı")).toEqual([]);
+    await db
+      .insert(analyses)
+      .values({ tenderId: helmet, kind: "translation", model: "claude-haiku-5-5", promptVersion: "translate.v1", output: { title: "Polis için kask alımı" }, valid: true });
+    expect(await ids("kask alımı")).toEqual([helmet]);
+    // Wildcards are taken literally.
+    expect(await ids("%")).toEqual([]);
+    expect((await inboxCounts(db, { ...all, q: "096315" })).all).toBe(1);
+
+    expect(readFilters({ q: "  zırh   yelek  " }).q).toBe("zırh yelek");
+    expect(readFilters({ q: "x".repeat(300) }).q).toHaveLength(100);
+    expect(inboxQuery({ ...all, q: "zırh yelek", source: "uk_fat" }, 2)).toBe("?source=uk_fat&q=z%C4%B1rh+yelek&page=2");
+  });
+
+  it("counts every verdict group over the same scope, matching what each tab lists", async () => {
+    const { db } = testDb;
+    const medical = await idOf("096253-2026");
+    const helmet = await idOf("096315-2026");
+    await verdict(medical, "NEEDS_DOCUMENTS");
+    await verdict(helmet, "COMMERCIAL_NO_BID");
+
+    const counts = await inboxCounts(db, all);
+    expect(counts).toEqual({
+      all: 3,
+      unassessed: 1,
+      newToday: 3,
+      closingSoon: 0,
+      needsDocuments: 1,
+      groups: { promising: 1, conditional: 0, watch: 0, rejected: 1, expired: 0 },
+    });
+    expect((await loadInbox(db, all)).total).toBe(counts.all);
+    for (const group of ["promising", "conditional", "watch", "rejected", "expired"] as const) {
+      expect((await loadInbox(db, { ...all, assessment: group })).total).toBe(counts.groups[group]);
+    }
+    expect((await loadInbox(db, { ...all, assessment: "none" })).total).toBe(counts.unassessed);
+
+    // Out of scope leaves "Tümü" but is counted in "Elenen", where the tab lists it.
+    await db.update(tenderAssessments).set({ status: "HARD_REJECT" }).where(eq(tenderAssessments.tenderId, helmet));
+    const after = await inboxCounts(db, all);
+    expect(after).toMatchObject({ all: 2, groups: { rejected: 1 } });
+    expect((await loadInbox(db, { ...all, assessment: "rejected" })).total).toBe(1);
+
+    // Matched more than a day ago, and closing within a week.
+    await db.update(profileMatches).set({ matchedAt: sql`now() - interval '2 days'` }).where(eq(profileMatches.tenderId, medical));
+    await db.update(tenders).set({ submissionDeadline: sql`now() + interval '3 days'` }).where(eq(tenders.id, medical));
+    expect(await inboxCounts(db, all)).toMatchObject({ newToday: 1, closingSoon: 1 });
+  });
+
+  it("narrows a read with an extra condition", async () => {
+    const page = await loadInbox(testDb.db, all, 10, eq(tenders.externalId, "096253-2026"));
+    expect(page.list.map((row) => row.externalId)).toEqual(["096253-2026"]);
+    expect(page.total).toBe(1);
   });
 });
 

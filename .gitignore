@@ -43,3 +43,7 @@ next-env.d.ts
 
 # Worker started in the background
 /worker.log
+
+# The user's design reference (Claude Design export, fonts inside)
+/design/
+/dev.log

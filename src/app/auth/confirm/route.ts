@@ -35,5 +35,5 @@ export async function GET(request: NextRequest) {
     redirect("/login?error=not_allowed");
   }
 
-  redirect("/inbox");
+  redirect("/panel");
 }

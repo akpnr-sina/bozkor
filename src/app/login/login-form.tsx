@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import { Notice } from "@/components/notice";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,16 +14,15 @@ export function LoginForm() {
 
   if (state.status === "sent") {
     return (
-      <p className="text-sm">
-        Giriş bağlantısı <span className="font-medium">{state.email}</span> adresine gönderildi.
-        E-postadaki bağlantıya tıklayarak giriş yapın.
-      </p>
+      <Notice tone="ok" role="status" title="Giriş bağlantısı gönderildi">
+        <span className="font-medium wrap-anywhere">{state.email}</span> adresine gelen e-postadaki bağlantıya tıklayarak giriş yapın.
+      </Notice>
     );
   }
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1.5">
         <Label htmlFor="email">E-posta</Label>
         <Input
           id="email"
@@ -31,14 +31,13 @@ export function LoginForm() {
           autoComplete="email"
           required
           aria-invalid={state.status === "error" || undefined}
+          aria-describedby={state.status === "error" ? "email-error" : undefined}
         />
       </div>
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-destructive">
-          {state.message}
-        </p>
+        <Notice tone="err" role="alert" title={<span id="email-error">{state.message}</span>} />
       )}
-      <Button type="submit" disabled={pending}>
+      <Button type="submit" disabled={pending} className="chamfer w-full">
         {pending ? "Gönderiliyor..." : "Giriş bağlantısı gönder"}
       </Button>
     </form>

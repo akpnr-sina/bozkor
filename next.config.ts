@@ -12,7 +12,7 @@ const nextConfig: NextConfig = {
     },
   },
   async redirects() {
-    return [{ source: "/", destination: "/inbox", permanent: false }];
+    return [{ source: "/", destination: "/panel", permanent: false }];
   },
 };
 

@@ -69,7 +69,8 @@ export const GATE_LABELS: Record<GateId, string> = {
 };
 
 export const GATE_STATE_LABELS: Record<GateState, string> = {
-  PASS: "Geçti",
+  // Not "Geçti": next to "Son teklif tarihi" it reads as a passed deadline.
+  PASS: "Uygun",
   FAIL: "Takıldı",
   UNKNOWN: "Bilinmiyor",
   NOT_APPLICABLE: "Geçerli değil",

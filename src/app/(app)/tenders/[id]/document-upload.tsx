@@ -2,9 +2,11 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { useEffect, useRef, useState, type DragEvent } from "react";
-import { Badge } from "@/components/ui/badge";
+import { EmptyState } from "@/components/empty-state";
+import { Badge, type BadgeVariant } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DOCUMENT_LIMITS } from "@/documents/limits";
+import { cn } from "@/lib/utils";
 import { KIND_MIME } from "@/documents/sniff";
 import { UPLOAD_ACCEPT } from "@/documents/uploads";
 import { completeUploads, prepareUploads } from "./document-actions";
@@ -31,12 +33,12 @@ import {
 
 const MAX_MB = Math.round(DOCUMENT_LIMITS.fileBytes / 1024 / 1024);
 
-const BADGE: Record<RowStatus, "outline" | "secondary" | "destructive"> = {
-  preparing: "outline",
-  uploading: "outline",
-  uploaded: "secondary",
-  duplicate: "secondary",
-  error: "destructive",
+const BADGE: Record<RowStatus, BadgeVariant> = {
+  preparing: "info",
+  uploading: "info",
+  uploaded: "ok",
+  duplicate: "default",
+  error: "err",
 };
 
 let storage: SupabaseClient | null = null;
@@ -83,7 +85,7 @@ export function DocumentUpload({ tenderId, disabledReason }: { tenderId: string;
     };
   }, []);
 
-  if (disabledReason) return <p className="text-sm text-muted-foreground">{disabledReason}</p>;
+  if (disabledReason) return <EmptyState>{disabledReason}</EmptyState>;
 
   function update(id: string, patch: RowPatch) {
     setRows((current) => current.map((row) => (row.id === id ? { ...row, ...patch } : row)));
@@ -155,13 +157,16 @@ export function DocumentUpload({ tenderId, disabledReason }: { tenderId: string;
         onDragOver={onDragOver}
         onDragLeave={onDragLeave}
         onDrop={onDrop}
-        className={`flex flex-col items-center gap-2 rounded-lg border border-dashed p-6 text-center transition-colors${dragging ? " border-primary bg-muted" : ""}`}
+        className={cn(
+          "flex flex-col items-center gap-2.5 border border-dashed border-line-strong bg-surface-head px-4 py-6 text-center transition-colors",
+          dragging && "border-ink-900 bg-canvas",
+        )}
       >
-        <p>Portaldan indirdiğiniz dosyaları buraya bırakın</p>
+        <p className="text-ink-900">Portaldan indirdiğiniz dosyaları buraya bırakın</p>
         <Button type="button" variant="outline" onClick={() => inputRef.current?.click()}>
           Dosya seç
         </Button>
-        <p className="text-xs text-muted-foreground">PDF, DOCX, XLSX ya da ZIP; dosya başına en fazla {MAX_MB} MB.</p>
+        <p className="text-xs text-ink-500">PDF, DOCX, XLSX ya da ZIP; dosya başına en fazla {MAX_MB} MB.</p>
         <input
           ref={inputRef}
           type="file"
@@ -180,10 +185,12 @@ export function DocumentUpload({ tenderId, disabledReason }: { tenderId: string;
         {rows.map((row) => {
           const note = rowNote(row);
           return (
-            <li key={row.id} className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-              <span className="font-medium wrap-anywhere">{row.name}</span>
-              <Badge variant={BADGE[row.status]}>{ROW_LABELS[row.status]}</Badge>
-              {note && <span className={row.status === "error" ? "text-destructive" : "text-muted-foreground"}>{note}</span>}
+            <li key={row.id} className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="font-medium text-ink-900 wrap-anywhere">{row.name}</span>
+              <Badge variant={BADGE[row.status]} dot>
+                {ROW_LABELS[row.status]}
+              </Badge>
+              {note && <span className={row.status === "error" ? "text-xs text-err" : "text-xs text-ink-500"}>{note}</span>}
             </li>
           );
         })}

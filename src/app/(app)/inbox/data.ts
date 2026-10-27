@@ -1,6 +1,6 @@
-import { and, asc, desc, eq, inArray, isNotNull, isNull, or, sql, type SQL } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, inArray, isNull, or, sql, type SQL } from "drizzle-orm";
 import type { AppDb } from "@/db";
-import { criteriaProfiles, documents, profileMatches, reviewDecision, tenderAssessments, tenderReviews, tenders } from "@/db/schema";
+import { analyses, criteriaProfiles, documents, profileMatches, reviewDecision, tenderAssessments, tenderReviews, tenders } from "@/db/schema";
 import type { ReviewDecision } from "@/lib/format";
 import { latestTranslations } from "@/analysis/translations";
 import { KIND_MIME } from "@/documents/sniff";
@@ -11,6 +11,7 @@ import { STATUS_GROUPS, type StatusGroup } from "@/policy/labels";
 
 export const PAGE_SIZE = 100;
 const MAX_PAGE = 10_000;
+const MAX_QUERY = 100;
 
 export type Filters = {
   profile: string;
@@ -21,6 +22,8 @@ export type Filters = {
   assessment: "" | "none" | StatusGroup;
   /** Nearest deadline first, or the most promising verdict first. */
   sort: "deadline" | "assessment";
+  /** Words in the title or its Turkish translation, the buyer or the notice number. */
+  q: string;
   /** 1-based. */
   page: number;
 };
@@ -45,6 +48,7 @@ export function readFilters(params: Record<string, string | string[] | undefined
         : "",
     assessment: assessment === "none" || Object.hasOwn(STATUS_GROUPS, assessment) ? (assessment as Filters["assessment"]) : "",
     sort: one("sort") === "assessment" ? "assessment" : "deadline",
+    q: one("q").replace(/\s+/g, " ").trim().slice(0, MAX_QUERY),
     page: Number.isInteger(page) && page >= 1 && page <= MAX_PAGE ? page : 1,
   };
 }
@@ -58,6 +62,7 @@ export function inboxQuery(filters: Filters, page = filters.page): string {
   if (filters.decision) params.set("decision", filters.decision);
   if (filters.assessment) params.set("assessment", filters.assessment);
   if (filters.sort !== "deadline") params.set("sort", filters.sort);
+  if (filters.q) params.set("q", filters.q);
   if (page > 1) params.set("page", String(page));
   const query = params.toString();
   return query ? `?${query}` : "";
@@ -69,24 +74,19 @@ const isConcreteDecision = (decision: Filters["decision"]): decision is ReviewDe
 /** Decisions that mean the team is still working on the tender. */
 const ACTIVE_DECISIONS: ReviewDecision[] = ["GO", "REVIEW", "WATCH"];
 
-/**
- * One page of tenders for the inbox, one row per tender, nearest deadline first. By
- * default the current matches of active profiles, plus tenders whose latest
- * decision is GO, REVIEW or WATCH even when no profile matches them any more
- * (a paused profile, or a tender that fell out of scope). With a concrete
- * decision filter every tender carrying that decision, matched or not, so a
- * decided tender can always be found again.
- */
-export async function loadInbox(db: AppDb, filters: Filters, pageSize = PAGE_SIZE) {
-  const [profiles, [{ n: profileCount } = { n: 0 }]] = await Promise.all([
-    db
-      .select({ id: criteriaProfiles.id, name: criteriaProfiles.name })
-      .from(criteriaProfiles)
-      .where(eq(criteriaProfiles.active, true))
-      .orderBy(asc(criteriaProfiles.name)),
-    db.select({ n: sql<number>`count(*)::int` }).from(criteriaProfiles),
-  ]);
+/** A LIKE pattern matching the text anywhere, its wildcards taken literally. */
+const containsPattern = (text: string) => `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
 
+/**
+ * What every inbox read shares: which tenders are in view. By default the
+ * current matches of active profiles, plus tenders whose latest decision is
+ * GO, REVIEW or WATCH even when no profile matches them any more (a paused
+ * profile, or a tender that fell out of scope). With a concrete decision
+ * filter every tender carrying that decision, matched or not, so a decided
+ * tender can always be found again. The verdict filter is kept apart
+ * (`verdict`): the tabs count every group over the same scope.
+ */
+function inboxScope(db: AppDb, filters: Filters) {
   const latestReview = db.$with("latest_review").as(
     db
       .selectDistinctOn([tenderReviews.tenderId], {
@@ -97,36 +97,92 @@ export async function loadInbox(db: AppDb, filters: Filters, pageSize = PAGE_SIZ
       .from(tenderReviews)
       .orderBy(tenderReviews.tenderId, desc(tenderReviews.decidedAt)),
   );
-
   const history = isConcreteDecision(filters.decision);
+
   const conditions: SQL[] = [];
   if (filters.profile) conditions.push(eq(profileMatches.profileId, filters.profile));
   if (filters.source) conditions.push(eq(tenders.source, filters.source));
   if (filters.status === "open") conditions.push(openTender());
   if (filters.status === "closed") conditions.push(sql`not (${openTender()})`);
   if (filters.decision === "none") conditions.push(isNull(latestReview.decision));
-  if (filters.assessment === "none") conditions.push(isNull(tenderAssessments.status));
-  else if (filters.assessment) conditions.push(inArray(tenderAssessments.status, [...STATUS_GROUPS[filters.assessment]]));
-  // Out of scope (a services lot let through, say) stays out of the everyday
-  // list (team decision, 14 October 2026) unless the team is working on it;
-  // "Elenen" shows it.
-  else if (!history) {
-    conditions.push(or(sql`${tenderAssessments.status} is distinct from 'HARD_REJECT'`, inArray(latestReview.decision, ACTIVE_DECISIONS))!);
+  if (filters.q) {
+    const pattern = containsPattern(filters.q);
+    conditions.push(
+      or(
+        ilike(tenders.title, pattern),
+        ilike(tenders.buyerName, pattern),
+        ilike(tenders.externalId, pattern),
+        sql`exists (select 1 from ${analyses} where ${analyses.tenderId} = ${tenders.id} and ${analyses.kind} = 'translation'
+          and ${analyses.valid} and ${analyses.output} ->> 'title' ilike ${pattern})`,
+      )!,
+    );
   }
   if (history) conditions.push(eq(latestReview.decision, filters.decision as ReviewDecision));
-  else conditions.push(or(isNotNull(profileMatches.profileId), inArray(latestReview.decision, ACTIVE_DECISIONS))!);
+  else conditions.push(or(sql`${profileMatches.profileId} is not null`, inArray(latestReview.decision, ACTIVE_DECISIONS))!);
+
+  // Out of scope (a services lot let through, say) stays out of the everyday
+  // list (team decision, 14 October 2026) unless the team is working on it;
+  // "Elenen" shows it. A concrete decision shows every tender carrying it.
+  const everyday = history
+    ? undefined
+    : or(sql`${tenderAssessments.status} is distinct from 'HARD_REJECT'`, inArray(latestReview.decision, ACTIVE_DECISIONS))!;
+  const verdict =
+    filters.assessment === "none"
+      ? isNull(tenderAssessments.status)
+      : filters.assessment
+        ? inArray(tenderAssessments.status, [...STATUS_GROUPS[filters.assessment]])
+        : everyday;
 
   // In the decision view every match row is joined; "new" counts only current matches of active profiles.
   const currentMatch = sql`${profileMatches.unmatchedAt} is null and ${criteriaProfiles.active}`;
+
+  // The joins (each read writes them out; one row per match row, so reads group by tender or count distinct
+  // tenders). In the decision view the decision condition makes the review join an inner one.
+  const on = {
+    review: eq(latestReview.tenderId, tenders.id),
+    assessment: eq(tenderAssessments.tenderId, tenders.id),
+    matches: history
+      ? eq(profileMatches.tenderId, tenders.id)
+      : // Only current matches of active profiles take part.
+        and(
+          eq(profileMatches.tenderId, tenders.id),
+          isNull(profileMatches.unmatchedAt),
+          sql`${profileMatches.profileId} in (select id from ${criteriaProfiles} where active)`,
+        )!,
+    profile: eq(criteriaProfiles.id, profileMatches.profileId),
+  };
+  return { latestReview, history, conditions, everyday, verdict, currentMatch, on };
+}
+
+/**
+ * One page of tenders for the inbox, one row per tender, nearest deadline
+ * first (inboxScope says which). `extra` narrows it further for other views
+ * (the panel's upcoming deadlines).
+ */
+export async function loadInbox(db: AppDb, filters: Filters, pageSize = PAGE_SIZE, extra?: SQL) {
+  const [profiles, [{ n: profileCount } = { n: 0 }]] = await Promise.all([
+    db
+      .select({ id: criteriaProfiles.id, name: criteriaProfiles.name })
+      .from(criteriaProfiles)
+      .where(eq(criteriaProfiles.active, true))
+      .orderBy(asc(criteriaProfiles.name)),
+    db.select({ n: sql<number>`count(*)::int` }).from(criteriaProfiles),
+  ]);
+
+  const scope = inboxScope(db, filters);
+  const { latestReview, currentMatch, on } = scope;
   // Most promising status first (the order of STATUSES), then the higher fit.
   const statusRank = sql`array_position(${sql.raw(`array[${STATUSES.map((s) => `'${s}'`).join(", ")}]::text[]`)}, ${tenderAssessments.status})`;
 
   const fields = {
     tenderId: tenders.id,
+    externalId: tenders.externalId,
     title: tenders.title,
     buyerName: tenders.buyerName,
     buyerCountry: tenders.buyerCountry,
     source: tenders.source,
+    noticeUrl: tenders.noticeUrl,
+    publishedAt: tenders.publishedAt,
     contractNature: tenders.contractNature,
     cpvMain: tenders.cpvMain,
     valueEur: tenders.valueEur,
@@ -150,37 +206,16 @@ export async function loadInbox(db: AppDb, filters: Filters, pageSize = PAGE_SIZ
   };
 
   // One row per tender; the page applies to tenders, not to match rows.
-  // Built afresh for each run: Drizzle builders are not reusable.
-  const base = () =>
-    history
-      ? db
-          .with(latestReview)
-          .select(fields)
-          .from(tenders)
-          .innerJoin(latestReview, eq(latestReview.tenderId, tenders.id))
-          .leftJoin(tenderAssessments, eq(tenderAssessments.tenderId, tenders.id))
-          .leftJoin(profileMatches, eq(profileMatches.tenderId, tenders.id))
-          .leftJoin(criteriaProfiles, eq(criteriaProfiles.id, profileMatches.profileId))
-      : db
-          .with(latestReview)
-          .select(fields)
-          .from(tenders)
-          .leftJoin(latestReview, eq(latestReview.tenderId, tenders.id))
-          .leftJoin(tenderAssessments, eq(tenderAssessments.tenderId, tenders.id))
-          // Only current matches of active profiles take part.
-          .leftJoin(
-            profileMatches,
-            and(
-              eq(profileMatches.tenderId, tenders.id),
-              isNull(profileMatches.unmatchedAt),
-              sql`${profileMatches.profileId} in (select id from ${criteriaProfiles} where active)`,
-            ),
-          )
-          .leftJoin(criteriaProfiles, eq(criteriaProfiles.id, profileMatches.profileId));
-
   const run = (limit: number, offset: number) =>
-    base()
-      .where(and(...conditions))
+    db
+      .with(latestReview)
+      .select(fields)
+      .from(tenders)
+      .leftJoin(latestReview, on.review)
+      .leftJoin(tenderAssessments, on.assessment)
+      .leftJoin(profileMatches, on.matches)
+      .leftJoin(criteriaProfiles, on.profile)
+      .where(and(...scope.conditions, scope.verdict, extra))
       .groupBy(tenders.id, latestReview.decision, latestReview.decidedAt, tenderAssessments.tenderId)
       .orderBy(
         ...(filters.sort === "assessment"
@@ -198,6 +233,66 @@ export async function loadInbox(db: AppDb, filters: Filters, pageSize = PAGE_SIZ
   const extras = await pageExtras(db, rows);
   const list = rows.map((row) => ({ ...row, ...(extras.get(row.tenderId) ?? { documents: { state: "none" as const }, titleTr: null }) }));
   return { profiles, hasAnyProfile: profileCount > 0, list, total };
+}
+
+export type InboxRow = Awaited<ReturnType<typeof loadInbox>>["list"][number];
+
+export type InboxCounts = {
+  /** The everyday view (no verdict filter): what "Tümü" lists. */
+  all: number;
+  groups: Record<StatusGroup, number>;
+  unassessed: number;
+  /** Matched in the last 24 hours. */
+  newToday: number;
+  /** Deadline within seven days. */
+  closingSoon: number;
+  needsDocuments: number;
+};
+
+/** The inbox's figures over the filters' scope, the verdict filter aside: the tab counts and the key figures. */
+export async function inboxCounts(db: AppDb, filters: Filters): Promise<InboxCounts> {
+  const scope = inboxScope(db, filters);
+  const { latestReview, on } = scope;
+  const n = (condition: SQL | undefined) => sql<number>`(count(distinct ${tenders.id}) filter (where ${condition ?? sql`true`}))::int`;
+  const group = (name: StatusGroup) => n(inArray(tenderAssessments.status, [...STATUS_GROUPS[name]]));
+  const [row] = await db
+    .with(latestReview)
+    .select({
+    all: n(scope.everyday),
+    promising: group("promising"),
+    conditional: group("conditional"),
+    watch: group("watch"),
+    rejected: group("rejected"),
+    expired: group("expired"),
+    unassessed: n(isNull(tenderAssessments.status)),
+    newToday: n(and(scope.everyday, scope.currentMatch, sql`${profileMatches.matchedAt} > now() - interval '24 hours'`)),
+    closingSoon: n(
+      and(scope.everyday, sql`${tenders.submissionDeadline} >= now() and ${tenders.submissionDeadline} < now() + interval '7 days'`),
+    ),
+    needsDocuments: n(eq(tenderAssessments.status, "NEEDS_DOCUMENTS")),
+    })
+    .from(tenders)
+    .leftJoin(latestReview, on.review)
+    .leftJoin(tenderAssessments, on.assessment)
+    .leftJoin(profileMatches, on.matches)
+    .leftJoin(criteriaProfiles, on.profile)
+    .where(and(...scope.conditions));
+  // An aggregate without GROUP BY always returns one row.
+  const counts = row!;
+  return {
+    all: counts.all,
+    unassessed: counts.unassessed,
+    newToday: counts.newToday,
+    closingSoon: counts.closingSoon,
+    needsDocuments: counts.needsDocuments,
+    groups: {
+      promising: counts.promising,
+      conditional: counts.conditional,
+      watch: counts.watch,
+      rejected: counts.rejected,
+      expired: counts.expired,
+    },
+  };
 }
 
 /** What the inbox says about a tender's documents (SPEC Faz 5). */

@@ -20,11 +20,11 @@ export function DeleteDocumentButton({ tenderId, documentId, name, members }: { 
 
   return (
     <>
-      <Button type="button" variant="ghost" size="xs" disabled={pending} onClick={remove} aria-label={`${name} dosyasını sil`}>
+      <Button type="button" variant="destructive-outline" size="xs" disabled={pending} onClick={remove} aria-label={`${name} dosyasını sil`}>
         {pending ? "Siliniyor..." : "Sil"}
       </Button>
       {error && (
-        <span role="alert" className="text-xs text-destructive">
+        <span role="alert" className="text-xs text-err">
           {error}
         </span>
       )}

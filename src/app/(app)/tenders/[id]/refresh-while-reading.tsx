@@ -1,23 +1,13 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useProgressRefresh } from "./use-progress-refresh";
 
 const EVERY_MS = 20_000;
 /** The worker reads a file within a minute or two; a file still not read after this waits for a reload. */
 const FOR_MS = 5 * 60_000;
 
-/** Refreshes the page now and then while the worker reads files, so they turn "Analize girecek" by themselves. */
-export function RefreshWhileReading({ active }: { active: boolean }) {
-  const router = useRouter();
-  useEffect(() => {
-    if (!active) return;
-    const started = Date.now();
-    const timer = setInterval(() => {
-      if (Date.now() - started > FOR_MS) clearInterval(timer);
-      else router.refresh();
-    }, EVERY_MS);
-    return () => clearInterval(timer);
-  }, [active, router]);
+/** Refreshes the page when the worker has read a file, so it turns "Analize girecek" by itself. */
+export function RefreshWhileReading({ tenderId, reading }: { tenderId: string; reading: number }) {
+  useProgressRefresh(tenderId, "reading", reading, { active: reading > 0, everyMs: EVERY_MS, forMs: FOR_MS });
   return null;
 }

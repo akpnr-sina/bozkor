@@ -4,12 +4,13 @@ import { io } from "next/cache";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { FormattedText } from "@/components/formatted-text";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Notice } from "@/components/notice";
+import { StatStrip } from "@/components/stat-strip";
+import { TabNav } from "@/components/tab-nav";
+import { buttonVariants } from "@/components/ui/button";
 import { getDb } from "@/db";
 import { isConnectionLost, retryRead } from "@/db/retry";
-import { analyses, criteriaProfiles, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
+import { analyses, criteriaProfiles, deepRequests, lots, profileMatches, tenderReviews, tenders } from "@/db/schema";
 import { sourcesHash } from "@/analysis/evidence";
 import { monthlyLlmSpend } from "@/analysis/budget";
 import { loadDeepView } from "@/analysis/deep-view";
@@ -20,29 +21,24 @@ import { noticeQuoteSources } from "@/analysis/triage-input";
 import { isFetchWanted } from "@/documents/fetch-job";
 import { loadTenderDocuments } from "@/documents/queries";
 import { uploadsConfigured } from "@/documents/storage";
-import { assessOne } from "@/policy/assess";
+import { loadRateTable } from "@/fx/rates";
+import { latestFacts, policyInputOf } from "@/policy/assess";
+import { assessTender } from "@/policy/engine";
 import { getCurrentUser } from "@/lib/auth/session";
-import {
-  CONTRACT_NATURE_LABELS,
-  DECISION_LABELS,
-  daysLeft,
-  formatDate,
-  formatDateTime,
-  formatDaysLeft,
-  formatMoney,
-  NOTICE_TYPE_LABELS,
-  REGIME_LABELS,
-  SOURCE_LABELS,
-  STATUS_LABELS,
-} from "@/lib/format";
-import { describeReason, parseReasons } from "@/matching/describe";
-import { isProductScope } from "@/sources/scope";
-import { AssessmentCard } from "./assessment-card";
+import { formatDateTime } from "@/lib/format";
+import { loadCategories } from "@/matching/apply";
+import { matchTender } from "@/matching/engine";
+import type { SourceId } from "@/sources/types";
+import { AssessmentDetail, AssessmentFacts, AssessmentSummary } from "./assessment-card";
+import { assessmentView, decidingFacts } from "./assessment-view";
 import { DeepAnalysisCard } from "./deep-analysis-card";
-import { DecisionForm } from "./decision-form";
 import { documentName } from "./document-state";
 import { DocumentUpload } from "./document-upload";
 import { DocumentsCard } from "./documents-card";
+import { HistoryTab } from "./history-tab";
+import { OverviewTab } from "./overview-tab";
+import { TenderHeader } from "./tender-header";
+import { deadlineWarning, documentsFigure, historyRows, matchRows, TABS, tabHref, tabOf, tenderFigures, timelineSteps } from "./tender-view";
 
 export const metadata: Metadata = { title: "İhale" };
 
@@ -50,24 +46,38 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default function TenderPage(props: PageProps<"/tenders/[id]">) {
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/inbox" className="text-sm text-muted-foreground hover:text-foreground">
-        Gelen kutusuna dön
-      </Link>
-      <Suspense fallback={<p className="text-sm text-muted-foreground">Yükleniyor...</p>}>
-        <TenderDetail params={props.params} />
-      </Suspense>
-    </div>
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-4">
+          <Link href="/inbox" className="w-fit text-[13px] text-ink-500 hover:text-ink-900">
+            Gelen kutusu
+          </Link>
+          <p className="text-sm text-ink-500">Yükleniyor...</p>
+        </div>
+      }
+    >
+      <TenderDetail params={props.params} searchParams={props.searchParams} />
+    </Suspense>
   );
 }
+
+/** A read the page can do without: should it fail (a table not migrated yet, say), the rest of the page shows. */
+const optional =
+  <T,>(what: string, fallback: T) =>
+  (error: unknown): T => {
+    if (isConnectionLost(error)) throw error;
+    console.error(`[tender page] ${what}:`, error);
+    return fallback;
+  };
 
 async function loadTender(id: string) {
   // postgres-js calls Math.random() while it builds its pool; keep it out of the prerender.
   await io();
+  const now = new Date();
   const db = getDb();
   const [tender] = await db.select().from(tenders).where(eq(tenders.id, id));
   if (!tender) return null;
-  const [lotRows, documentList, matchRows, reviewRows] = await Promise.all([
+  const [lotRows, documentList, matchRowsRead, reviewRows, categories] = await Promise.all([
     db.select().from(lots).where(eq(lots.tenderId, id)).orderBy(asc(lots.lotNumber)),
     // The notice's links in the order the facts stage reads them, so the fingerprints agree.
     loadTenderDocuments(db, id),
@@ -78,16 +88,20 @@ async function loadTender(id: string) {
         profileActive: criteriaProfiles.active,
         reasons: profileMatches.filterReasons,
         unmatchedAt: profileMatches.unmatchedAt,
+        rules: criteriaProfiles.rules,
       })
       .from(profileMatches)
       .innerJoin(criteriaProfiles, eq(criteriaProfiles.id, profileMatches.profileId))
       .where(eq(profileMatches.tenderId, id))
       .orderBy(asc(criteriaProfiles.name)),
     db.select().from(tenderReviews).where(eq(tenderReviews.tenderId, id)).orderBy(desc(tenderReviews.decidedAt)),
+    // The taxonomy a profile's categories stand for: why a profile matches no more.
+    loadCategories(db),
   ]);
-  const [translations, assessed, [latestFactsAttempt], fetchWanted, factsPending, spend, deep] = await Promise.all([
+  const [translations, latest, rates, [latestFactsAttempt], fetchWanted, factsPending, spend, deep, analysisRows, requestRows] = await Promise.all([
     latestTranslations(db, [id]),
-    assessOne(db, id),
+    latestFacts(db, [id]).then((byTender) => byTender.get(id) ?? null),
+    loadRateTable(db),
     // The newest facts attempt, to show a failure after the last valid result.
     db
       .select()
@@ -99,14 +113,43 @@ async function loadTender(id: string) {
     // The facts queue's own test: whether the stored facts wait to be extracted again.
     isFactsPending(db, id),
     monthlyLlmSpend(db),
-    // The deep analysis card only: should it fail to read (its tables not migrated yet, say), the rest of the page shows.
-    loadDeepView(db, id).catch((error: unknown) => {
-      if (isConnectionLost(error)) throw error;
-      console.error("[tender page] deep analysis view:", error);
-      return null;
-    }),
+    loadDeepView(db, id).catch(optional("deep analysis view", null)),
+    // The history tab: every call made for the tender, with its cost.
+    db
+      .select({
+        kind: analyses.kind,
+        model: analyses.model,
+        promptVersion: analyses.promptVersion,
+        costUsd: analyses.costUsd,
+        valid: analyses.valid,
+        error: analyses.error,
+        createdAt: analyses.createdAt,
+      })
+      .from(analyses)
+      .where(eq(analyses.tenderId, id))
+      .orderBy(desc(analyses.createdAt))
+      .limit(200),
+    db
+      .select({
+        status: deepRequests.status,
+        requestedBy: deepRequests.requestedBy,
+        requestedAt: deepRequests.requestedAt,
+        finishedAt: deepRequests.finishedAt,
+        error: deepRequests.error,
+      })
+      .from(deepRequests)
+      .where(eq(deepRequests.tenderId, id))
+      .orderBy(desc(deepRequests.requestedAt))
+      .limit(50)
+      .catch(optional("deep analysis requests", [])),
   ]);
+  // The assessment as assessOne works it out, keeping the engine's input to
+  // find the facts the status rests on.
+  const policyInput = latest ? policyInputOf(tender, lotRows, latest.facts, rates, now) : null;
+  const assessed = latest && policyInput ? { assessment: assessTender(policyInput), latest } : null;
   return {
+    now,
+    policyInput,
     tender,
     lots: lotRows.sort(byLotNumber),
     documents: documentList.documents,
@@ -114,268 +157,178 @@ async function loadTender(id: string) {
     fetchWanted,
     factsPending,
     budgetExceeded: spend.exceeded,
-    matches: matchRows,
+    matches: matchRowsRead,
+    categories,
     reviews: reviewRows,
     translation: translations.get(id) ?? null,
     assessed,
     latestFactsAttempt: latestFactsAttempt ?? null,
     deep,
+    analyses: analysisRows,
+    deepRequests: requestRows,
   };
 }
 
-async function TenderDetail({ params }: { params: PageProps<"/tenders/[id]">["params"] }) {
+async function TenderDetail({ params, searchParams }: { params: PageProps<"/tenders/[id]">["params"]; searchParams: PageProps<"/tenders/[id]">["searchParams"] }) {
   await getCurrentUser();
   const { id } = await params;
   if (!UUID.test(id)) notFound();
+  const tab = tabOf((await searchParams).tab);
   const data = await retryRead(() => loadTender(id));
   if (!data) notFound();
-  const { tender, reviews } = data;
-  const now = new Date();
+  const { tender, reviews, translation, now } = data;
   const uploadsEnabled = uploadsConfigured();
   const current = reviews[0] ?? null;
-  const cpvs = [tender.cpvMain, ...tender.cpvAdditional].filter((c): c is string => !!c);
-  const notice = toTriageNotice(tender, data.lots);
-  const noticeHash = sourcesHash(noticeQuoteSources(notice));
-  const { translation } = data;
-  const lotTitlesTr = new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.title]) ?? []);
-  const lotDescriptionsTr = new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.description]) ?? []);
+  const noticeHash = sourcesHash(noticeQuoteSources(toTriageNotice(tender, data.lots)));
   // A change the team has already decided on after does not need the badge.
-  const changedSinceDecision = tender.changedAt && (!current || tender.changedAt > current.decidedAt);
+  const changedSinceDecision = !!tender.changedAt && (!current || tender.changedAt > current.decidedAt);
+  const warning = deadlineWarning(tender.submissionDeadline, now);
+  const portal = tender.documentsPortalUrl;
+
+  const figures = tenderFigures(
+    {
+      valueAmount: tender.valueAmount,
+      valueCurrency: tender.valueCurrency,
+      valueEur: tender.valueEur,
+      submissionDeadline: tender.submissionDeadline,
+      procedureType: tender.procedureType,
+      buyerCountry: tender.buyerCountry,
+      nutsCode: tender.nutsCode,
+      fit: data.assessed?.assessment.best.scores.fit ?? null,
+      documents: documentsFigure(data.documents, portal),
+    },
+    now,
+  ).map((figure) => (figure.label === "Dokümanlar" ? { ...figure, href: tabHref(tender.id, "documents") } : figure));
+
+  const fileNames = (data.assessed?.latest.documentIds ?? []).map((documentId) => {
+    const doc = data.documents.find((d) => d.id === documentId);
+    return doc ? documentName(doc) : "";
+  });
+  // Which facts the status rests on: the engine runs once more per known fact, so only for the tab that shows them.
+  const assessment =
+    tab === "overview" && data.assessed && data.policyInput
+      ? assessmentView(data.assessed, tender.details ?? null, fileNames, decidingFacts(data.policyInput, data.assessed.latest.stored))
+      : null;
+
+  const history = historyRows({ tender, reviews, analyses: data.analyses, deepRequests: data.deepRequests });
+  const tabs = TABS.map((t) => ({
+    href: tabHref(tender.id, t.tab),
+    label: t.label,
+    count: t.tab === "documents" ? data.documents.length : t.tab === "history" ? history.length : null,
+    active: t.tab === tab,
+  }));
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-      <div className="flex min-w-0 flex-col gap-8">
-        <header className="flex flex-col gap-3">
-          <div className="flex flex-col gap-1">
-            <h1 className="text-xl font-semibold">{translation?.title || tender.title}</h1>
-            {translation && (
-              <p className="text-sm text-muted-foreground">
-                {tender.title} <span className="text-xs">(orijinal başlık; Türkçesi AI çevirisi)</span>
-              </p>
-            )}
-            {translation?.sourcesHash && translation.sourcesHash !== noticeHash && (
-              <p className="text-xs text-muted-foreground">Çeviri ilanın önceki hâline ait; yenisi sırada.</p>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Badge variant={tender.status === "open" ? "default" : "secondary"}>{STATUS_LABELS[tender.status]}</Badge>
-            {tender.noticeType && <Badge variant="outline">{NOTICE_TYPE_LABELS[tender.noticeType] ?? tender.noticeType}</Badge>}
-            <Badge variant="outline">{REGIME_LABELS[tender.regime]}</Badge>
-            {tender.contractNature && <Badge variant="outline">{CONTRACT_NATURE_LABELS[tender.contractNature]}</Badge>}
-            {!isProductScope(tender.contractNature, tender.cpvMain) && (
-              <Badge variant="destructive" title="Sadece mal alımları takip ediliyor. Bu ihale kararınız olduğu için duruyor, profillerle eşleşmez.">
-                Kapsam dışı
-              </Badge>
-            )}
-            <Badge variant="outline">{SOURCE_LABELS[tender.source as keyof typeof SOURCE_LABELS] ?? tender.source}</Badge>
-            {changedSinceDecision && <Badge variant="destructive">Değişti: {formatDate(tender.changedAt)}</Badge>}
-          </div>
-          <div className="flex flex-wrap gap-4 text-sm">
-            {tender.noticeUrl && (
-              <a href={tender.noticeUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-                Orijinal ilan
-              </a>
-            )}
-            {tender.documentsPortalUrl && (
-              <a href={tender.documentsPortalUrl} target="_blank" rel="noreferrer" className="underline underline-offset-4">
-                Doküman portalı
-              </a>
-            )}
-          </div>
-        </header>
+    <div className="flex flex-col gap-[18px]">
+      <TenderHeader
+        tender={tender}
+        title={translation?.title || tender.title}
+        originalTitle={translation?.title ? tender.title : null}
+        translationOutdated={!!translation?.sourcesHash && translation.sourcesHash !== noticeHash}
+        assessment={data.assessed?.assessment.best.status ?? null}
+        changedSinceDecision={changedSinceDecision}
+        decision={current?.decision ?? null}
+      />
 
-        <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-          <Fact label="Alıcı" value={tender.buyerName ?? "Belirtilmemiş"} />
-          <Fact label="Ülke / bölge" value={[tender.buyerCountry, tender.nutsCode].filter(Boolean).join(" / ") || "Belirtilmemiş"} />
-          <Fact
-            label="Tahmini değer"
-            value={
-              tender.valueEur !== null && tender.valueCurrency !== "EUR"
-                ? `${formatMoney(tender.valueAmount, tender.valueCurrency)} (${formatMoney(tender.valueEur, "EUR")})`
-                : formatMoney(tender.valueAmount, tender.valueCurrency)
-            }
-          />
-          <Fact label="Usul" value={tender.procedureType ?? "Belirtilmemiş"} />
-          <Fact label="Yayın tarihi" value={formatDate(tender.publishedAt)} />
-          <Fact
-            label="Son teklif tarihi"
-            value={
-              tender.submissionDeadline
-                ? `${formatDateTime(tender.submissionDeadline)} (${formatDaysLeft(daysLeft(tender.submissionDeadline, now))})`
-                : "Belirtilmemiş"
-            }
-          />
-          <Fact label="Soru sorma son tarihi" value={formatDateTime(tender.clarificationDeadline)} />
-          <Fact label="İlan dili / numarası" value={`${tender.noticeLanguage ?? "?"} / ${tender.externalId}`} />
-          <Fact label="CPV" value={cpvs.length ? cpvs.join(", ") : "Belirtilmemiş"} wide />
-        </dl>
+      {warning && tender.submissionDeadline && (
+        <Notice
+          tone="warn"
+          title={warning.title}
+          action={
+            portal ? (
+              <a href={portal} target="_blank" rel="noreferrer" className={buttonVariants({ variant: "outline", size: "sm" })}>
+                Portalı aç<span className="sr-only"> (yeni sekmede açılır)</span>
+              </a>
+            ) : undefined
+          }
+        >
+          Son teklif: {formatDateTime(tender.submissionDeadline)}
+          {portal ? " · teklif alıcının portalından verilir." : ""}
+        </Notice>
+      )}
 
-        {tender.description && (
-          <Section title="Açıklama">
-            {translation?.description ? (
+      <StatStrip size="md" items={figures} />
+
+      <TabNav label="İhale bölümleri" items={tabs} />
+
+      {tab === "overview" && (
+        <OverviewTab
+          description={
+            tender.description
+              ? translation?.description
+                ? { text: translation.description, original: tender.description, language: tender.noticeLanguage }
+                : { text: tender.description, original: null, language: tender.noticeLanguage }
+              : null
+          }
+          cpvs={[tender.cpvMain, ...tender.cpvAdditional].filter((c): c is string => !!c)}
+          lots={data.lots}
+          lotTitlesTr={new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.title]) ?? [])}
+          lotDescriptionsTr={new Map(translation?.lots.map((lot) => [lot.lotNumber, lot.description]) ?? [])}
+          timeline={timelineSteps(tender, now)}
+          matches={matchRows(data.matches, (rules) =>
+            matchTender(
+              {
+                source: tender.source as SourceId,
+                noticeType: tender.noticeType,
+                regime: tender.regime,
+                contractNature: tender.contractNature,
+                status: tender.status,
+                title: tender.title,
+                description: tender.description,
+                buyerCountry: tender.buyerCountry,
+                cpvMain: tender.cpvMain,
+                cpvAdditional: tender.cpvAdditional,
+                valueEur: tender.valueEur,
+                submissionDeadline: tender.submissionDeadline,
+                noticeLanguage: tender.noticeLanguage,
+                lots: data.lots.map((lot) => ({ title: lot.title, description: lot.description, cpv: lot.cpv })),
+              },
+              rules,
+              { categories: data.categories, now },
+            ),
+          )}
+          summary={
+            <AssessmentSummary
+              result={data.assessed}
+              latestAttempt={data.latestFactsAttempt}
+              stale={!!data.assessed && data.factsPending}
+              budgetExceeded={data.budgetExceeded}
+              tenderId={tender.id}
+              checks={assessment?.checks ?? []}
+            />
+          }
+          assessment={
+            data.assessed &&
+            assessment && (
               <>
-                <FormattedText text={translation.description} className="text-sm leading-relaxed" />
-                <details className="text-sm">
-                  <summary className="cursor-pointer text-muted-foreground">Orijinal metin ({tender.noticeLanguage ?? "?"})</summary>
-                  <FormattedText text={tender.description} className="mt-2" />
-                </details>
+                <AssessmentFacts result={data.assessed} view={assessment} />
+                <AssessmentDetail result={data.assessed} fileCount={data.assessed.latest.documentIds.length} />
               </>
-            ) : (
-              <details className="text-sm">
-                <summary className="cursor-pointer text-muted-foreground">Açıklamayı göster</summary>
-                <FormattedText text={tender.description} className="mt-2" />
-              </details>
-            )}
-          </Section>
-        )}
+            )
+          }
+          tenderId={tender.id}
+          decision={current?.decision ?? null}
+          reviews={reviews}
+          now={now}
+        />
+      )}
 
-        <Section title="Eşleşme nedenleri">
-          {data.matches.length ? (
-            <ul className="flex flex-col gap-3 text-sm">
-              {data.matches.map((m) => (
-                <li key={m.profileId} className="flex flex-col gap-1">
-                  <span className="font-medium">
-                    {m.profileName}
-                    {!m.profileActive && <span className="font-normal text-muted-foreground"> (pasif profil)</span>}
-                    {m.unmatchedAt && (
-                      <span className="font-normal text-muted-foreground">
-                        {" "}
-                        ({formatDate(m.unmatchedAt)} tarihinden beri kriterlere uymuyor)
-                      </span>
-                    )}
-                  </span>
-                  <ul className="list-disc pl-5 text-muted-foreground">
-                    {parseReasons(m.reasons).map((reason, i) => (
-                      <li key={i}>{describeReason(reason)}</li>
-                    ))}
-                  </ul>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <Empty>Bu ihale hiçbir profille eşleşmedi.</Empty>
-          )}
-        </Section>
+      {tab === "deep" && <DeepAnalysisCard view={data.deep} tenderId={tender.id} />}
 
-        <Section title={`Lotlar (${data.lots.length})`}>
-          {data.lots.length ? (
-            <div className="rounded-lg border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Lot</TableHead>
-                    <TableHead>Başlık</TableHead>
-                    <TableHead>CPV</TableHead>
-                    <TableHead className="text-right">Değer</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.lots.map((lot) => (
-                    <TableRow key={lot.id}>
-                      <TableCell>{lot.lotNumber}</TableCell>
-                      <TableCell className="whitespace-normal" title={lotTitlesTr.get(lot.lotNumber) ? (lot.title ?? undefined) : undefined}>
-                        {lotTitlesTr.get(lot.lotNumber) || lot.title || "Belirtilmemiş"}
-                        {(lotDescriptionsTr.get(lot.lotNumber) || lot.description) && (
-                          <details className="mt-1 text-xs">
-                            <summary className="cursor-pointer text-muted-foreground">Açıklama</summary>
-                            <FormattedText text={lotDescriptionsTr.get(lot.lotNumber) || lot.description || ""} className="mt-1" />
-                          </details>
-                        )}
-                      </TableCell>
-                      <TableCell className="whitespace-normal">{lot.cpv.join(", ") || "Belirtilmemiş"}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatMoney(lot.valueAmount, lot.valueCurrency)}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          ) : (
-            <Empty>İlanda lot bilgisi yok.</Empty>
-          )}
-        </Section>
+      {tab === "documents" && (
+        <DocumentsCard
+          tenderId={tender.id}
+          documents={data.documents}
+          storedBytes={data.storedBytes}
+          portalUrl={portal}
+          fetchWanted={data.fetchWanted}
+          uploadsEnabled={uploadsEnabled}
+          now={now}
+          upload={<DocumentUpload tenderId={tender.id} disabledReason={uploadsEnabled ? null : "Dosya deposu henüz ayarlı değil; yükleme kapalı."} />}
+        />
+      )}
 
-        <Section title="Değerlendirme">
-          <AssessmentCard
-            result={data.assessed}
-            latestAttempt={data.latestFactsAttempt}
-            stale={!!data.assessed && data.factsPending}
-            budgetExceeded={data.budgetExceeded}
-            details={tender.details ?? null}
-            tenderId={tender.id}
-            fileNames={(data.assessed?.latest.documentIds ?? []).map((id) => {
-              const doc = data.documents.find((d) => d.id === id);
-              return doc ? documentName(doc) : "";
-            })}
-          />
-        </Section>
-
-        <Section title="Derin analiz">
-          <DeepAnalysisCard view={data.deep} tenderId={tender.id} />
-        </Section>
-
-        <Section title={`Dokümanlar (${data.documents.length})`}>
-          <DocumentsCard
-            tenderId={tender.id}
-            documents={data.documents}
-            storedBytes={data.storedBytes}
-            portalUrl={tender.documentsPortalUrl}
-            fetchWanted={data.fetchWanted}
-            uploadsEnabled={uploadsEnabled}
-            now={now}
-            upload={<DocumentUpload tenderId={tender.id} disabledReason={uploadsEnabled ? null : "Dosya deposu henüz ayarlı değil; yükleme kapalı."} />}
-          />
-        </Section>
-      </div>
-
-      <aside className="flex flex-col gap-6">
-        <Section title="Karar">
-          <p className="text-sm">
-            {current?.decision ? DECISION_LABELS[current.decision] : <span className="text-muted-foreground">Karar verilmedi</span>}
-          </p>
-          <DecisionForm tenderId={tender.id} current={current?.decision ?? null} />
-        </Section>
-        <Section title="Karar geçmişi">
-          {reviews.length ? (
-            <ol className="flex flex-col gap-3 text-sm">
-              {reviews.map((review) => (
-                <li key={review.id} className="flex flex-col gap-0.5 border-l-2 pl-3">
-                  <span className="font-medium">
-                    {review.decision ? DECISION_LABELS[review.decision] : "Karar geri alındı"}
-                  </span>
-                  {review.note && <span className="whitespace-pre-line">{review.note}</span>}
-                  <span className="text-xs text-muted-foreground">
-                    {review.decidedBy}, {formatDateTime(review.decidedAt)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <Empty>Henüz karar verilmedi.</Empty>
-          )}
-        </Section>
-      </aside>
+      {tab === "history" && <HistoryTab rows={history} />}
     </div>
   );
-}
-
-function Fact({ label, value, wide }: { label: string; value: string; wide?: boolean }) {
-  return (
-    <div className={wide ? "flex flex-col gap-0.5 sm:col-span-2" : "flex flex-col gap-0.5"}>
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="wrap-anywhere">{value}</dd>
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="text-base font-semibold">{title}</h2>
-      {children}
-    </section>
-  );
-}
-
-function Empty({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm text-muted-foreground">{children}</p>;
 }

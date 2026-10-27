@@ -11,7 +11,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 ## Stack
 
 - Next.js 16 (App Router), TypeScript strict
-- Postgres (Supabase, EU bölgesi) + Drizzle ORM
+- Postgres (Supabase, EU bölgesi) + Drizzle ORM. Bağlantılar şifreli (`ssl: "require"`; Supabase'in CA sertifikası olmadan sunucu doğrulanmıyor)
 - Supabase Auth (email magic link, `ALLOWED_EMAILS` allowlist) ve Supabase Storage (ihale dokümanları)
 - Tailwind + shadcn/ui
 - Worker: aynı repoda ayrı Node süreci (`src/worker/`), kuyruk ve zamanlama için pg-boss
@@ -32,6 +32,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `pnpm backfill --source=uk_fat --days=30` geriye dönük yükleme, `--source=eu_ted` TED için (tekrar çalıştırmak güvenli)
 - `pnpm renormalize --source=uk_fat` normalizer, fold ya da kapsam kuralı değişince tüm ihaleleri ham veriden yeniden hesaplar (API çağırmaz). `--dry-run` önce neyin silineceğini yazar. İhaleleri yeniden yazdığı için eşleşen ve kararlı ihalelerin olgularını da yeniden çıkartır (ihale başına ~0,002 USD)
 - `pnpm facts --limit=50` bekleyen ihalelerden olgu çıkarır ve değerlendirir (elle; bütçe dolsa da uyarıyla çalışır), `--tender=<id>` ya da `--notice=ted:702149-2026,fat:096535-2026` seçilen ihaleleri yeniden işler ve kararlarını yazdırır (FaT ve TED numaraları çakışabildiği için önek)
+- `pnpm rematch` tüm açık ihaleleri aktif profillerle yeniden eşleştirir; eşleştirme kodu (`src/matching/`) değişince gerekir, worker açılışta ve senkronlarda yalnız değişen ihalelere bakar (yaklaşık 30 MB veri çıkışı)
 - `pnpm assess` olgusu olan tüm ihaleleri yeterlilik politikasıyla yeniden değerlendirir, `--dry-run` hiçbir şey yazmadan kaç kararın değişeceğini gösterir (politika değerini değiştirdikten sonra), `--report` kayıtlı kararları özetler (ret nedenleri, ortak bulma süresine duyarlılık, örnek gerekçeler)
 - `pnpm triage --limit=50` emekli profil bazlı AI puanı (worker çalıştırmaz; SPEC 7.1)
 - `pnpm translate --limit=50` ekibin gördüğü ihalelerin Türkçe çevirisi (elle), `--tender=<id>` tek ihale
@@ -80,9 +81,43 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - Saat dilimi Europe/Istanbul; veritabanında UTC.
 - Bir faz SPEC.md'deki kabul kriterleri sağlanmadan kapanmaz ve sonraki faza geçilmez.
 
+## Veri çıkışı
+
+Supabase ücretsiz planında aylık 5 GB veri çıkışı (egress) var: veritabanının döndürdüğü her bayt ve Storage'dan her indirme sayılır. Ekim 2026'da 5,98 GB ile aşıldı; çoğu worker'ın her turda her şeyi yeniden okumasıydı.
+
+- Periyodik işler yalnız değişeni okur. Senkron ve kur işlerinden sonra eşleştirme ve değerlendirme yalnız o arada yazılan ihalelere bakar (`src/worker/incremental.ts`); worker açılışında bir kez hepsine bakılır (yaklaşık 35 MB). Tam değerlendirme günde bir kez.
+- Senkron az önce yazdığı ham kayıtları geri okumaz (`storeRawNotices` sonucu `applyProcedures`'a `fresh` olarak gider).
+- Kredi yokken LLM işleri yarım saatte bir tek ihaleyle dener (`src/worker/credit-pause.ts`); her deneme dosya metinlerini okur.
+- pg-boss kuyrukları 30 saniyede bir yoklar (varsayılan 2 saniye günde yaklaşık 500.000 sorgu demekti).
+- Web süreci eşleştirme adaylarını bellekte tutar; profil önizlemesi ve profil kaydı paylaşır (`src/matching/apply.ts`). İlk yükleme metinleriyle okur (yaklaşık 36 MB), sonrakiler yalnız `updated_at` ve EUR değerini okur (yaklaşık 1 MB) ve metni yalnız yeni ya da yeniden yazılmış ihaleler için ister.
+- İhale sayfası dosya okunurken ve derin analiz sürerken sayfayı değil `/api/tenders/[id]/progress`'i yoklar (sayfanın yeniden çizimi yaklaşık 250 KB okur); değişince bir kez yeniler.
+- Tekrarlanan bir yere büyük okuma (binlerce satır, metin sütunları, `payload`, `text_content`) ekleyen kod önce ölçülür ve yalnız gereken sütunları seçer. Ölçmek için `extensions.pg_stat_statements` (satır ve çağrı sayısı) ya da soket bayt sayımı kullanılır.
+
+## Arayüz
+
+Kaynak: kullanıcının verdiği "BOZKOR Arayüz Tasarım Dili v2" (Claude Design; yerel kopya `design/`, git'e girmez). Tokenlar ve yardımcı sınıflar `src/app/globals.css`'te.
+
+- Renk: arayüz siyah, beyaz ve sıcak grilerden oluşur: `ink-900` (#111111, metin ve birincil), `ink-600` (ikincil metin), `ink-500` (etiket), `ink-400` (pasif), `line` (#E4E3DF, ayırıcı), `line-strong` (#D4D2CC, alan kenarı), `canvas` (#F4F4F2, zemin), `surface` (beyaz, panel). Durum renkleri yalnız rozet, uyarı ve doğrulamada: `ok` yeşil, `warn` sarı, `err` kırmızı, `info` mavi; her birinin `-soft` zemini, `-line` kenarı, `-ink` koyu metni var. Tailwind'in hazır renkleri (emerald, sky, amber...) kullanılmaz.
+- Yazı: Geist arayüz metni; Geist Mono kodlar, ilan numarası, CPV, tutar, tarih ve sayı sütunları; Oxanium sayfa başlığı (30px, 600), gösterge rakamları ve bölüm etiketleri. Panel ve bölüm etiketi `eyebrow` (11px, büyük harf, aralıklı), tablo başlığı `th-label`.
+- Geometri: köşe en çok 2px; paneller ve tablolar köşeli. Gölge yerine 1px çizgi; gölge yalnız açılır katmanlarda (`shadow-overlay`). 45° pah (`chamfer`, `chamfer-all`) yalnız vurguda: sayfanın birincil eylemi, kullanıcı rozeti. Odak halkası 2px siyah, 2px boşluklu; koyu menüde beyaz.
+- Bileşenler: düğme 36px (`sm` 28px), ekranda tek birincil düğme, etiketler fiille başlar. Rozet 22px, durum rozetinde kare nokta (`dot`). Tablo satırı 52px, başlık satırı 36px. Panel `Card` (başlık satırı etiket); sayfa başı `PageHeader` (menü numarası "02 / 05", `pageIndex`); göstergeler `StatStrip`; sekmeler `TabNav` (sekme URL'de); uyarı `Notice`; boş durum `EmptyState`; kalan gün `DueChip`; skor çubuğu `Meter`.
+- Kabuk: solda 248px koyu menü (Takip: Panel, Gelen kutusu; Yönetim: Profiller, Kaynaklar, Ayarlar; `src/lib/nav.ts`), altta kaynak sağlığı ve kullanıcı; üstte 60px çubuk (konum, son senkron, arama). Dar ekranda menü üst çubuktaki düğmede. Açılış sayfası Panel.
+- Ekranda yalnız gerçek veri: tasarımda olup bizde karşılığı olmayan öğeler (üretici eşleşmesi, teklif dosyası, raporlar) eklenmez.
+
 ## Mevcut durum
 
-Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor. Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Sıradaki (kullanıcı kararı): arayüz yenilemesi, kullanıcının verdiği BOZKOR arayüz tasarım dilinden; Faz 6 kabulüyle paralel. Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor (API kredisi bekleniyor). Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Arayüz yenilemesi ve veri çıkışı düzeltmesi 27 Ekim'de tamam (`arayuz` dalı, `faz-6`'nın üstünde). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Arayüz yenilemesi ve veri çıkışı (27 Ekim 2026, `arayuz` dalı):
+- Kullanıcının "BOZKOR Arayüz Tasarım Dili v2"si (bkz. Arayüz): koyu menü ve üst çubuk, Panel sayfası, gelen kutusunda sağ özet paneli ve arama, Ayarlar ikiye bölündü (Kaynaklar, Ayarlar). Profil formunda resmi CPV 2008 listesinden (9.454 kod, AB Yayın Ofisi SPARQL) arama ve kod ağacı; okumalar route handler'larda (sunucu eylemleri sıraya girdiği için arama önizlemenin arkasında bekliyordu). İhale sayfasında değerlendirme özeti sağda, olgular solda kutu ızgarasında; kararı belirleyen olgu kırmızı, bilinmeyen sarı.
+- Supabase veri çıkışı 5,98 / 5 GB ile aşıldı. Ölçüm: worker gün boyu açıkken günde yaklaşık 1,1 GB okuyordu (her senkrondan sonra tüm açık ihaleler 28 MB, 15 dakikada bir tam değerlendirme 6,2 MB, pg-boss yoklaması, kredi yokken her 10 dakikada dosya metinleri). Düzeltmeler Veri çıkışı bölümünde; ölçülen: boşta 10 dakikada 25-46 KB, worker açılışı 7,7 MB (önce 51-81), önizleme yenilemesi 1 MB (önce 22-35).
+- Veritabanı bağlantıları şifresizdi; artık TLS (uygulama, worker, drizzle-kit). Next.js 16.4.0'daki iki kritik ve bir yüksek açık için 16.4.3'e geçildi.
+- 63 Kaynaklar ve Ayarlar sayfalarını, profil formunu, CPV seçiciyi ve route handler'ları; 03 ihale sayfasını yazdı. Her teslim mutasyonla denendi (testlerin yakaladığı bozmalar), ekranlar tarayıcıda kontrol edildi.
+
+Arayüz ve veri çıkışı bilinen eksikleri:
+- Sunucu sertifikası doğrulanmıyor (`require`); tam doğrulama için Supabase panelinden CA sertifikası indirilmeli. Supabase'de "Enforce SSL" açılabilir.
+- Önizlemenin ilk yüklemesi web süreci başına yaklaşık 36 MB; Vercel'de her soğuk başlangıç bunu tekrarlar.
+- İşlenen her dosya Storage'dan bir kez indiriliyor (316 dosya, 215 MB); derin analiz PDF'leri yeniden indiriyor.
 
 Faz 6, derin analiz (kod 20 Ekim 2026, `faz-6` dalı; kabul bitince main'e):
 - SPEC 7.2'deki gibi: PDF'ler istekte doküman bloğu (Files API yok), DOCX ve XLSX metin; sınırları aşan dosyalar parçalara bölünüp birleştiriliyor; her iddia dosya ve sayfayla, alıntılar pdfjs metninde doğrulanıyor. Migration 0019 (`deep_requests`) uygulandı; worker işi `deep-analysis`, komut `pnpm deep`, ihale sayfasında "Derin analiz" kartı.
@@ -185,7 +220,7 @@ Kararlar:
 - Eşleştirmede CPV önekleri ile `keywordsAny` arasında VEYA var (kaçırmak fazladan sonuçtan pahalı; Faz 4'te AI skorlayacak). Ayrıntılar SPEC bölüm 6.
 - Eşleşme kayıtları silinmez: profil artık istemiyorsa `profile_matches.unmatched_at` işaretlenir (durum, triage, karar korunur). Gelen kutusu karar filtresiyle bunları da gösterir.
 - Karar geri alma, `tender_reviews`'e kararı boş yeni bir satır eklemektir (append-only).
-- Worker işleri: `sync-uk-fat` (2 saatte bir), `sync-eu-ted` (11:30 ve 17:30), `fx-ecb` (18:30), `facts` ve `translate` (10 dakikada bir), `assess` (15 dakikada bir), hepsi açılışta bir kez; `enrich-ted` (05:45, ayrıntısı eksik eşleşmiş TED ihaleleri); senkron ve kur işlerinin sonunda `fillValueEur` ve `rematch` çalışır. Emekli `triage` işinin zamanlaması açılışta silinir.
+- Worker işleri: `sync-uk-fat` (2 saatte bir), `sync-eu-ted` (11:30 ve 17:30), `fx-ecb` (18:30), `facts` ve `translate` (10 dakikada bir), `assess` (saat başı bakar, İstanbul günü dönünce hepsini değerlendirir), hepsi açılışta bir kez; `enrich-ted` (05:45, ayrıntısı eksik eşleşmiş TED ihaleleri); senkron ve kur işlerinin sonunda EUR değerleri, eşleştirme ve değişen ihalelerin değerlendirmesi çalışır (açılıştan sonra yalnız değişenler, bkz. Veri çıkışı). Emekli `triage` işinin zamanlaması açılışta silinir.
 - Sadece mal alımı (14 Ekim 2026, ekip kararı). Kural `src/sources/scope.ts`'te, eşleştirme motorunun ilk kuralı da odur. Kapsam dışına düşen ihale silinir; kararı, analizi ya da indirilmiş dokümanı olan kalır ama eşleşmez.
 - Gelen kutusunun varsayılan görünümü, eşleşmesi bitmiş olsa da son kararı GO, REVIEW ya da WATCH olan ihaleleri de gösterir.
 - Şu aşamada yalnızca ürün teslimi (16 Ekim 2026, ekip kararı): kurulum (basit montaj dahil), yerinde servis, sahada devreye alma ya da eğitim isteyen lotlar elenir (`src/policy/policy.ts` `supplyOnly`, `allowMinorAssembly`). Puan tek sayı (aralığın ortası) gösterilir. Ekip ayrıca 10 iş günlük ortak bulma süresini ve Bozkor'un istekli belgesi, kendi referansı ve hiçbir ülkede ortağı olmadığını doğruladı.

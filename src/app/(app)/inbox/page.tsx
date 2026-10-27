@@ -1,16 +1,22 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import { PageHeader } from "@/components/page-header";
+import { pageIndex } from "@/lib/nav";
 import { InboxContent } from "./inbox-content";
 
 export const metadata: Metadata = { title: "Gelen kutusu" };
 
 export default function InboxPage(props: PageProps<"/inbox">) {
   return (
-    <section className="flex flex-col gap-4">
-      <h1 className="text-xl font-semibold">Gelen kutusu</h1>
-      <Suspense fallback={<p className="text-sm text-muted-foreground">Yükleniyor...</p>}>
-        <InboxContent searchParams={props.searchParams} />
-      </Suspense>
-    </section>
+    <Suspense
+      fallback={
+        <div className="flex flex-col gap-[18px]">
+          <PageHeader index={pageIndex("/inbox")} title="Gelen kutusu" />
+          <p className="text-[13px] text-ink-500">Yükleniyor...</p>
+        </div>
+      }
+    >
+      <InboxContent searchParams={props.searchParams} />
+    </Suspense>
   );
 }

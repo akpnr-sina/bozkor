@@ -68,7 +68,7 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   }
 
   if (allowed && pathname === "/login") {
-    return redirectTo("/inbox");
+    return redirectTo("/panel");
   }
 
   return response;

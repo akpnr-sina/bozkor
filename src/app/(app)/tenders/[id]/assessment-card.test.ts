@@ -1,15 +1,17 @@
-import { createElement } from "react";
+import { createElement, Fragment } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { facts, lot } from "../../../../../tests/helpers/facts";
 import type { Analysis } from "@/db/schema";
 import { checkFactsQuotes, evidencedFacts } from "@/analysis/facts-evidence";
 import type { FactsOutput } from "@/analysis/facts-schema";
-import { assessTender } from "@/policy/engine";
-import { AssessmentCard } from "./assessment-card";
+import { assessTender, type PolicyInput } from "@/policy/engine";
+import { AssessmentDetail, AssessmentFacts, AssessmentSummary } from "./assessment-card";
+import { assessmentView, decidingFacts } from "./assessment-view";
 
-// The card is a server component without data access: render it to HTML and
-// check what the team reads.
+// The cards are server components without data access: render them to HTML
+// and check what the team reads. The summary, the facts and the detail are
+// rendered together, as the overview tab shows them.
 
 const REVIEWED = new Date("2026-10-15T09:00:00+03:00");
 const sources = {
@@ -24,24 +26,26 @@ function render(
 ) {
   const quoteChecks = checkFactsQuotes(extracted, { ...sources, ...files.sources });
   const evidenced = evidencedFacts(extracted, quoteChecks);
-  const assessment = assessTender({
+  const input: PolicyInput = {
     tender: { valueEur: 14_000, submissionDeadline: new Date("2026-11-09T12:00:00Z"), buyerCountry: "GB", noticeLanguage: "EN", details: null },
     lots,
     facts: evidenced,
     now: REVIEWED,
-  });
+  };
+  const stored = { facts: extracted, quoteChecks, sourcesHash: "h" };
+  const result = {
+    assessment: assessTender(input),
+    latest: { analysisId: "a1", createdAt: REVIEWED, documentIds: [], stored, facts: evidenced },
+  };
+  const view = assessmentView(result, null, files.names, decidingFacts(input, stored));
   return renderToStaticMarkup(
-    createElement(AssessmentCard, {
-      result: {
-        assessment,
-        latest: { analysisId: "a1", createdAt: REVIEWED, documentIds: [], stored: { facts: extracted, quoteChecks, sourcesHash: "h" }, facts: evidenced },
-      },
-      latestAttempt: null,
-      stale: false,
-      details: null,
-      tenderId: "t1",
-      fileNames: files.names,
-    }),
+    createElement(
+      Fragment,
+      null,
+      createElement(AssessmentSummary, { result, latestAttempt: null, stale: false, tenderId: "t1", checks: view.checks }),
+      createElement(AssessmentFacts, { result, view }),
+      createElement(AssessmentDetail, { result, fileCount: files.names.length }),
+    ),
   );
 }
 
@@ -68,7 +72,7 @@ const furniture = facts({
   samples: { value: "YES", quote: "Samples must be provided within 5 days." },
 });
 
-describe("AssessmentCard", () => {
+describe("assessment cards", () => {
   it("shows the verdict, the scores, the next actions and the facts with their sources", () => {
     const html = render(furniture);
     expect(html).toContain("Üretici bulunmalı");
@@ -82,6 +86,37 @@ describe("AssessmentCard", () => {
     expect(html).not.toContain("\u2014");
   });
 
+  it("keeps the summary short: the checks it rests on and a link to every fact", () => {
+    const html = render(furniture);
+    const summary = html.slice(0, html.indexOf('id="olgular"'));
+    expect(summary).toContain("Kararı belirleyen kontroller");
+    // The failing gate first, then the hard gates in their state.
+    expect(summary.indexOf("Üretici<")).toBeLessThan(summary.indexOf("Son teklif tarihi<"));
+    expect(summary).toContain('href="#olgular"');
+    expect(summary).not.toContain("kaynak:");
+    expect(summary).not.toContain("Sonraki adımlar");
+    expect(html).toContain("Olgular · ");
+  });
+
+  it("marks in red the facts a rejection rests on and lists them first in the summary", () => {
+    const onSite = facts({
+      ...furniture,
+      installation: { value: "REQUIRED", detail: "Sahada montaj", quote: "The supplier shall install the furniture on site." },
+    });
+    const html = render(onSite, [], { sources: { performance: "The supplier shall install the furniture on site." }, names: [] });
+    expect(html).toContain("Ticari olarak uygun değil");
+    const summary = html.slice(0, html.indexOf('id="olgular"'));
+    expect(summary).toContain("Kurulum: Zorunlu");
+    expect(summary.indexOf("Kurulum: Zorunlu")).toBeLessThan(summary.indexOf("Üretici<"));
+    expect(html).toContain('text-err">Zorunlu<span class="sr-only"> (kararı belirleyen olgu)</span>');
+    expect(html).toContain("kaynak: ifa koşulları");
+  });
+
+  it("writes unknown values in amber", () => {
+    const html = render(furniture);
+    expect(html).toContain('text-warn">Bilinmiyor<span class="sr-only"> (bilinmiyor)</span>');
+  });
+
   it("names the file and page a quote came from", () => {
     const fromFile = { ...furniture, samples: { value: "YES" as const, quote: "Samples must be provided within 5 days." } };
     const html = render(fromFile, [], {
@@ -90,6 +125,7 @@ describe("AssessmentCard", () => {
     });
     expect(html).toContain("kaynak: &quot;Technical Specification.pdf&quot;, sayfa 12");
     expect(html).not.toContain("doğrulanmadı, kararda kullanılmadı");
+    expect(html).toContain("ilan metninden ve 1 dosyadan çıkardı");
   });
 
   it("adds a lot table for tenders with several lots", () => {
@@ -111,9 +147,7 @@ describe("AssessmentCard", () => {
 
   it("explains a failed extraction when there is no verdict yet", () => {
     const attempt = { id: "x", valid: false, output: null, error: "API hatası (529): overloaded", createdAt: REVIEWED } as Analysis;
-    const html = renderToStaticMarkup(
-      createElement(AssessmentCard, { result: null, latestAttempt: attempt, stale: false, details: null, tenderId: "t1" }),
-    );
+    const html = renderToStaticMarkup(createElement(AssessmentSummary, { result: null, latestAttempt: attempt, stale: false, tenderId: "t1", checks: [] }));
     expect(html).toContain("Olgu çıkarma başarısız");
     expect(html).toContain("AI servisi hata verdi");
     expect(html).toContain("pnpm facts --tender=t1");

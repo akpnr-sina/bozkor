@@ -10,7 +10,48 @@ const dateTimeFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: TIMEZONE, da
 const dateFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: TIMEZONE, dateStyle: "medium" });
 const numberFormat = new Intl.NumberFormat("tr-TR");
 
+const clockFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: TIMEZONE, hour: "2-digit", minute: "2-digit" });
+const dayMonthFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: TIMEZONE, day: "2-digit", month: "2-digit" });
+const dayKeyFormat = new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" });
+
 export const formatDateTime = (date: Date | null) => (date ? dateTimeFormat.format(date) : "Belirtilmemiş");
+
+/** A time of day: "14:20" when it is today in Istanbul, "19.10 14:20" otherwise. */
+export function formatClock(date: Date, now: Date): string {
+  const time = clockFormat.format(date);
+  if (dayKeyFormat.format(date) === dayKeyFormat.format(now)) return time;
+  // ICU writes the day and month alone with a slash in Turkish; the dotted form matches full dates.
+  const part = (type: string) => dayMonthFormat.formatToParts(date).find((p) => p.type === type)?.value ?? "";
+  return `${part("day")}.${part("month")} ${time}`;
+}
+
+const longDateFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: TIMEZONE, day: "numeric", month: "long", year: "numeric" });
+const weekdayFormat = new Intl.DateTimeFormat("tr-TR", { timeZone: TIMEZONE, weekday: "long" });
+
+/** "20 Ekim 2026 · Pazartesi". */
+export const formatLongDate = (date: Date) => `${longDateFormat.format(date)} · ${weekdayFormat.format(date)}`;
+
+const regionNames = new Intl.DisplayNames(["tr"], { type: "region" });
+
+/** A country's Turkish name from its ISO alpha-2 code: "DE" is "Almanya". */
+export function countryName(code: string | null): string {
+  if (!code) return "Belirtilmemiş";
+  try {
+    return regionNames.of(code.toUpperCase()) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+/** How long ago, short: "şimdi", "12 dk", "3 sa", "2 gün". */
+export function formatAgo(date: Date, now: Date): string {
+  const minutes = Math.floor((now.getTime() - date.getTime()) / 60_000);
+  if (minutes < 1) return "şimdi";
+  if (minutes < 60) return `${minutes} dk`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} sa`;
+  return `${Math.floor(hours / 24)} gün`;
+}
 export const formatDate = (date: Date | null) => (date ? dateFormat.format(date) : "Belirtilmemiş");
 export const formatNumber = (value: number) => numberFormat.format(value);
 
@@ -35,13 +76,13 @@ export function formatMoney(amount: number | null, currency: string | null): str
   }
 }
 
-/** Whole days until the deadline, rounded down; negative once it has passed. */
 /** "Lot 1" for TED's "LOT-0001" and Find a Tender's "1"; other identifiers as given. */
 export function lotLabel(lotNumber: string): string {
   const match = /^LOT-0*(\d+)$/i.exec(lotNumber.trim());
   return `Lot ${match ? match[1] : lotNumber.trim()}`;
 }
 
+/** Whole days until the deadline, rounded down; negative once it has passed. */
 export function daysLeft(deadline: Date | null, now: Date): number | null {
   return deadline ? Math.floor((deadline.getTime() - now.getTime()) / DAY_MS) : null;
 }

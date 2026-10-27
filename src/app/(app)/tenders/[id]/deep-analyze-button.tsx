@@ -4,8 +4,12 @@ import { useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
 import { requestDeep } from "./deep-actions";
 
-/** Asks for the tender's deep analysis; the card then shows it queued and the page refreshes itself. */
-export function DeepAnalyzeButton({ tenderId, label, variant = "default" }: { tenderId: string; label: string; variant?: "default" | "outline" }) {
+/**
+ * Asks for the tender's deep analysis; the card then shows it queued and the
+ * page refreshes itself. An outline button: opening the notice is the page's
+ * one primary action.
+ */
+export function DeepAnalyzeButton({ tenderId, label }: { tenderId: string; label: string }) {
   const [pending, startTransition] = useTransition();
   const [message, setMessage] = useState<{ text: string; error: boolean } | null>(null);
 
@@ -19,11 +23,11 @@ export function DeepAnalyzeButton({ tenderId, label, variant = "default" }: { te
 
   return (
     <>
-      <Button type="button" size="sm" variant={variant} disabled={pending} onClick={ask}>
+      <Button type="button" variant="outline" disabled={pending} onClick={ask}>
         {pending ? "İsteniyor..." : label}
       </Button>
       {message && (
-        <span role={message.error ? "alert" : "status"} className={message.error ? "text-xs text-destructive" : "text-xs text-muted-foreground"}>
+        <span role={message.error ? "alert" : "status"} className={message.error ? "text-xs text-err" : "text-xs text-ink-500"}>
           {message.text}
         </span>
       )}
