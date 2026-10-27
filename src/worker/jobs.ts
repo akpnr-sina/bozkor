@@ -56,7 +56,8 @@ const syncQueue: Omit<Queue, "name"> = {
   retryLimit: 1,
   retryDelay: 10 * 60,
   // A running worker refreshes the heartbeat; a stopped one leaves its job
-  // failed within a minute instead of holding the queue until it expires.
+  // failed within five minutes (superviseIntervalSeconds, boss.ts) instead of
+  // holding the queue until it expires.
   heartbeatSeconds: 60,
 };
 
@@ -64,9 +65,9 @@ const syncQueue: Omit<Queue, "name"> = {
  * How often an idle worker asks pg-boss for a job, per queue. pg-boss's 2
  * seconds made a dozen queues poll about 500,000 times a day, each answer
  * counting against Supabase's egress quota; scheduled jobs start up to this
- * much later instead.
+ * much later instead (the every-minute jobs run every minute or two).
  */
-const POLL_SECONDS = 30;
+const POLL_SECONDS = 60;
 
 /** LLM runs stay short (a few minutes), so a restart cuts little off. */
 const LLM_BATCH = 60;

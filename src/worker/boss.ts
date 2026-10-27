@@ -17,10 +17,15 @@ export function createBoss(): PgBoss {
     // Supabase session pooler slots are limited; leave room for the web app.
     max: 4,
     // Every answer counts against Supabase's egress quota. The queue list
-    // (with its stats) was read every minute; the flow check, every 5 seconds,
-    // serves parent and child jobs, which this worker does not use.
+    // (with its stats) was read every minute, by the cache and by supervise;
+    // the flow check, every 5 seconds, serves parent and child jobs, which this
+    // worker does not use. Supervise also fails the job of a stopped worker
+    // (missed heartbeat), now within five minutes. The cron check reads every
+    // schedule; 45 seconds is pg-boss's ceiling, still inside its one-minute window.
     queueCacheIntervalSeconds: 600,
+    superviseIntervalSeconds: 300,
     flowIntervalSeconds: 300,
+    cronMonitorIntervalSeconds: 45,
     // pg's pool option, which pg-boss passes on (its types leave it out). pg
     // closes a connection idle for 10 seconds, so every 30-second poll opened
     // new ones, each with a TLS handshake: about 7 a minute, 50 MB of egress a day.
