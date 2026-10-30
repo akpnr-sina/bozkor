@@ -1,13 +1,18 @@
 import { createCpvCatalog, type CpvItem } from "./catalog";
 import vocabulary from "./cpv-2008.json";
+import turkish from "./cpv-2008-tr.json";
 
 // The CPV 2008 vocabulary on the server. Some 9,000 codes: pages and actions
 // pass the form only what it shows, and client code imports types from
-// ./catalog, never this module.
+// ./catalog, never this module. cpv-2008-tr.json holds the Turkish names of
+// the 6,345 goods codes the form offers, translated from the English ones with
+// Claude (30 October 2026): the official Turkish list (KİK's OKAS) is only a
+// PDF behind EKAP's login, which rule 1 keeps us out of. The page marks them as
+// translations and keeps the official English name in view.
 
 export type { CpvItem, CpvLevel } from "./catalog";
 
-const catalog = createCpvCatalog(vocabulary as [string, string][]);
+const catalog = createCpvCatalog(vocabulary as [string, string][], turkish as [string, string][]);
 
 /** The English name of the code a stored prefix stands for, or null. */
 export const cpvLabel = (prefix: string): string | null => catalog.label(prefix);

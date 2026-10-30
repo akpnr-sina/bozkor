@@ -1,8 +1,8 @@
 import { isProductScope } from "@/sources/scope";
 
 // The CPV 2008 vocabulary (Regulation (EC) No 213/2008) as the profile form
-// reads it: each code with its English name, its prefix, its level and its
-// parent. The hierarchy is in the trailing zeros: a division has 2 significant
+// reads it: each code with its official English name, its Turkish name (goods
+// codes), its prefix, its level and its parent. The hierarchy is in the trailing zeros: a division has 2 significant
 // digits, a group 3, a class 4, a category 5, subcategories 6 to 8. Matching
 // works on prefixes (src/matching): a profile's prefix holds every code that
 // starts with it.
@@ -16,9 +16,20 @@ export type CpvItem = {
   code: string;
   /** The official English name. */
   label: string;
+  /** The Turkish name, a translation (index.ts); null outside the goods divisions. */
+  labelTr: string | null;
   level: CpvLevel;
   hasChildren: boolean;
 };
+
+/**
+ * Goes into the profile form's requests to /api/cpv, which browsers keep for an
+ * hour: change it when the names change, so the form does not show old ones.
+ */
+export const CPV_NAMES_VERSION = "tr-2026-10-30";
+
+/** The name to show: the Turkish one where there is one, else the official English. */
+export const cpvName = (item: Pick<CpvItem, "label" | "labelTr">): string => item.labelTr ?? item.label;
 
 /** "31121000" as "31121": the trailing zeros dropped, the division's two digits kept. */
 export function cpvPrefixOf(code: string): string {
@@ -45,7 +56,7 @@ export function normalizeCpvText(text: string): string {
     .trim();
 }
 
-type Entry = Omit<CpvItem, "hasChildren"> & { text: string; inScope: boolean; parent: string | null };
+type Entry = Omit<CpvItem, "hasChildren"> & { text: string; textTr: string | null; inScope: boolean; parent: string | null };
 
 export type CpvCatalog = {
   /** The code a stored prefix stands for: its own, or the eight digits given in full. Null when the vocabulary has none. */
@@ -53,22 +64,36 @@ export type CpvCatalog = {
   label(prefix: string): string | null;
   /**
    * Codes in scope (goods, src/sources/scope.ts) for what was typed. Digits:
-   * the codes they begin, the code itself first. Words, any case or accent:
-   * the name as typed, then names that start with it, names with a word that
-   * starts with it, names that contain it, names with all its words. Higher
-   * levels first within each.
+   * the codes they begin, the code itself first. Words, any case or accent, in
+   * the English or the Turkish name, whichever matches better: the name as
+   * typed, then names that start with it, names with a word that starts with
+   * it, names that contain it, names with all its words. Higher levels first
+   * within each.
    */
   search(query: string, limit?: number): CpvItem[];
   /** The codes right under a prefix; under null, the goods divisions (03 to 44 without 48). */
   children(prefix: string | null): CpvItem[];
 };
 
-export function createCpvCatalog(rows: readonly (readonly [string, string])[]): CpvCatalog {
+/** `turkish`: Turkish names by code, for the codes that have one. */
+export function createCpvCatalog(rows: readonly (readonly [string, string])[], turkish: readonly (readonly [string, string])[] = []): CpvCatalog {
+  const turkishNames = new Map(turkish);
   const byPrefix = new Map<string, Entry>();
   const byCode = new Map<string, Entry>();
   for (const [code, label] of rows) {
     const prefix = cpvPrefixOf(code);
-    const entry: Entry = { prefix, code, label, level: cpvLevelOf(prefix), text: normalizeCpvText(label), inScope: isProductScope(null, code), parent: null };
+    const labelTr = turkishNames.get(code) ?? null;
+    const entry: Entry = {
+      prefix,
+      code,
+      label,
+      labelTr,
+      level: cpvLevelOf(prefix),
+      text: normalizeCpvText(label),
+      textTr: labelTr === null ? null : normalizeCpvText(labelTr),
+      inScope: isProductScope(null, code),
+      parent: null,
+    };
     byPrefix.set(prefix, entry);
     byCode.set(code, entry);
   }
@@ -87,7 +112,7 @@ export function createCpvCatalog(rows: readonly (readonly [string, string])[]): 
 
   const byCodeOrder = (a: Entry, b: Entry) => a.code.localeCompare(b.code);
   const higherFirst = (a: Entry, b: Entry) => a.prefix.length - b.prefix.length || byCodeOrder(a, b);
-  const toItem = ({ prefix, code, label, level }: Entry): CpvItem => ({ prefix, code, label, level, hasChildren: children.has(prefix) });
+  const toItem = ({ prefix, code, label, labelTr, level }: Entry): CpvItem => ({ prefix, code, label, labelTr, level, hasChildren: children.has(prefix) });
   const roots = [...byPrefix.values()].filter((e) => e.prefix.length === 2 && e.inScope).sort(byCodeOrder);
   const inScope = [...byPrefix.values()].filter((e) => e.inScope);
 
@@ -121,12 +146,16 @@ export function createCpvCatalog(rows: readonly (readonly [string, string])[]): 
       const words = normalizeCpvText(typed);
       if (words.length < 2) return [];
       const tokens = words.split(" ");
+      const rank = (text: string): number | null => {
+        if (text === words) return 0;
+        if (text.startsWith(words)) return 1;
+        if (` ${text}`.includes(` ${words}`)) return 2;
+        if (text.includes(words)) return 3;
+        return tokens.every((token) => text.includes(token)) ? 4 : null;
+      };
       return ranked((e) => {
-        if (e.text === words) return 0;
-        if (e.text.startsWith(words)) return 1;
-        if (` ${e.text}`.includes(` ${words}`)) return 2;
-        if (e.text.includes(words)) return 3;
-        return tokens.every((token) => e.text.includes(token)) ? 4 : null;
+        const ranks = [rank(e.text), e.textTr === null ? null : rank(e.textTr)].filter((r) => r !== null);
+        return ranks.length ? Math.min(...ranks) : null;
       }, limit);
     },
     children(prefix) {

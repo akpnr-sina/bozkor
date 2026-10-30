@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { CpvItem } from "@/matching/cpv/catalog";
+import { CPV_NAMES_VERSION, cpvName, type CpvItem } from "@/matching/cpv/catalog";
 import {
   addCpv,
   cpvStanding,
@@ -103,7 +103,7 @@ export function CategoryCodes({ categories, names }: { categories: readonly Cate
           return (
             <li key={`${category}-${prefix}`} title={chipTitle(prefix, item, category)} className={cn(CHIP, "pr-2 text-ink-600")}>
               <span className="font-mono text-ink-900">{item?.code ?? prefix}</span>
-              <span className="max-w-56 truncate">{item?.label ?? "Adı bilinmiyor"}</span>
+              <span className="max-w-56 truncate">{item ? cpvName(item) : "Adı bilinmiyor"}</span>
             </li>
           );
         })}
@@ -115,7 +115,9 @@ export function CategoryCodes({ categories, names }: { categories: readonly Cate
 const CHIP = "inline-flex h-7 max-w-full items-center gap-1.5 rounded-sm bg-canvas pl-2 text-[13px] shadow-[inset_0_0_0_1px_var(--color-line)]";
 
 function chipTitle(prefix: string, item: CpvItem | null, category?: string): string {
-  const name = item ? `${item.code} ${item.label} (${item.level})` : `${prefix}: adı bilinmeyen önek`;
+  const name = item
+    ? `${item.code} ${cpvName(item)} (${item.level})${item.labelTr ? `; resmi adı: ${item.label}` : ""}`
+    : `${prefix}: adı bilinmeyen önek`;
   const from = category ? `, ${category} kategorisinden` : "";
   return `${name}${from}. ${prefix} ile başlayan tüm kodlar sayılır.`;
 }
@@ -149,7 +151,7 @@ function ChipList({
             return (
               <li key={prefix} title={chipTitle(prefix, item)} className={CHIP}>
                 <span className="font-mono">{code}</span>
-                <span className={cn("max-w-56 truncate", item ? "text-ink-600" : "text-ink-400")}>{item?.label ?? "Adı bilinmiyor"}</span>
+                <span className={cn("max-w-56 truncate", item ? "text-ink-600" : "text-ink-400")}>{item ? cpvName(item) : "Adı bilinmiyor"}</span>
                 <span className="flex items-center">
                   <button
                     type="button"
@@ -249,7 +251,7 @@ function CpvSearch({
       return;
     }
     const timer = setTimeout(async () => {
-      const outcome = await searches.run((signal) => fetchJson<CpvItem[]>(`/api/cpv/search?${new URLSearchParams({ q: typed })}`, { signal }));
+      const outcome = await searches.run((signal) => fetchJson<CpvItem[]>(`/api/cpv/search?${new URLSearchParams({ q: typed, v: CPV_NAMES_VERSION })}`, { signal }));
       if (outcome.status === "done") {
         setFound({ query: typed, items: outcome.value });
         setActive(0);
@@ -291,7 +293,7 @@ function CpvSearch({
           aria-describedby={`${id}-hint`}
           autoComplete="off"
           value={query}
-          placeholder="örn. 3112 ya da generating sets"
+          placeholder="örn. 3112, jeneratör ya da generating sets"
           className="pl-8"
           onChange={(e) => {
             setQuery(e.target.value);
@@ -320,7 +322,7 @@ function CpvSearch({
         />
       </div>
       <span id={`${id}-hint`} className="text-xs text-ink-500">
-        Kodlar resmi CPV 2008 listesinden, adlar İngilizce. Oklarla seçin; Enter dahil eder, Shift+Enter hariç tutar.
+        Kodlar resmi CPV 2008 listesinden. Türkçe adlar çeviridir, resmi İngilizce ad yanında ya da üzerine gelince görünür; iki dilde de arayabilirsiniz. Oklarla seçin; Enter dahil eder, Shift+Enter hariç tutar.
       </span>
       {showList && (
         <div className="absolute top-full right-0 left-0 z-20 mt-1 border border-line bg-surface shadow-overlay" onMouseDown={(e) => e.preventDefault()}>
@@ -336,11 +338,13 @@ function CpvSearch({
               >
                 <span className="w-[4.5rem] shrink-0 font-mono text-[13px]">{choice.item?.code ?? choice.prefix}</span>
                 <span className="flex min-w-0 flex-1 flex-col">
-                  <span className="truncate text-[13px]" title={choice.item?.label}>
-                    {choice.item ? choice.item.label : `Öneki ekle: ${choice.prefix}`}
+                  <span className="truncate text-[13px]" title={choice.item ? cpvName(choice.item) : undefined}>
+                    {choice.item ? cpvName(choice.item) : `Öneki ekle: ${choice.prefix}`}
                   </span>
-                  <span className="text-xs text-ink-500">
-                    {choice.item ? choice.item.level : "Listede yok; bu rakamlarla başlayan kodlar sayılır"}
+                  <span className="truncate text-xs text-ink-500" title={choice.item?.labelTr ? `Resmi adı: ${choice.item.label}` : undefined}>
+                    {choice.item
+                      ? `${choice.item.level}${choice.item.labelTr ? ` · ${choice.item.label}` : ""}`
+                      : "Listede yok; bu rakamlarla başlayan kodlar sayılır"}
                   </span>
                 </span>
                 <Standing standing={standingOf(choice.prefix)} />
@@ -392,7 +396,7 @@ function CpvTree({
     const controller = new AbortController();
     requests.current.add(controller);
     try {
-      const items = await fetchJson<CpvItem[]>(`/api/cpv/tree?${new URLSearchParams({ prefix: key })}`, { signal: controller.signal });
+      const items = await fetchJson<CpvItem[]>(`/api/cpv/tree?${new URLSearchParams({ prefix: key, v: CPV_NAMES_VERSION })}`, { signal: controller.signal });
       setLevels((current) => ({ ...current, [key]: items }));
       remember(items);
       setFailed(null);
@@ -442,8 +446,8 @@ function CpvTree({
                   <span aria-hidden className="size-6 shrink-0" />
                 )}
                 <span className="w-[4.5rem] shrink-0 font-mono text-[13px]">{item.code}</span>
-                <span className="min-w-0 flex-1 truncate text-[13px]" title={`${item.label} (${item.level})`}>
-                  {item.label}
+                <span className="min-w-0 flex-1 truncate text-[13px]" title={`${item.labelTr ? `Resmi adı: ${item.label}` : item.label} (${item.level})`}>
+                  {cpvName(item)}
                 </span>
                 <Standing standing={standingOf(item.prefix)} />
                 <PickButtons choice={{ prefix: item.prefix, item }} onPick={onPick} focusable />

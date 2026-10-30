@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cpvLevelOf, cpvPrefixOf, createCpvCatalog, normalizeCpvText } from "./catalog";
+import { cpvLevelOf, cpvName, cpvPrefixOf, createCpvCatalog, normalizeCpvText } from "./catalog";
 
 // A few codes shaped like the vocabulary's (names shortened), with a missing
 // group (093) and codes out of scope: works (45), software (48), services (50).
@@ -56,7 +56,7 @@ describe("CPV prefixes and levels", () => {
 
 describe("createCpvCatalog", () => {
   it("finds a code by its prefix or its eight digits, with its level and whether it has codes under it", () => {
-    expect(catalog.item("31121")).toEqual({ prefix: "31121", code: "31121000", label: "Generating sets", level: "Kategori", hasChildren: true });
+    expect(catalog.item("31121")).toEqual({ prefix: "31121", code: "31121000", label: "Generating sets", labelTr: null, level: "Kategori", hasChildren: true });
     expect(catalog.item("31121000")).toMatchObject({ prefix: "31121", label: "Generating sets" });
     expect(catalog.item("311211")).toMatchObject({ level: "Alt kategori", hasChildren: false });
     expect(catalog.label("3112")).toBe("Generators");
@@ -108,5 +108,41 @@ describe("createCpvCatalog", () => {
     expect(catalog.search("construction work")).toEqual([]);
     expect(catalog.search("e")).toEqual([]);
     expect(catalog.search("   ")).toEqual([]);
+  });
+});
+
+describe("Turkish names", () => {
+  const bilingual = createCpvCatalog(
+    [
+      ["31000000", "Electrical machinery, apparatus, equipment and consumables; lighting"],
+      ["31120000", "Generators"],
+      ["31121000", "Generating sets"],
+      ["31121100", "Generating sets with compression-ignition engines"],
+      ["31130000", "Alternators"],
+    ],
+    [
+      ["31000000", "Elektrikli makineler, cihazlar, ekipman ve sarf malzemeleri; aydınlatma"],
+      ["31120000", "Jeneratörler"],
+      ["31121000", "Jeneratör setleri"],
+      ["31121100", "Dizel motorlu jeneratör setleri"],
+    ],
+  );
+
+  it("gives a code its Turkish name beside the official English one, and shows the Turkish where there is one", () => {
+    const item = bilingual.item("3112")!;
+    expect(item).toMatchObject({ label: "Generators", labelTr: "Jeneratörler" });
+    expect(cpvName(item)).toBe("Jeneratörler");
+    expect(bilingual.item("3113")).toMatchObject({ label: "Alternators", labelTr: null });
+    expect(cpvName(bilingual.item("3113")!)).toBe("Alternators");
+    expect(bilingual.children("31")[0]).toMatchObject({ labelTr: "Jeneratörler" });
+  });
+
+  it("finds codes by either name, without Turkish letters too, ranked by the better of the two", () => {
+    expect(prefixes(bilingual.search("jeneratör"))).toEqual(["3112", "31121", "311211"]);
+    expect(prefixes(bilingual.search("JENERATOR SET"))).toEqual(["31121", "311211"]);
+    expect(prefixes(bilingual.search("dizel"))).toEqual(["311211"]);
+    // "generating sets" starts the English name of 31121, and is only inside 311211's.
+    expect(prefixes(bilingual.search("generating sets"))).toEqual(["31121", "311211"]);
+    expect(prefixes(bilingual.search("aydinlatma"))).toEqual(["31"]);
   });
 });

@@ -123,6 +123,11 @@
   [role="button"]:not(:disabled) {
     cursor: pointer;
   }
+  /* Browsers give a fieldset min-width: min-content, so one long unbroken line
+     inside (a CPV name in the code tree) widened the form past its column. */
+  fieldset {
+    min-width: 0;
+  }
   /* Focus: a 2px black ring 2px away; fields draw their own (a black border). */
   :focus-visible {
     outline: 2px solid var(--color-ink-900);

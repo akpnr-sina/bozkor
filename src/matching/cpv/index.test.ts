@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { isProductScope } from "@/sources/scope";
 import { cpvPrefixOf } from "./catalog";
 import vocabulary from "./cpv-2008.json";
+import turkish from "./cpv-2008-tr.json";
 import { cpvChildren, cpvItems, cpvLabel, searchCpv } from "./index";
 import { CPV_CODE_COUNT, cpvProblems, type CpvRow } from "./source";
 
@@ -31,6 +32,25 @@ describe("cpv-2008.json", () => {
   });
 });
 
+describe("cpv-2008-tr.json", () => {
+  const names = new Map(turkish as [string, string][]);
+
+  it("names every goods code the form offers in Turkish, and nothing else", () => {
+    const goods = rows.filter(([code]) => isProductScope(null, code)).map(([code]) => code);
+    expect(goods.filter((code) => !names.get(code)?.trim())).toEqual([]);
+    expect([...names.keys()].filter((code) => !isProductScope(null, code))).toEqual([]);
+    expect([...names.values()].filter((name) => name.includes("\u2014"))).toEqual([]);
+  });
+
+  it("has the names the team looks for", () => {
+    expect(names.get("31121000")).toBe("Jeneratör setleri");
+    expect(names.get("18100000")).toBe("Meslek giysileri, özel iş giysileri ve aksesuarları");
+    expect(names.get("44211000")).toBe("Prefabrik binalar");
+    expect(searchCpv("jeneratör").map((item) => item.code)).toContain("31121000");
+    expect(cpvChildren(null).every((item) => item.labelTr)).toBe(true);
+  });
+});
+
 describe("the CPV catalog on the vocabulary", () => {
   it("names stored prefixes, and full codes stored as prefixes", () => {
     expect(cpvLabel("31121")).toBe("Generating sets");
@@ -39,7 +59,7 @@ describe("the CPV catalog on the vocabulary", () => {
     expect(cpvLabel("181")).toBe("Occupational clothing, special workwear and accessories");
     expect(cpvLabel("31999")).toBeNull();
     expect(cpvItems(["3112", "31999", "3112"])).toEqual({
-      "3112": { prefix: "3112", code: "31120000", label: "Generators", level: "Sınıf", hasChildren: true },
+      "3112": { prefix: "3112", code: "31120000", label: "Generators", labelTr: "Jeneratörler", level: "Sınıf", hasChildren: true },
       "31999": null,
     });
   });
