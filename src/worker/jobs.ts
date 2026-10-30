@@ -388,6 +388,13 @@ async function afterTenderChanges(db: ReturnType<typeof getDb>, job: string, opt
   );
 }
 
+/** An error's message with its cause's: Drizzle's "Failed query" keeps the reason (a reset connection) in the cause. */
+function describeError(error: unknown): string {
+  if (!(error instanceof Error)) return String(error);
+  const cause = error.cause instanceof Error ? ` (neden: ${error.cause.message})` : "";
+  return `${error.message.slice(0, 300)}${cause}`;
+}
+
 export async function registerJobs(boss: PgBoss): Promise<void> {
   // Before this process's syncs move last_synced_at (see matchedThroughAtStart).
   tenderChanges = createTenderChanges({ log: (m) => console.warn(m), handledThrough: await matchedThroughAtStart(getDb()) });
@@ -414,7 +421,13 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
     }
     await boss.work(job.name, { pollingIntervalSeconds: POLL_SECONDS }, async (batch) => {
       for (const { id, data } of batch) {
-        await job.handler(id, data);
+        try {
+          await job.handler(id, data);
+        } catch (error) {
+          // pg-boss keeps the error in the job's row; the log should show it too.
+          console.error(`[${job.name}] hata: ${describeError(error)}`);
+          throw error;
+        }
       }
     });
     // The stately policy drops this if a run is already queued.

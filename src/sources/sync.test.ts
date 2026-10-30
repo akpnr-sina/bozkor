@@ -190,6 +190,20 @@ describe("sync", () => {
     expect(source?.lastSyncedAt).toBeNull();
   });
 
+  it("puts the cause of a failed query first, ahead of the statement", async () => {
+    const { db } = testDb;
+    const failing: SourceAdapter = {
+      ...fakeAdapter(() => []),
+      async *pages() {
+        throw new Error(`Failed query: insert into "raw_notices" ${"x".repeat(3_000)}`, { cause: new Error("read ECONNRESET") });
+      },
+    };
+    await expect(syncIncremental(db, failing)).rejects.toThrow(/Failed query/);
+    const [source] = await db.select().from(sources).where(eq(sources.id, "uk_fat"));
+    expect(source?.lastError).toMatch(/^read ECONNRESET: Failed query: insert into "raw_notices"/);
+    expect(source?.lastError?.length).toBe(2_000);
+  });
+
   it("starts the next incremental run one hour before the cursor", async () => {
     const { db } = testDb;
     await db.update(sources).set({ cursor: "2026-10-13T10:00:00.000Z" }).where(eq(sources.id, "uk_fat"));

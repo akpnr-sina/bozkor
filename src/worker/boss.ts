@@ -27,9 +27,18 @@ export function createBoss(): PgBoss {
     flowIntervalSeconds: 300,
     cronMonitorIntervalSeconds: 45,
     // pg's pool option, which pg-boss passes on (its types leave it out). pg
-    // closes a connection idle for 10 seconds, so every 30-second poll opened
+    // closes a connection idle for 10 seconds, so every poll opened
     // new ones, each with a TLS handshake: about 7 a minute, 50 MB of egress a day.
     idleTimeoutMillis: 5 * 60_000,
+    // pg's client options, passed on the same way. pg has no TCP keepalive by
+    // default, so a connection that died while the Mac slept or the network
+    // changed went unnoticed: its query hung and kept its slot, every other
+    // query timed out waiting ("timeout exceeded when trying to connect"), and
+    // no sync ran for two days (October 2026). Keepalive finds a dead peer; a
+    // query without an answer in a minute fails, and the pool drops its connection.
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000,
+    query_timeout: 60_000,
   };
   return new PgBoss(options);
 }

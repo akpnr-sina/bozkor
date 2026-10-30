@@ -100,7 +100,10 @@ export async function applyPending(
 }
 
 function errorMessage(error: unknown): string {
-  return (error instanceof Error ? error.message : String(error)).slice(0, 2_000);
+  if (!(error instanceof Error)) return String(error).slice(0, 2_000);
+  // Drizzle's "Failed query" holds the statement; why it failed (a reset connection, a constraint) is its cause.
+  const cause = error.cause instanceof Error ? `${error.cause.message}: ` : "";
+  return `${cause}${error.message}`.slice(0, 2_000);
 }
 
 async function recordSuccess(db: AppDb, adapter: SourceAdapter, syncedUpTo: Date, stats: SyncStats): Promise<void> {
