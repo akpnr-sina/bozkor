@@ -26,7 +26,8 @@ export function BozkorLogo({ className }: { className?: string }) {
   return (
     <span className={cn("inline-flex items-center gap-[11px]", className)}>
       <BozkorMark className="size-[19.8px]" />
-      <span className="font-heading text-[18px] leading-none font-semibold tracking-[0.08em]">BOZKOR</span>
+      {/* Oxanium's capitals sit about 1px above the middle of its line; this centres them on the mark. */}
+      <span className="relative top-px font-heading text-[18px] leading-none font-semibold tracking-[0.08em]">BOZKOR</span>
     </span>
   );
 }

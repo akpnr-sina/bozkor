@@ -12,11 +12,16 @@ import { loadShell, SYNC_DOT, syncText } from "./shell-data";
 export function Sidebar() {
   return (
     <aside className="sticky top-0 hidden h-svh w-62 shrink-0 flex-col border-r border-nav-line bg-nav text-white lg:flex">
-      <div className="flex h-15 shrink-0 items-center justify-between gap-3 border-b border-nav-line bg-nav-top pr-5 pl-6 shadow-[inset_0_1px_0_#1a1a18]">
-        <Link href="/panel" aria-label="Panel" className="focus-visible:outline-white">
+      {/* The link is a flex box so the logo is centred by its own height; as a line of text it sat 3px high.
+          The 24px sides match the menu's: the logo starts with the labels, "İHALE" ends with the counts. */}
+      <div className="flex h-15 shrink-0 items-center justify-between gap-3 border-b border-nav-line bg-nav-top px-6 shadow-[inset_0_1px_0_#1a1a18]">
+        <Link href="/panel" aria-label="Panel" className="flex items-center focus-visible:outline-white">
           <BozkorLogo />
         </Link>
-        <span className="border-l border-ink-800 pl-2.5 font-mono text-[10px] leading-none text-ink-600">İHALE</span>
+        <span className="flex items-center gap-2.5 font-mono text-[10px] leading-none tracking-[0.12em] text-ink-500">
+          <span aria-hidden className="h-3 w-px bg-ink-800" />
+          İHALE
+        </span>
       </div>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         <Suspense fallback={<NavList pathname={null} counts={null} />}>
