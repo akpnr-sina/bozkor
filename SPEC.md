@@ -112,7 +112,7 @@ Birleştirme (`src/sources/fold.ts`): Aynı `ocid`'in tüm ilanları yayın tari
 
 Senkron (`src/sources/sync.ts`):
 
-- Artımlı: 2 saatte bir (pg-boss `sync-uk-fat`, `0 */2 * * *`, İstanbul). `sources.cursor`'dan 1 saat geriden başlar (geç indekslenen ilanlar ve yaz saati geçişi için). İlk çalışmada son 24 saat.
+- Artımlı: 2 saatte bir (pg-boss `sync-uk-fat`, `0 */2 * * *`, İstanbul). `sources.cursor`'dan 1 saat geriden başlar (geç indekslenen ilanlar ve yaz saati geçişi için). İlk çalışmada son 24 saat. Uykuda kaçırılan zamanlama uyanınca bir kez çalışır; son başarılı senkron 2,5 saatten eskiyse worker işi 10 dakikada bir yeniden ister (zamanlayıcı turu başarısız olduğunda pg-boss o dakikanın işini göndermez).
 - Backfill: `pnpm backfill --source=uk_fat --days=30`. Günlük pencereler, eskiden yeniye, 1 dakika örtüşmeyle. Tekrar çalıştırmak güvenli.
 - Aynı içerikteki ham ilan (anahtar sırasından bağımsız sha256) tekrar yazılmaz. Sadece yeni ham kayıt alan prosedürler yeniden hesaplanır.
 - Ham satır, ihaleye işlendiğinde ya da atlandığında `applied_at` alır (ihale ile aynı transaction'da, okunan satır kimlikleriyle). Her senkron ve backfill başında `applied_at` boş satırların prosedürleri işlenir; yarıda kesilen bir çalıştırma böylece kendiliğinden tamamlanır.
@@ -191,7 +191,7 @@ Bilinen eksikler:
 Birleştirme ve senkron:
 
 - Birleştirme FaT ile aynı kurallarla (`fold.ts`). TED yayın tarihi gün olduğundan aynı gün yayınlanan iki ilan ilan numarasına göre sıralanır; bir değişiklik ancak asıl ilan yayınlandıktan sonra gönderilebildiği için pratikte aynı güne düşmezler.
-- Artımlı: günde 2 kez (pg-boss `sync-eu-ted`, `30 11,17 * * *`, İstanbul). Sabah baskısını öğlen, geciken baskıyı akşam alır. İlk çalışmada son 24 saat.
+- Artımlı: günde 2 kez (pg-boss `sync-eu-ted`, `30 11,17 * * *`, İstanbul). Sabah baskısını öğlen, geciken baskıyı akşam alır. İlk çalışmada son 24 saat. Kaçırılan zamanlama ve gecikme denetimi FaT'deki gibi; eşik 19 saat (gece arası 18 saat).
 - Backfill: `pnpm backfill --source=eu_ted --days=30`. `pnpm renormalize --source=eu_ted` FaT'deki gibi.
 - `pnpm enrich-ted`: `TED_FIELDS`'e sonradan eklenen alanlar (örn. sözleşme detayları) eski ham kayıtlarda yoktur ve renormalize bunları getiremez. Komut, güncel eşleşmesi (unmatched_at boş) ya da kararı olan TED ihalelerinin tüm ilanlarını `publication-number IN (...)` sorgusuyla 100'erli gruplar halinde yeniden çeker (15 Ekim'de 100 numara tek sayfada geldi), yeni payload'ları ham kayıt olarak ekler ve bu prosedürleri yeniden hesaplar. Birleştirme her ilanın en son çekilen payload'ını okur. changed_at basmaz; tekrar çalıştırınca bir şey yazmaz. Tüm ham kayıtları yeniden çekmek yerine sadece ekibin gördüğü ihaleler zenginleştirilir.
 

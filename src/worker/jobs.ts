@@ -1,5 +1,6 @@
 import type { PgBoss, Queue } from "pg-boss";
 import { getDb } from "@/db";
+import { sources } from "@/db/schema";
 import { runFacts } from "@/analysis/facts";
 import { queueAutoDeep, runDeepRequests } from "@/analysis/deep";
 import { createLlmClient } from "@/analysis/llm";
@@ -23,6 +24,7 @@ import { createFatAdapter } from "@/sources/uk-fat";
 import { TIMEZONE } from "./boss";
 import { createCreditPause, type CreditOutcome } from "./credit-pause";
 import { createTenderChanges, matchedThroughAtStart, onceADay, WRITE_MARGIN_MS } from "./incremental";
+import { watchOverdueSyncs } from "./overdue";
 
 type JobDefinition = {
   name: string;
@@ -30,6 +32,11 @@ type JobDefinition = {
   cron?: string;
   /** Also run once when the worker starts, so a worker that was off catches up right away. */
   runOnStart?: boolean;
+  /**
+   * After a stretch with no cron pass at all (the Mac asleep), run once for the latest slot missed
+   * (pg-boss's `missed: "once"`) instead of waiting for the next one.
+   */
+  catchUp?: boolean;
   queue?: Omit<Queue, "name">;
   handler: (jobId: string, data: unknown) => Promise<void>;
 };
@@ -180,6 +187,7 @@ const jobs: JobDefinition[] = [
     name: "sync-uk-fat",
     cron: "0 */2 * * *",
     runOnStart: true,
+    catchUp: true,
     queue: syncQueue,
     handler: async () => {
       const db = getDb();
@@ -196,6 +204,7 @@ const jobs: JobDefinition[] = [
     name: "sync-eu-ted",
     cron: "30 11,17 * * *",
     runOnStart: true,
+    catchUp: true,
     queue: syncQueue,
     handler: async () => {
       const db = getDb();
@@ -270,6 +279,7 @@ const jobs: JobDefinition[] = [
     // TED_FIELDS had them and matched only later; newer notices carry them.
     name: "enrich-ted",
     cron: "45 5 * * *",
+    catchUp: true,
     queue: syncQueue,
     handler: async () => {
       const stats = await enrichTedNotices(getDb(), createTedClient(), { onlyMissingDetails: true, log: (m) => console.warn(`[enrich-ted] ${m.trim()}`) });
@@ -358,6 +368,7 @@ const jobs: JobDefinition[] = [
     name: "fx-ecb",
     cron: "30 18 * * *",
     runOnStart: true,
+    catchUp: true,
     queue: syncQueue,
     handler: async () => {
       const db = getDb();
@@ -417,7 +428,7 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
       await boss.updateQueue(job.name, { expireInSeconds, retryLimit, retryDelay, heartbeatSeconds });
     }
     if (job.cron) {
-      await boss.schedule(job.name, job.cron, null, { tz: TIMEZONE });
+      await boss.schedule(job.name, job.cron, null, { tz: TIMEZONE, missed: job.catchUp ? "once" : "skip" });
     }
     await boss.work(job.name, { pollingIntervalSeconds: POLL_SECONDS }, async (batch) => {
       for (const { id, data } of batch) {
@@ -434,4 +445,9 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
     if (job.runOnStart) await boss.send(job.name, {});
     console.log(`[worker] registered ${job.name}${job.cron ? ` (${job.cron} ${TIMEZONE})` : ""}`);
   }
+  watchOverdueSyncs({
+    read: () => getDb().select({ id: sources.id, lastSyncedAt: sources.lastSyncedAt }).from(sources),
+    send: (job) => boss.send(job, {}),
+    log: (message) => console.warn(message),
+  });
 }
