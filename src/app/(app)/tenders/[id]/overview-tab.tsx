@@ -1,6 +1,7 @@
+import { ChevronRight } from "lucide-react";
 import { DueChip } from "@/components/due-chip";
 import { EmptyState } from "@/components/empty-state";
-import { FormattedText } from "@/components/formatted-text";
+import { FormattedText, numberedLines } from "@/components/formatted-text";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -63,9 +64,12 @@ function SubjectCard({ description, cpvs }: { description: Props["description"];
           <>
             <FormattedText text={description.text} className="text-sm leading-relaxed text-ink-900" />
             {description.original && (
-              <details className="text-sm">
-                <summary className="cursor-pointer text-ink-500 hover:text-ink-900">Orijinal metin ({description.language ?? "?"})</summary>
-                <FormattedText text={description.original} className="mt-2 text-ink-700" />
+              <details className="group/original text-sm">
+                <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-ink-500 select-none hover:text-ink-900 [&::-webkit-details-marker]:hidden">
+                  <ChevronRight aria-hidden className="size-3.5 transition-transform group-open/original:rotate-90" />
+                  Orijinal metin ({description.language ?? "?"})
+                </summary>
+                <FormattedText text={description.original} className="mt-2 border-l-2 border-line pl-3 leading-relaxed text-ink-700" />
               </details>
             )}
           </>
@@ -90,6 +94,9 @@ function SubjectCard({ description, cpvs }: { description: Props["description"];
 }
 
 function LotsCard({ lots, titlesTr, descriptionsTr }: { lots: Lot[]; titlesTr: Map<string, string>; descriptionsTr: Map<string, string> }) {
+  const descriptions = new Map(lots.map((lot) => [lot.id, descriptionsTr.get(lot.lotNumber) || lot.description]));
+  // Once the lots number their items, a lot with a single item lists it as its neighbours do.
+  const numbered = [...descriptions.values()].reduce((sum, text) => sum + (text ? numberedLines(text) : 0), 0) >= 2;
   return (
     <Card>
       <CardHeader>
@@ -107,21 +114,34 @@ function LotsCard({ lots, titlesTr, descriptionsTr }: { lots: Lot[]; titlesTr: M
           </TableHeader>
           <TableBody>
             {lots.map((lot) => {
-              const description = descriptionsTr.get(lot.lotNumber) || lot.description;
+              const description = descriptions.get(lot.id);
               return (
                 <TableRow key={lot.id}>
-                  <TableCell className="px-4 font-mono text-xs whitespace-nowrap text-ink-600">{lotLabel(lot.lotNumber)}</TableCell>
-                  <TableCell className="px-4 py-3 whitespace-normal" title={titlesTr.get(lot.lotNumber) ? (lot.title ?? undefined) : undefined}>
-                    {titlesTr.get(lot.lotNumber) || lot.title || "Belirtilmemiş"}
+                  <TableCell className="px-4 pt-3.5 align-top font-mono text-xs whitespace-nowrap text-ink-600">{lotLabel(lot.lotNumber)}</TableCell>
+                  <TableCell className="px-4 py-3 align-top whitespace-normal" title={titlesTr.get(lot.lotNumber) ? (lot.title ?? undefined) : undefined}>
+                    <span className="font-medium">{titlesTr.get(lot.lotNumber) || lot.title || "Belirtilmemiş"}</span>
                     {description && (
-                      <details className="mt-1 text-xs">
-                        <summary className="cursor-pointer text-ink-500 hover:text-ink-900">Açıklama</summary>
-                        <FormattedText text={description} className="mt-1 text-ink-700" />
+                      <details className="group/lot mt-1.5">
+                        <summary className="inline-flex cursor-pointer list-none items-center gap-1 text-xs text-ink-500 select-none hover:text-ink-900 [&::-webkit-details-marker]:hidden">
+                          <ChevronRight aria-hidden className="size-3.5 transition-transform group-open/lot:rotate-90" />
+                          Açıklama
+                        </summary>
+                        <FormattedText text={description} numbered={numbered} className="mt-2 mb-1 max-w-[72ch] border-l-2 border-line pl-3 text-[13px] leading-relaxed text-ink-700" />
                       </details>
                     )}
                   </TableCell>
-                  <TableCell className="px-4 font-mono text-xs whitespace-normal text-ink-600">{lot.cpv.join(", ") || "Belirtilmemiş"}</TableCell>
-                  <TableCell className="px-4 text-right font-mono text-xs whitespace-nowrap">{formatMoney(lot.valueAmount, lot.valueCurrency)}</TableCell>
+                  <TableCell className="px-4 pt-3.5 align-top font-mono text-xs whitespace-normal text-ink-600">
+                    {lot.cpv.length ? (
+                      <span className="flex flex-col gap-1">
+                        {lot.cpv.map((cpv) => (
+                          <span key={cpv}>{cpv}</span>
+                        ))}
+                      </span>
+                    ) : (
+                      "Belirtilmemiş"
+                    )}
+                  </TableCell>
+                  <TableCell className="px-4 pt-3.5 align-top text-right font-mono text-xs whitespace-nowrap">{formatMoney(lot.valueAmount, lot.valueCurrency)}</TableCell>
                 </TableRow>
               );
             })}
