@@ -7,10 +7,11 @@ import { saveDecision, type DecisionState } from "./actions";
 
 // The header's two shortcuts to a decision (WATCH, NO_GO) in one bordered
 // group, through the decision form's own action: the current one shows
-// pressed, and pressing it again takes the decision back.
+// pressed in its decision's colour (DECISION_TONE), and pressing it again
+// takes the decision back.
 
 const SHORTCUTS: readonly { decision: Extract<ReviewDecision, "WATCH" | "NO_GO">; label: string; pressed: string; idle: string }[] = [
-  { decision: "WATCH", label: "İzlemeye al", pressed: "bg-ink-900 text-white", idle: "text-ink-900 hover:bg-canvas" },
+  { decision: "WATCH", label: "İzlemeye al", pressed: "bg-info-soft text-info", idle: "text-ink-900 hover:bg-canvas" },
   { decision: "NO_GO", label: "Ele", pressed: "bg-err-soft text-err", idle: "text-ink-600 hover:bg-err-soft hover:text-err" },
 ];
 

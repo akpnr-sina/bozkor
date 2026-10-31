@@ -152,13 +152,29 @@ export type ReviewDecision = (typeof reviewDecision.enumValues)[number];
 export const DECISION_LABELS: Record<ReviewDecision, string> = {
   GO: "GO: teklif verilecek",
   REVIEW: "REVIEW: incelenecek",
-  NO_GO: "NO_GO: teklif verilmeyecek",
+  NO_GO: "NO GO: teklif verilmeyecek",
   WATCH: "WATCH: izlenecek",
 };
 
 export const DECISION_SHORT: Record<ReviewDecision, string> = {
   GO: "GO",
   REVIEW: "REVIEW",
-  NO_GO: "NO_GO",
+  NO_GO: "NO GO",
   WATCH: "WATCH",
+};
+
+/** The decision in Turkish alone, where its code shows beside it. */
+export const DECISION_MEANINGS: Record<ReviewDecision, string> = {
+  GO: "Teklif verilecek",
+  REVIEW: "İncelenecek",
+  NO_GO: "Teklif verilmeyecek",
+  WATCH: "İzlenecek",
+};
+
+/** A decision's colour, as a badge variant: go green, review yellow, no-go red, watch blue. */
+export const DECISION_TONE: Record<ReviewDecision, "ok" | "warn" | "err" | "info"> = {
+  GO: "ok",
+  REVIEW: "warn",
+  NO_GO: "err",
+  WATCH: "info",
 };

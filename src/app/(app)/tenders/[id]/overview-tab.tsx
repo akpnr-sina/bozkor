@@ -2,10 +2,10 @@ import { DueChip } from "@/components/due-chip";
 import { EmptyState } from "@/components/empty-state";
 import { FormattedText } from "@/components/formatted-text";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { Lot, TenderReview } from "@/db/schema";
-import { DECISION_LABELS, formatDate, formatDateTime, formatMoney, lotLabel, type ReviewDecision } from "@/lib/format";
+import { DECISION_MEANINGS, DECISION_TONE, formatDate, formatDateTime, formatMoney, lotLabel, type ReviewDecision } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { DecisionForm } from "./decision-form";
 import { Mark } from "./fact-grid";
@@ -228,34 +228,47 @@ function MatchCard({ matches }: { matches: MatchRow[] }) {
   );
 }
 
+// The saved decision is the header's badge, so a choice made in the list but
+// not yet saved cannot pass for it; the history shows only once there is one.
 function DecisionCard({ tenderId, decision, reviews }: { tenderId: string; decision: ReviewDecision | null; reviews: TenderReview[] }) {
   return (
     <Card>
       <CardHeader>
         <CardTitle>Karar</CardTitle>
+        <CardAction>
+          <DecisionBadge decision={decision} empty="Verilmedi" />
+        </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-5">
-        <p className="text-sm font-medium text-ink-900">{decision ? DECISION_LABELS[decision] : <span className="font-normal text-ink-500">Karar verilmedi</span>}</p>
         <DecisionForm tenderId={tenderId} current={decision} />
-        <div className="flex flex-col gap-2 border-t border-line pt-4">
-          <span className="eyebrow">Karar geçmişi</span>
-          {reviews.length ? (
-            <ol className="flex flex-col gap-3 text-sm">
+        {reviews.length > 0 && (
+          <div className="flex flex-col gap-2.5 border-t border-line pt-4">
+            <span className="eyebrow">Karar geçmişi</span>
+            <ol className="flex flex-col divide-y divide-line">
               {reviews.map((review) => (
-                <li key={review.id} className="flex flex-col gap-0.5 border-l-2 border-line-strong pl-3">
-                  <span className="font-medium text-ink-900">{review.decision ? DECISION_LABELS[review.decision] : "Karar geri alındı"}</span>
-                  {review.note && <span className="whitespace-pre-line text-ink-700">{review.note}</span>}
-                  <span className="font-mono text-[11px] text-ink-500">
-                    {review.decidedBy} · {formatDateTime(review.decidedAt)}
-                  </span>
+                <li key={review.id} className="flex flex-col gap-1 py-2.5 first:pt-0 last:pb-0">
+                  <div className="flex items-center justify-between gap-3">
+                    <DecisionBadge decision={review.decision} empty="Karar geri alındı" />
+                    <span className="font-mono text-[11px] text-ink-500">{formatDateTime(review.decidedAt)}</span>
+                  </div>
+                  {review.note && <p className="text-[13px] leading-relaxed whitespace-pre-line text-ink-700">{review.note}</p>}
+                  <span className="text-xs text-ink-500">{review.decidedBy}</span>
                 </li>
               ))}
             </ol>
-          ) : (
-            <EmptyState>Henüz karar verilmedi.</EmptyState>
-          )}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
+  );
+}
+
+function DecisionBadge({ decision, empty }: { decision: ReviewDecision | null; empty: string }) {
+  return decision ? (
+    <Badge variant={DECISION_TONE[decision]} dot>
+      {DECISION_MEANINGS[decision]}
+    </Badge>
+  ) : (
+    <Badge dot>{empty}</Badge>
   );
 }
