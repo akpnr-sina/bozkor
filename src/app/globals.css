@@ -42,6 +42,11 @@
   --color-info-line: #c5d5e5;
   --color-info-ink: #24435f;
 
+  /* Charts: what matched in a calm teal, apart from the status colours; what was published, the
+     context, in a light warm grey. Big black or mid-grey blocks tire the eye. */
+  --color-chart: #4a7a82;
+  --color-chart-muted: #dfddd7;
+
   /* The dark menu. */
   --color-nav: #0c0c0b;
   --color-nav-top: #080807;
