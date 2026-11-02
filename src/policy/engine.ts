@@ -645,7 +645,7 @@ function assessLot(input: PolicyInput, lot: LotFacts, policy: Policy): LotAssess
       state: unknownCritical.length ? "FAIL" : "PASS",
       note: unknownCritical.length ? `İlandan anlaşılmayan: ${listTr(unknownCritical)}.` : "Kritik şartlar belli.",
     },
-    { id: "C02", state: "FAIL", note: "Doğrulanmış üretici yok (üretici veritabanı sonraki aşamada)." },
+    { id: "C02", state: "FAIL", note: "Doğrulanmış üretici yok; Üreticiler kartındaki adaylar firmayla teyit edilmedi." },
     {
       id: "C03",
       state: derived.localObligations.length ? (derived.partnerAvailable ? "PASS" : "FAIL") : obligationsUnknown ? "UNKNOWN" : "NOT_APPLICABLE",

@@ -141,6 +141,13 @@
       "when": 1792426397358,
       "tag": "0019_deep_requests",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793640782609,
+      "tag": "0020_manufacturers",
+      "breakpoints": true
     }
   ]
 }

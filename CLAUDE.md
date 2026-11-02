@@ -48,6 +48,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `src/sources/` kaynaktan bağımsız katman: `types.ts` (SourceAdapter, NormalizedNotice), `http.ts` (timeout, 429, backoff), `fold.ts` (bir prosedürün ilanlarını tek ihaleye birleştirir), `store.ts` (ham kayıt + upsert), `sync.ts` (artımlı senkron, backfill, sources tablosu)
 - `src/sources/uk-fat/`, `src/sources/eu-ted/` her kaynak için client + Zod şeması + normalizer + adapter
 - `src/matching/` kriterler ve eşleştirme: `rules.ts` (profil kuralları, Zod), `types.ts` (sözleşme), `engine.ts` + `text.ts` (saf motor, anahtar kelime araması), `apply.ts` (profile_matches'e yazma, canlı önizleme), `describe.ts` (Türkçe sebep metinleri)
+- `src/manufacturers/` üretici havuzu (Faz 8): `families.ts` (F01-F17 ürün aileleri ve CPV köprüsü), `types.ts` (içe aktarma, sayfalar ve eşleştirme sözleşmesi)
 - `src/fx/` ECB kurları: çekme, ayrıştırma, `toEur`, `syncEcbRates`; `src/sources/value-eur.ts` ihalelerin `value_eur` alanını doldurur
 - `src/documents/` indirme, açma, metne çevirme
 - `src/analysis/` triage, derin analiz, Zod şemaları, alıntı doğrulama
@@ -103,11 +104,11 @@ Kaynak: kullanıcının verdiği "BOZKOR Arayüz Tasarım Dili v2" (Claude Desig
 - Geometri: köşe en çok 2px; paneller ve tablolar köşeli. Gölge yerine 1px çizgi; gölge yalnız açılır katmanlarda (`shadow-overlay`). 45° pah (`chamfer`, `chamfer-all`) yalnız vurguda: sayfanın birincil eylemi, kullanıcı rozeti. Odak halkası 2px siyah, 2px boşluklu; koyu menüde beyaz.
 - Bileşenler: düğme 36px (`sm` 28px), ekranda tek birincil düğme, etiketler fiille başlar. Rozet 22px, durum rozetinde kare nokta (`dot`). Tablo satırı 52px, başlık satırı 36px. Panel `Card` (başlık satırı etiket); sayfa başı `PageHeader` (menü numarası "02 / 05", `pageIndex`); göstergeler `StatStrip`; sekmeler `TabNav` (sekme URL'de); uyarı `Notice`; boş durum `EmptyState`; kalan gün `DueChip`; skor çubuğu `Meter`; ilan ve lot açıklaması gibi uzun metin `FormattedText` (paragraf, kare madde imi, numaralı maddeler numara sütununda, listeden önceki kısa "...:" satırı başlık).
 - Kabuk: solda 248px koyu menü (Takip: Panel, Gelen kutusu; Yönetim: Profiller, Kaynaklar, Ayarlar; `src/lib/nav.ts`), altta kaynak sağlığı ve kullanıcı; üstte 60px çubuk (konum, son senkron, arama). Dar ekranda menü üst çubuktaki düğmede. Açılış sayfası Panel.
-- Ekranda yalnız gerçek veri: tasarımda olup bizde karşılığı olmayan öğeler (üretici eşleşmesi, teklif dosyası, raporlar) eklenmez.
+- Ekranda yalnız gerçek veri: tasarımda olup bizde karşılığı olmayan öğeler (teklif dosyası, raporlar) eklenmez.
 
 ## Mevcut durum
 
-Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor (API kredisi bekleniyor). Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Arayüz yenilemesi ve veri çıkışı düzeltmesi 27 Ekim'de tamam (`arayuz` dalı, `faz-6`'nın üstünde). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor (API kredisi 2 Kasım'da yüklendi; kalan 3 derin analiz ve kullanıcının örnek kontrolü bekleniyor). Faz 8 (üretici modülü) 2 Kasım'da `faz-8` dalında başladı; Faz 6 kabulü beklenirken başlaması kullanıcı kararı, çünkü 8.1 ve 8.2 LLM kullanmıyor (plan SPEC 10). Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Arayüz yenilemesi ve veri çıkışı düzeltmesi 27 Ekim'de tamam (`arayuz` dalı, `faz-6`'nın üstünde). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
 
 Arayüz yenilemesi ve veri çıkışı (27 Ekim 2026, `arayuz` dalı):
 - Kullanıcının "BOZKOR Arayüz Tasarım Dili v2"si (bkz. Arayüz): koyu menü ve üst çubuk, Panel sayfası, gelen kutusunda sağ özet paneli ve arama, Ayarlar ikiye bölündü (Kaynaklar, Ayarlar). Profil formunda resmi CPV 2008 listesinden (9.454 kod, AB Yayın Ofisi SPARQL) arama ve kod ağacı; mal kodlarının adları Türkçe (çeviri, resmi İngilizce ad yanında); okumalar route handler'larda (sunucu eylemleri sıraya girdiği için arama önizlemenin arkasında bekliyordu). İhale sayfasında değerlendirme özeti sağda, olgular solda kutu ızgarasında; kararı belirleyen olgu kırmızı, bilinmeyen sarı.

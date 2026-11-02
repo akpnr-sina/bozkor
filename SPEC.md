@@ -537,16 +537,45 @@ Kullanıcı kararı (20 Ekim 2026): bu faz yapılmayacak. Aşağıdaki tanım ka
 - Her sabah 08:00 (İstanbul): yeni eşleşmeler (skora göre), son tarihine 7 gün kalan GO ve REVIEW ihaleler (eşleşmeden bağımsız, `tender_reviews`'taki son karara göre), "değişti" etiketli ihaleler.
 - Profilde `notify` kapalıysa o profilin eşleşmeleri gönderilmez.
 
-## 10. Sonraki aşama: üretici modülü (Faz 8)
+## 10. Üretici modülü (Faz 8)
 
 Kısıt (17 Ekim 2026 kullanım şartları incelemesi): evergabe-online, Vergabemarktplatz NRW, DTVP ve Deutsche eVergabe ihale dokümanlarının üçüncü kişilere verilmesini yasaklıyor. Üreticilere dokümanın kendisi değil, analiz ve özet iletilir ya da üretici dokümanı portaldan kendisi indirir. Bu bir hukuk değerlendirmesi değildir.
 
-Bu sürümde inşa edilmez; şema ve kategori taksonomisi buna hazır kurulur.
+Kararlar (2 Kasım 2026, kullanıcı onayı; plan 63 ve 03'ün incelemesiyle):
+- Faz 6 kabulü beklenirken başlar; 8.1 ve 8.2 LLM kullanmaz.
+- İlk veri, ekibin platform dışında hazırladığı havuzun 2.3 sürümü (252 firma, 48 sütun, 7.220 satırlık alan kaynakları). Havuz dosyaları depoya girmez, yalnız veritabanına yüklenir; testler küçük örnek kullanır (kural 8).
+- İlk sürümde üretici kayıtları salt okunur; yeni havuz sürümüyle güncellenir.
+- Yalnız firma düzeyinde iletişim (KVKK). Kişi adı, kişisel e-posta, cep telefonu, şahıs işletmesinde kişiyi gösteren kimlik ya da bağlantı tutulmaz.
+- Taksonomi: havuz ve olgular 16 politika kategorisini (src/policy/categories.ts) kullanır; profil kategorileri tablosu (`categories`) kullanılmaz. Ürün türünü havuzdaki 17 ürün ailesi (F01-F17) taşır; ailelere CPV'den elle tutulan bir köprüyle (src/manufacturers/families.ts) ulaşılır.
 
-- Tablolar: `manufacturers` (unvan, şehir, iletişim, üretici / distribütör), `manufacturer_categories` (`categories` ile ilişki), `manufacturer_capabilities` (serbest metin, üretim yöntemleri, malzemeler), `manufacturer_certifications` (ad, standart, geçerlilik bitişi, belge), `manufacturer_documents` (katalog, test raporu), operasyonel alanlar (MOQ, standart termin, ihracat deneyimi, hedef ülkeler)
-- CSV içe aktarma ve form
-- Eşleştirme: derin analizi yapılmış ihalenin `items` listesi için önce kategori ve zorunlu sertifika filtresi, sonra kalan kısa liste için LLM sıralaması. Çıktı: ihale başına en fazla 3 üretici, gerekçe ve eksik listesi (örnek: "EN ISO 20471 sertifikası yok").
-- Üretici sayısı birkaç yüzü geçerse embedding tabanlı ön eleme eklenir.
+Tablolar (migration 0020): `manufacturers` (BZ kimliği, kimlik, il ve il dayanağı, kategori, aile, ürün, malzeme ve standart dizileri, ölçü aralığı, belgeler, AQAP, AS9100, NCAGE, ihracat, araştırmacı notu, firma düzeyi iletişim, üretim kanıtı, havuz sürümü, aktif), `manufacturer_certifications`, `manufacturer_sources` (alan bazında kaynak; kural 5), `manufacturer_imports`. Havuzdaki "İhale uygunluğu" puan değil, not olarak tutulur. Katalog ve test raporu dosyaları ile kişi bazlı iletişim şimdilik yok.
+
+### 8.1 İçe aktarma ve Üreticiler sayfası
+- `pnpm manufacturers`: havuz JSONL'i ve alan kaynakları CSV'si Zod ile doğrulanır, paketteki SHA256SUMS'a karşı denetlenir, BZ kimliğiyle tek işlemde idempotent yazılır. Aynı sürüm ve özet ikinci kez gelirse "değişiklik yok" der. Yeni sürümde olmayan firma silinmez, pasif olur. Boş metin ile null birleştirilir, ülkeler ISO alpha-2'ye çevrilir.
+- KVKK bekçisi: ücretsiz posta alan adı, cep numarası, TCKN sağlamasından geçen sayı, kişi profili bağlantısı ya da şahıs işletmesinde VKN/MERSİS olan satır yüklenmez; rapor kimliği ve alan adını yazar, değeri asla yazmaz. Rol ya da firma adı olmayan e-posta yerel kısmı ve şahıs işletmelerinin bağlantıları incelemeye listelenir.
+- `/manufacturers` (menüde): arama ve filtreler (kategori, ürün ailesi, il, belge, ihracat, iletişim durumu); satırda unvan, alanlar, ürünler, il, belgeler. `/manufacturers/[id]`: kimlik, üretim, belgeler, savunma ve ihracat, iletişim, üretim kanıtı ve her alanın kaynağı.
+
+### 8.2 Kural tabanlı eşleştirme
+İhale sayfasında Genel bakış'ta "Üreticiler" kartı ve "Uygun üreticileri bul" düğmesi. Okuma `GET /api/tenders/[id]/manufacturers` (sayfa yenilenmez). Üretici izdüşümü web sürecinin belleğinde durur; her istekte son `manufacturer_imports` kimliği okunur, değiştiyse yeniden yüklenir. Hesap saf fonksiyondur (`src/manufacturers/match.ts`), sonuç tabloya yazılmaz.
+- Yalnız hizmet ve yapım lotları dışarıda kalır (ilanın sözleşme türü ya da olgudaki objectType); bilinmeyen ve karışık lotlar etiketle dahildir.
+- Lotun ürünü sırasıyla olgulardaki productTr, lotun Türkçe çevirisi, CPV'nin Türkçe adı ve orijinal metinden okunur. Durma listesi, nadirlik ağırlığı ve küçük bir eşanlam tablosu kullanılır.
+- Aday olmak için ürün düzeyinde eşleşme şarttır: lotun ürünü ya da eşanlamı üreticinin ürünlerinde ya da malzemelerinde geçmeli. Aile ve kategori tek başına aday yapmaz; aile uyumu sıralamada en güçlü artıdır. Lotun ailesi lot CPV'sinden (yoksa ihalenin CPV'lerinden) gelir; bütün öneklerden geniş bir kod aile vermez.
+- Güç ve ölçü (ör. 12,5 kVA) üreticinin aralığıyla karşılaştırılır; artı ya da eksik yazılır, eleme yapılmaz. kW ile kVA arasında 0,8 güç katsayısı varsayım olarak işaretlenir.
+- Belge: yalnız PRODUCT ve MANUFACTURER seviyesindeki, alıntısı doğrulanmış şartlar karşılaştırılır; BIDDER şartı karşılaştırılmaz (politika VIII: üretici niteliği istekliye aktarılmaz). Havuzda olmayan belge "bilinmiyor" yazılır, eleme yapılmaz. AQAP da aynı kuralla.
+- Sıra deterministik ve testlidir: araştırmacı notu "Düşük" olanlar ve iletişim durumu "Uygun değil" olanlar (uyarıyla) sona; sonra aile uyumu, ürün eşleşmesi puanı (nadirlik ağırlıklı), güç uyumu, belge, kategori, kanıt ve iletişim; eşitlikte unvan ve kimlik.
+- Çıktı: lot başına ilk 3 ve en çok 10 aday; her adayda gerekçeler, eksikler, uyarılar ve üretici sayfası bağlantısı. Hepsi "aday"dır: üretim kapasitesi firmayla teyit edilmeden kesin sayılmaz. Havuzda karşılık yoksa "havuzda bu ürün için üretici yok".
+- Olgusu olmayan ihalede eşleştirme yine çalışır, "olgu yok: kategori ve belge kontrolü yapılmadı" etiketiyle.
+- Politika kapısı C02 insanın teyit ettiği üretici gelene kadar FAIL kalır; yalnız notu değişir.
+
+### 8.3 LLM sıralaması (kredi ister)
+Elle tetik, lot başına ilk ~8 aday. LLM yalnız alıntılı kanıt çıkarır (ihale olguları ve dokümanları, üretici kaydı ve kanıt alıntısı); politika VIII'deki 100 puanlık üretici skorunu kod aralık olarak hesaplar; ilk 3 gerekçe ve eksik listesiyle. `analyses` tablosunda yeni tür, maliyet kaydı, bütçe kapısı, Zod ve bir tekrar (kurallar 4-7).
+
+### 8.4 Sonra
+Kısa liste ve teklif isteme takibi (append-only insan kararı) ve C02'nin buna bağlanması, havuz güncellemesi farkı, arayüzden düzenleme, üreticiye analiz iletimi, aydınlatma (armatür) üreticileri için yeni havuz turu.
+
+### Kabul
+- 8.1: v2.3 iki kez yüklenince 252 kayıt, kopya yok; her alanın kaynağı sayfada görünür; KVKK bekçisi temiz; testler örnek veriyle.
+- 8.2: her kural için olumlu ve olumsuz birim testi; 15 gerçek ihalede (iş kıyafeti ve KKD 10, jeneratör 3, prefabrik 2) kullanıcı ilk 3'ü kontrol eder; hizmet ve yapım lotları dışarıda; LLM maliyeti sıfır.
 
 ## 11. Varsayımlar (değiştirilebilir)
 

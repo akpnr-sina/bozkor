@@ -431,6 +431,153 @@ export const fxRates = pgTable(
   (t) => [primaryKey({ columns: [t.date, t.currency] })],
 ).enableRLS();
 
+// Faz 8 (SPEC 10): Turkish manufacturers from the pool files the team builds outside the platform.
+// `pnpm manufacturers` imports a pool version; the app only reads these tables. Values keep the pool's
+// meaning; the closed lists are stored as codes and shown with Turkish labels.
+
+export const manufacturerKind = pgEnum("manufacturer_kind", ["producer", "producer_trader"]);
+export const addressKind = pgEnum("address_kind", ["factory", "head_office", "branch", "unknown"]);
+/** What the province rests on: a verified factory address, the firm's own statement, a directory entry, or nothing. */
+export const provinceBasis = pgEnum("province_basis", ["factory", "company", "directory", "unknown"]);
+export const triState = pgEnum("tri_state", ["yes", "no", "unknown"]);
+export const aqapLevel = pgEnum("aqap_level", ["2110", "2120", "none", "unknown"]);
+/** The pool's "İhale uygunluğu": a researcher's note, never a score (the pool has no "Yüksek"). */
+export const fitLevel = pgEnum("fit_level", ["medium", "low"]);
+/** BOZKOR's contact with the firm, not whether the firm publishes contacts. */
+export const contactState = pgEnum("contact_state", ["not_contacted", "info_requested", "awaiting_reply", "confirmed", "unsuitable"]);
+export const certificationKind = pgEnum("certification_kind", ["management", "product", "defense", "other"]);
+
+export const manufacturerImports = pgTable("manufacturer_imports", {
+  id: integer("id").primaryKey().generatedAlwaysAsIdentity(),
+  /** Pool version as the package names it, e.g. "2.3". */
+  version: text("version").notNull(),
+  poolSha256: text("pool_sha256").notNull(),
+  sourcesSha256: text("sources_sha256").notNull(),
+  manufacturers: integer("manufacturers").notNull(),
+  sources: integer("sources").notNull(),
+  inserted: integer("inserted").notNull(),
+  updated: integer("updated").notNull(),
+  deactivated: integer("deactivated").notNull(),
+  createdAt: createdAt(),
+}).enableRLS();
+
+export const manufacturers = pgTable(
+  "manufacturers",
+  {
+    /** The pool's Firma ID: "BZ-" and 12 upper-case hex digits; stable across versions. */
+    id: text("id").primaryKey(),
+    legalName: text("legal_name").notNull(),
+    branchName: text("branch_name"),
+    /** Null when the pool does not say. A sole proprietor's name, TCKN, VKN and MERSİS are never stored. */
+    soleProprietor: boolean("sole_proprietor"),
+    vkn: text("vkn"),
+    mersis: text("mersis"),
+    identityUrl: text("identity_url"),
+    province: text("province"),
+    district: text("district"),
+    address: text("address"),
+    addressKind: addressKind("address_kind").notNull().default("unknown"),
+    provinceBasis: provinceBasis("province_basis").notNull().default("unknown"),
+    osbZones: text("osb_zones").array().notNull().default(emptyTextArray),
+    kind: manufacturerKind("kind").notNull(),
+    /** Policy category codes (src/policy/categories.ts). */
+    categories: text("categories").array().notNull().default(emptyTextArray),
+    /** Product family codes F01-F17 (src/manufacturers/families.ts). */
+    families: text("families").array().notNull().default(emptyTextArray),
+    products: text("products").array().notNull().default(emptyTextArray),
+    materials: text("materials").array().notNull().default(emptyTextArray),
+    standards: text("standards").array().notNull().default(emptyTextArray),
+    /** "Ölçü ya da güç aralığı" as written, e.g. "Dizel setler: 18-1100 kVA". */
+    sizeRange: text("size_range"),
+    productionMethod: text("production_method"),
+    /** "Sertifikalar" as written; the parsed list is manufacturer_certifications. */
+    certificationsText: text("certifications_text"),
+    certificationsUrl: text("certifications_url"),
+    aqap: aqapLevel("aqap").notNull().default("unknown"),
+    as9100: triState("as9100").notNull().default("unknown"),
+    ncage: text("ncage"),
+    ncageUrl: text("ncage_url"),
+    defenseExperience: text("defense_experience"),
+    defenseUrl: text("defense_url"),
+    facilitySecurity: triState("facility_security").notNull().default("unknown"),
+    exports: triState("exports").notNull().default("unknown"),
+    /** ISO 3166 alpha-2. */
+    exportCountries: text("export_countries").array().notNull().default(emptyTextArray),
+    exportUrl: text("export_url"),
+    fitLevel: fitLevel("fit_level"),
+    fitNote: text("fit_note"),
+    /** Firm-level mailboxes and lines only (KVKK). */
+    emails: text("emails").array().notNull().default(emptyTextArray),
+    phones: text("phones").array().notNull().default(emptyTextArray),
+    website: text("website"),
+    evidenceKind: text("evidence_kind"),
+    evidenceUrl: text("evidence_url"),
+    evidenceLocation: text("evidence_location"),
+    /** Verbatim production quote from the evidence page, at most 25 words. */
+    evidenceQuote: text("evidence_quote"),
+    identityMatch: text("identity_match"),
+    firstSources: text("first_sources"),
+    contactState: contactState("contact_state").notNull().default("not_contacted"),
+    moq: text("moq"),
+    leadTimeDays: integer("lead_time_days"),
+    notes: text("notes"),
+    checkedOn: date("checked_on", { mode: "string" }),
+    poolVersion: text("pool_version").notNull(),
+    importId: integer("import_id")
+      .notNull()
+      .references(() => manufacturerImports.id),
+    /** False when a later pool version no longer has the firm; rows are never deleted. */
+    active: boolean("active").notNull().default(true),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check("manufacturers_id_format", sql`${t.id} ~ '^BZ-[0-9A-F]{12}$'`),
+    check("manufacturers_vkn_format", sql`${t.vkn} is null or ${t.vkn} ~ '^[0-9]{10}$'`),
+    check("manufacturers_mersis_format", sql`${t.mersis} is null or ${t.mersis} ~ '^0[0-9]{15}$'`),
+    check("manufacturers_sole_proprietor_ids", sql`${t.soleProprietor} is not true or (${t.vkn} is null and ${t.mersis} is null)`),
+  ],
+).enableRLS();
+
+/** One row per certificate parsed from the pool's "Sertifikalar", with the firm-level source the pool gives. */
+export const manufacturerCertifications = pgTable(
+  "manufacturer_certifications",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    manufacturerId: text("manufacturer_id")
+      .notNull()
+      .references(() => manufacturers.id, { onDelete: "cascade" }),
+    /** As written, e.g. "ISO 9001", "AQAP 2110", "EN ISO 20471". */
+    name: text("name").notNull(),
+    kind: certificationKind("kind").notNull(),
+    validUntil: date("valid_until", { mode: "string" }),
+    /** What the pool says about validity or scope when there is no date, e.g. "bitiş tarihi bilinmiyor". */
+    note: text("note"),
+    sourceUrl: text("source_url"),
+  },
+  (t) => [uniqueIndex("manufacturer_certifications_name_idx").on(t.manufacturerId, t.name)],
+).enableRLS();
+
+/** The pool's field-level sources (rule 5): where each value came from and how it was verified. */
+export const manufacturerSources = pgTable(
+  "manufacturer_sources",
+  {
+    manufacturerId: text("manufacturer_id")
+      .notNull()
+      .references(() => manufacturers.id, { onDelete: "cascade" }),
+    /** The pool column name, e.g. "Genel telefon". */
+    field: text("field").notNull(),
+    value: text("value"),
+    sourceUrl: text("source_url"),
+    /** The pool's "Doğrulama türü", e.g. "firma beyanı", "kurum sorgusu". */
+    verification: text("verification").notNull(),
+    note: text("note"),
+    previousSources: text("previous_sources"),
+    checkedOn: date("checked_on", { mode: "string" }),
+  },
+  (t) => [primaryKey({ columns: [t.manufacturerId, t.field] })],
+).enableRLS();
+
 export type Source = typeof sources.$inferSelect;
 export type RawNotice = typeof rawNotices.$inferSelect;
 export type Tender = typeof tenders.$inferSelect;
@@ -444,3 +591,8 @@ export type Analysis = typeof analyses.$inferSelect;
 export type TenderReview = typeof tenderReviews.$inferSelect;
 export type FxRate = typeof fxRates.$inferSelect;
 export type TenderAssessmentRow = typeof tenderAssessments.$inferSelect;
+export type Manufacturer = typeof manufacturers.$inferSelect;
+export type NewManufacturer = typeof manufacturers.$inferInsert;
+export type ManufacturerCertification = typeof manufacturerCertifications.$inferSelect;
+export type ManufacturerSource = typeof manufacturerSources.$inferSelect;
+export type ManufacturerImport = typeof manufacturerImports.$inferSelect;
