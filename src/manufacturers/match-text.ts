@@ -174,47 +174,83 @@ const ITEM_SPLIT = /[,;/+&\n]|\s(?:ve|ile|veya|and|or)\s/iu;
 /** A lone describing word ("Benzinli ve dizel jeneratörler") belongs to the next item's head. */
 const DESCRIBING = /(?:li|lu|siz|suz|sel|sal)$/;
 
+/** The words of a text as the matcher reads them: stop words, collectives, numbers and one-letter tokens left out. */
+function wordsOf(text: string): PhraseWord[] {
+  const words: PhraseWord[] = [];
+  for (const word of text.split(/[^\p{L}\p{N}]+/u)) {
+    if (word.length < 2 || /\d/.test(word)) continue;
+    const s = stem(fold(word));
+    const canon = canonical(s);
+    if (canon.length < 2 || STOP.has(canon) || TRANSPARENT.has(canon)) continue;
+    words.push({ stem: s, canon, word });
+  }
+  return words;
+}
+
+/** One word, or describing words only: what a parenthesis says of the item it follows ("(deri)", "(motorlu)"). */
+const qualifies = (words: readonly PhraseWord[]) => words.length === 1 || words.every((w) => WEAK.has(w.canon) || DESCRIBING.test(fold(w.word)));
+
 /**
  * The items of a product phrase: "rechapé ve yeni kamyon lastiği" as "rechapé" and "yeni kamyon lastiği".
- * What is in parentheses is read after the rest, as items of its own: "itfaiye çıkış kıyafeti (ceket ve
- * pantolon)" as "itfaiye çıkış kıyafeti", "ceket" and "pantolon", so the main item keeps its head; a lone
- * describing word there ("kurtarma botu (motorlu)") goes to the item before it.
+ * A parenthesis of one word, or of describing words only, qualifies the item it follows ("kurtarma botu
+ * (motorlu) ve can yeleği", "iş eldiveni (deri)"); any other is read after the rest as items of its own
+ * ("itfaiye çıkış kıyafeti (ceket ve pantolon)" as "itfaiye çıkış kıyafeti", "ceket" and "pantolon"), so
+ * the main item keeps its head.
  */
 export function phrases(text: string): Phrase[] {
-  const inner: string[] = [];
-  const outer = text.replace(/\(([^()]*)\)/g, (_, group: string) => {
-    inner.push(group);
-    return " ";
-  });
+  const groups: { text: string; before: string }[] = [];
+  let outer = "";
+  let from = 0;
+  for (const m of text.matchAll(/\(([^()]*)\)/g)) {
+    outer += `${text.slice(from, m.index)} `;
+    groups.push({ text: m[1]!, before: outer });
+    from = m.index + m[0].length;
+  }
+  outer += text.slice(from);
   const out: Phrase[] = [];
-  for (const part of [outer, ...inner]) readItems(part, out);
+  let pending = readItems(outer, out, []);
+  // Describing words left at the end go to the last item; with no item yet ("dizel (jeneratör)"), to the next.
+  if (pending.length && out.length) {
+    out.at(-1)!.modifiers.push(...pending);
+    pending = [];
+  }
+  for (const group of groups) {
+    const words = wordsOf(group.text);
+    if (!words.length) continue;
+    const item = qualifies(words) ? out[itemAt(group.before)] : undefined;
+    if (item) item.modifiers.push(...words);
+    else pending = readItems(group.text, out, pending);
+  }
+  if (pending.length && out.length) out.at(-1)!.modifiers.push(...pending);
   return out;
 }
 
-/** Adds the items of a text to out; describing words left at its end go to the last item so far. */
-function readItems(text: string, out: Phrase[]): void {
-  let pending: PhraseWord[] = [];
+/** Which item a parenthesis follows, from the text before it: the item it closes, or the next when none is open. */
+function itemAt(before: string): number {
+  const count = (text: string) => {
+    const items: Phrase[] = [];
+    readItems(text, items, []);
+    return items.length;
+  };
+  return count(before) - (count(before.split(ITEM_SPLIT).at(-1) ?? "") > 0 ? 1 : 0);
+}
+
+/** Adds the items of a text to out and gives back the describing words no item has taken yet. */
+function readItems(text: string, out: Phrase[], pending: readonly PhraseWord[]): PhraseWord[] {
+  let waiting = [...pending];
   for (const item of text.split(ITEM_SPLIT)) {
-    const words: PhraseWord[] = [];
-    for (const word of item.split(/[^\p{L}\p{N}]+/u)) {
-      if (word.length < 2 || /\d/.test(word)) continue;
-      const folded = fold(word);
-      const s = stem(folded);
-      const canon = canonical(s);
-      if (canon.length < 2 || STOP.has(canon) || TRANSPARENT.has(canon)) continue;
-      words.push({ stem: s, canon, word });
-    }
+    const words = wordsOf(item);
     if (!words.length) continue;
     const describing = words.every((w) => WEAK.has(w.canon)) || (words.length === 1 && DESCRIBING.test(fold(words[0]!.word)));
     if (describing) {
-      pending.push(...words);
+      waiting.push(...words);
       continue;
     }
     const head = words.at(-1)!;
-    out.push({ text: item.trim(), head, modifiers: [...pending, ...words.slice(0, -1)], generic: GENERIC.has(head.canon) });
-    pending = [];
+    out.push({ text: item.trim(), head, modifiers: [...waiting, ...words.slice(0, -1)], generic: GENERIC.has(head.canon) });
+    waiting = [];
   }
-  if (pending.length && out.length) out.at(-1)!.modifiers.push(...pending);
+  return waiting;
 }
 
 /** How many of the pool's manufacturers use each term, for the rarity weight. */

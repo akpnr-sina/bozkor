@@ -124,6 +124,23 @@ describe("loadMatchInput", () => {
     });
   });
 
+  it("keeps a lot of several without codes of its own empty, and gives a lone lot the tender's codes", async () => {
+    const id = await insertTender(t.db, { contractNature: "goods", cpvMain: "35112000", cpvAdditional: ["35113400", "44211000"], title: "Rescue equipment" });
+    await t.db.insert(lots).values([
+      { tenderId: id, lotNumber: "LOT-0001", title: "Decontamination", cpv: ["35112000"] },
+      { tenderId: id, lotNumber: "LOT-0002", title: "Boats", cpv: [] },
+    ]);
+    const several = await loadMatchInput(t.db, id);
+    expect(several!.tenderCpv).toEqual(["35112000", "35113400", "44211000"]);
+    expect(several!.lots.map((l) => [l.lotNumber, l.cpv, l.cpvNamesTr.length])).toEqual([
+      ["LOT-0001", ["35112000"], 1],
+      ["LOT-0002", [], 0],
+    ]);
+    const alone = await insertTender(t.db, { contractNature: "goods", cpvMain: "35113400", cpvAdditional: [], title: "Protective clothing" });
+    await t.db.insert(lots).values([{ tenderId: alone, lotNumber: "LOT-0001", title: "Suits", cpv: [] }]);
+    expect((await loadMatchInput(t.db, alone))!.lots[0]!.cpv).toEqual(["35113400"]);
+  });
+
   it("is null for a tender that does not exist", async () => {
     expect(await loadMatchInput(t.db, "00000000-0000-4000-8000-000000000000")).toBeNull();
   });

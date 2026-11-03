@@ -98,13 +98,34 @@ describe("phrases", () => {
     expect(isGeneric(phrases("çocuk oyun alanı ekipmanı")[0]!.head.canon)).toBe(true);
   });
 
-  it("reads what is in parentheses as items of its own, so the main item keeps its head", () => {
+  it("reads a parenthesis of several words as items of its own, so the main item keeps its head", () => {
     expect(heads("itfaiye çıkış kıyafeti (ceket ve pantolon)")).toEqual([
       ["itfaiye çıkış kıyafeti", "kıyafeti", ["itfaiye", "çıkış"]],
       ["ceket", "ceket", []],
       ["pantolon", "pantolon", []],
     ]);
+    expect(heads("bot (şişme kurtarma botu), can yeleği").map(([text]) => text)).toEqual(["bot", "can yeleği", "şişme kurtarma botu"]);
+  });
+
+  it("gives a parenthesis of one word or of describing words to the item it follows", () => {
     expect(heads("şişme kurtarma botu (motorlu)")).toEqual([["şişme kurtarma botu", "botu", ["şişme", "kurtarma", "motorlu"]]]);
+    expect(heads("kurtarma botu (motorlu) ve can yeleği")).toEqual([
+      ["kurtarma botu", "botu", ["kurtarma", "motorlu"]],
+      ["can yeleği", "yeleği", ["can"]],
+    ]);
+    // The clothing in general keeps nothing more specific beside its head.
+    expect(heads("mont (kapüşonlu) ve iş kıyafeti")).toEqual([
+      ["mont", "mont", ["kapüşonlu"]],
+      ["iş kıyafeti", "kıyafeti", []],
+    ]);
+    expect(heads("iş eldiveni (deri)")).toEqual([["iş eldiveni", "eldiveni", ["deri"]]]);
+    expect(heads("(motorlu) bot, (yüksek görünürlüklü) yelek")).toEqual([
+      ["bot", "bot", ["motorlu"]],
+      ["yelek", "yelek", ["yüksek", "görünürlüklü"]],
+    ]);
+    // With no item before it, the parenthesis is the item.
+    expect(heads("dizel (jeneratör)")).toEqual([["jeneratör", "jeneratör", ["dizel"]]]);
+    expect(heads("iş güvenliği ayakkabısı (S3)")).toEqual([["iş güvenliği ayakkabısı", "ayakkabısı", ["güvenliği"]]]);
   });
 
   it("gives a lone describing word to the next item's head", () => {

@@ -26,7 +26,7 @@ const OTHERS = 7;
 export const NO_FACTS_NOTE = "Olgu yok: kategori ve belge kontrolü yapılmadı.";
 export const NO_FAMILY_NOTE = "Olgularda ürün adı yok ve CPV kodundan ürün ailesi çıkmadı; ilan metniyle eşleştirme yapılmadı.";
 export const TENDER_FAMILY_NOTE = "Aile ihalenin CPV'sinden: lotun kendi kodu aile vermiyor.";
-export const TENDER_FAMILIES_NOTE = "İhalenin CPV kodları birden çok ürün ailesine düşüyor; lotun kendi kodu aile vermediği için lot ailesiz sayıldı.";
+export const TENDER_FAMILIES_NOTE = "Lotun kodu ürün ailesi vermiyor ve ihalenin kodları farklı ailelere düşüyor; adayda baş isim ve nadir bir kelime birlikte aranır.";
 export const NO_FAMILY_GATE_NOTE = "CPV kodundan ürün ailesi çıkmadı; adayda baş isim ve nadir bir kelime birlikte aranır.";
 
 /**
@@ -161,16 +161,36 @@ function requirements(lot: LotForMatch): Requirement[] {
 
 const join = (items: readonly string[]) => items.join(", ");
 
+/** Where the lot's families came from: its own codes, the tender's agreeing codes, or nowhere (the tender's codes differ, or name none). */
+type FamilySource = "lot" | "tender" | "tender_differs" | "none";
+
+/**
+ * The families of a lot without one of its own, from the tender's codes when they agree: every code that
+ * names a family names the same ones ("35113400" names F13 and F14 by design). Codes pointing at different
+ * families ("bot" for rescue boats beside protective clothing) say nothing about which one the lot is.
+ */
+function tenderFamilies(codes: readonly string[]): { families: FamilyCode[]; differ: boolean } {
+  let agreed: FamilyCode[] | null = null;
+  for (const code of codes) {
+    const families = familiesOfCpvs([code]);
+    if (!families.length) continue;
+    if (agreed && agreed.join() !== families.join()) return { families: [], differ: true };
+    agreed = families;
+  }
+  return { families: agreed ?? [], differ: false };
+}
+
 /** What the page says of the lot before any candidate: no facts, a mixed lot, the sizes read, what was left out. */
-function lotNotes(lot: LotForMatch, hasFacts: boolean, families: readonly FamilyCode[], fromTender: boolean, items: readonly LotItem[], sizes: readonly LotSize[]): string[] {
+function lotNotes(lot: LotForMatch, hasFacts: boolean, familySource: FamilySource, items: readonly LotItem[], sizes: readonly LotSize[]): string[] {
   const notes: string[] = [];
   if (!hasFacts) notes.push(NO_FACTS_NOTE);
   if (lot.objectType === "MIXED") notes.push("Karışık lot: mal ve bağlı hizmet; mal kısmı eşleştirildi.");
   if (hasFacts && (lot.objectType === "UNKNOWN" || lot.objectType === null)) notes.push("Alım türü olgulardan anlaşılmadı; mal sayıldı.");
   const searched = [...new Set(items.map((item) => item.text))];
   if (searched.length) notes.push(`Aranan: ${searched.slice(0, 6).join("; ")}`);
-  if (!families.length) notes.push(NO_FAMILY_GATE_NOTE);
-  else if (fromTender) notes.push(TENDER_FAMILY_NOTE);
+  // One note on the family: without the facts' product name and a family nothing is read at all.
+  if (familySource === "tender") notes.push(TENDER_FAMILY_NOTE);
+  else if (familySource !== "lot") notes.push(!lot.productTr?.trim() ? NO_FAMILY_NOTE : familySource === "tender_differs" ? TENDER_FAMILIES_NOTE : NO_FAMILY_GATE_NOTE);
   if (sizes.some((s) => s.fromKw)) {
     notes.push(`Güç kW'tan kVA'ya ${POWER_FACTOR.toLocaleString("tr-TR")} güç katsayısıyla çevrildi (varsayım).`);
   }
@@ -395,13 +415,12 @@ function notGoods(lot: LotForMatch): string | null {
 }
 
 function matchLot(lot: LotForMatch, hasFacts: boolean, tenderCpv: readonly string[], pool: PreparedPool): LotMatch {
-  // A lot's own codes first; when they name no family (a broad "31000000"), the tender's codes, but only
-  // when they name a single family: a tender spanning several ("bot" for rescue boats beside protective
-  // clothing) says nothing about which one the lot is.
+  // A lot's own codes first; when they name no family (a broad "31000000", or none at all), the tender's
+  // codes when they agree.
   const own = familiesOfCpvs(lot.cpv);
-  const ofTender = own.length ? [] : familiesOfCpvs(tenderCpv);
-  const fromTender = ofTender.length === 1;
-  const families = own.length ? own : fromTender ? ofTender : [];
+  const tender = own.length ? null : tenderFamilies(tenderCpv);
+  const families = own.length ? own : tender!.families;
+  const familySource: FamilySource = own.length ? "lot" : families.length ? "tender" : tender!.differ ? "tender_differs" : "none";
   const excluded = notGoods(lot);
   if (excluded) return { lotNumber: lot.lotNumber, status: "not_goods", families, top: [], others: [], notes: [excluded] };
   // Only the facts give a category; a lot without them is not held to it.
@@ -427,9 +446,7 @@ function matchLot(lot: LotForMatch, hasFacts: boolean, tenderCpv: readonly strin
       if (found.length) break;
     }
   }
-  const notes = lotNotes(lot, hasFacts, families, fromTender, items, sizes);
-  if (ofTender.length > 1) notes.push(TENDER_FAMILIES_NOTE);
-  if (!fromFacts && !families.length) notes.push(NO_FAMILY_NOTE);
+  const notes = lotNotes(lot, hasFacts, familySource, items, sizes);
   const scored = found
     .sort(compareScored)
     .slice(0, TOP + OTHERS)

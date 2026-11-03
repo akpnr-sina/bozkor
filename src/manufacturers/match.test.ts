@@ -247,7 +247,7 @@ describe("the head noun decides", () => {
     expect(one(lot({ productTr: "araç ve bisiklet aksesuarı ile yedek parça", cpv: ["34913000"] }), parts).status).toBe("no_pool_match");
   });
 
-  it("meets every clothing maker of the family for clothing in general, below a product, and asks more for a kind of clothing", () => {
+  it("meets the family's items named clothing for clothing in general, below a product, and asks more for a kind of clothing", () => {
     const pool = [
       firm("COOK", { legalName: "A Tekstil", families: ["F13"], products: ["Aşçı kıyafetleri", "İş kıyafetleri"] }),
       firm("HIVIS", { legalName: "B Tekstil", families: ["F13"], products: ["Yüksek görünürlüklü giysiler"] }),
@@ -323,12 +323,29 @@ describe("the family from the tender's codes", () => {
     expect(second!.notes).toContain(TENDER_FAMILY_NOTE);
   });
 
-  it("leaves the lot without a family when the tender's codes name several, and says so", () => {
-    // 082472d9: rescue boats beside protective clothing; the tender's codes do not say which a lot is.
+  it("leaves the lot without a family when the tender's codes point at different ones, and says so once", () => {
     const m = run([cables], pool, true, ["31300000", "44211000"]).lots[0]!;
     expect(m).toMatchObject({ status: "no_pool_match", families: [] });
+    expect(m.notes.filter((n) => [TENDER_FAMILIES_NOTE, TENDER_FAMILY_NOTE, NO_FAMILY_GATE_NOTE, NO_FAMILY_NOTE].includes(n))).toEqual([TENDER_FAMILIES_NOTE]);
+  });
+
+  it("082472d9 LOT-0004: names no boot maker for a rescue boat, the lot without codes of its own", () => {
+    // Rescue boats beside protective clothing and tents: the tender's codes do not say which a lot is.
+    const boots = [firm("BOOTS", { families: ["F14"], products: ["İş güvenliği botları"] }), firm("MOTOR", { families: ["F05", "F12"], products: ["Elektrik motorları"] })];
+    const boat = lot({ lotNumber: "LOT-0004", category: "OTHER_GOODS", productTr: "bot, bot motoru ve kurtarma ekipmanı", cpv: [] });
+    const m = run([boat], boots, true, ["35112000", "35113400", "44211000"]).lots[0]!;
+    expect(m).toMatchObject({ status: "no_pool_match", families: [] });
     expect(m.notes).toContain(TENDER_FAMILIES_NOTE);
-    expect(m.notes).not.toContain(TENDER_FAMILY_NOTE);
+    // A tender with that lot alone would be the lot, its codes the lot's own.
+    expect(ids(run([{ ...boat, cpv: ["35112000", "35113400", "44211000"] }], boots, true, ["35112000", "35113400", "44211000"]).lots[0]!)).toEqual(["BOOTS"]);
+  });
+
+  it("takes the two families one code names, as the tender's codes agree on them", () => {
+    const pool = [firm("WORKWEAR", { families: ["F13"], products: ["İş kıyafetleri"] })];
+    const m = run([lot({ category: "TEXTILES_WORKWEAR", productTr: "iş kıyafeti", cpv: [] })], pool, true, ["18000000", "35113400"]).lots[0]!;
+    expect(m).toMatchObject({ status: "matched", families: ["F13", "F14"] });
+    expect(m.notes).toContain(TENDER_FAMILY_NOTE);
+    expect(productReason(m, "WORKWEAR")).toBe('Ürün (genel): "iş kıyafeti" (havuzda: İş kıyafetleri)');
   });
 
   it("keeps the lot's own family when it has one, and asks for more without any", () => {
@@ -402,6 +419,7 @@ describe("where the lot's product is read", () => {
     const m = one(lot({ cpv: ["33100000"], textTr: "Burunlu iş güvenliği botları" }), [firm("TOECAP", { families: ["F14"], products: ["Burunlu iş güvenliği botları"] })], false);
     expect(m.status).toBe("no_pool_match");
     expect(m.notes).toContain(NO_FAMILY_NOTE);
+    expect(m.notes).not.toContain(NO_FAMILY_GATE_NOTE);
   });
 });
 

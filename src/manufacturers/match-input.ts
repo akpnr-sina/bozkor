@@ -81,7 +81,9 @@ export function buildMatchInput({ tender, lots: lotRows, facts, translation }: M
     const raw = i >= 0 ? stored!.lots[i]! : null;
     const verified = i >= 0 ? facts!.facts.lots[i] ?? null : null;
     const lotCpv = (row?.cpv ?? []).map(cpvCode).filter((c): c is string => !!c);
-    const cpv = lotCpv.length ? [...new Set(lotCpv)] : [...new Set(tenderCpv)];
+    // With one lot or none the lot is the tender, so the tender's codes are its own when it has none. A lot
+    // of several keeps only its own: the matcher decides what the tender's codes say of it (SPEC 10, 8.2).
+    const cpv = [...new Set(lotCpv.length || lotRows.length > 1 ? lotCpv : tenderCpv)];
     const translatedLot = row ? translation?.lots.find((l) => sameLot(l.lotNumber, row.lotNumber)) : null;
     const ownText = joinText(row?.title, row?.description);
     return {

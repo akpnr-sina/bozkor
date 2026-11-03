@@ -53,7 +53,7 @@ export type LotForMatch = {
   /** Short Turkish product name from facts (2-6 words, no technical values). */
   productTr: string | null;
   productNature: "STANDARD" | "CUSTOM" | "SPECIALISED" | "UNKNOWN" | null;
-  /** The lot's CPV codes, or the tender's when the lot has none. */
+  /** The lot's own CPV codes; a tender with one lot or none is that lot, so the tender's codes when the lot has none. */
   cpv: string[];
   /** Turkish names of those codes (src/matching/cpv), filled by match-input so the matcher stays pure. */
   cpvNamesTr: string[];
@@ -69,7 +69,7 @@ export type LotForMatch = {
 export type MatchInput = {
   tenderId: string;
   hasFacts: boolean;
-  /** The tender's main and additional CPV codes: the families of a lot whose own codes name none. */
+  /** The tender's main and additional CPV codes: a lot whose own codes name no family takes the families they agree on. */
   tenderCpv: string[];
   lots: LotForMatch[];
 };
