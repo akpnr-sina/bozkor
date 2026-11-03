@@ -21,6 +21,7 @@
     "documents": "tsx src/worker/documents.ts",
     "deep": "tsx src/worker/deep.ts",
     "enrich-ted": "tsx src/worker/enrich-ted.ts",
+    "manufacturers": "tsx src/worker/manufacturers.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio"

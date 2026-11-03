@@ -6,6 +6,7 @@ export type NavItem = { href: string; label: string; group: "Takip" | "Yönetim"
 export const NAV: readonly NavItem[] = [
   { href: "/panel", label: "Panel", group: "Takip", sections: ["/panel"] },
   { href: "/inbox", label: "Gelen kutusu", group: "Takip", sections: ["/inbox", "/tenders"] },
+  { href: "/manufacturers", label: "Üreticiler", group: "Takip", sections: ["/manufacturers"] },
   { href: "/profiles", label: "Profiller", group: "Yönetim", sections: ["/profiles"] },
   { href: "/sources", label: "Kaynaklar", group: "Yönetim", sections: ["/sources"] },
   { href: "/settings", label: "Ayarlar", group: "Yönetim", sections: ["/settings"] },
