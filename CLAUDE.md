@@ -37,6 +37,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `pnpm triage --limit=50` emekli profil bazlı AI puanı (worker çalıştırmaz; SPEC 7.1)
 - `pnpm translate --limit=50` ekibin gördüğü ihalelerin Türkçe çevirisi (elle), `--tender=<id>` tek ihale
 - `pnpm documents --report` doküman durumları, portal siteleri ve son denenen linkler (Faz 5 kabulü için), `--fetch` / `--process` worker'ın indirme ve okuma işlerinden birer parti (her doküman sahiplenildiği için worker açıkken de güvenli)
+- `pnpm manufacturers --dir <paket klasörü> --version 2.3` üretici havuzu paketini içe aktarır: SHA256SUMS'a karşı denetler, KVKK bekçisinden geçirir, BZ kimliğiyle tek işlemde yazar; aynı sürüm ve özet ikinci kez "değişiklik yok" der, `--force` kurallar değiştiyse yeniden yazar, `--dry-run` yazmadan sayıları ve inceleme listesini verir
 - `pnpm enrich-ted` eşleşmesi ya da kararı olan TED ihalelerinin ilanlarını TED_FIELDS'e sonradan eklenen alanlarla (süre, ödül ve seçim kriterleri) yeniden çeker ve ihaleleri günceller; "değişti" basmaz, tekrar çalıştırmak güvenli
 
 ## Klasör yapısı
@@ -48,7 +49,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `src/sources/` kaynaktan bağımsız katman: `types.ts` (SourceAdapter, NormalizedNotice), `http.ts` (timeout, 429, backoff), `fold.ts` (bir prosedürün ilanlarını tek ihaleye birleştirir), `store.ts` (ham kayıt + upsert), `sync.ts` (artımlı senkron, backfill, sources tablosu)
 - `src/sources/uk-fat/`, `src/sources/eu-ted/` her kaynak için client + Zod şeması + normalizer + adapter
 - `src/matching/` kriterler ve eşleştirme: `rules.ts` (profil kuralları, Zod), `types.ts` (sözleşme), `engine.ts` + `text.ts` (saf motor, anahtar kelime araması), `apply.ts` (profile_matches'e yazma, canlı önizleme), `describe.ts` (Türkçe sebep metinleri)
-- `src/manufacturers/` üretici havuzu (Faz 8): `families.ts` (F01-F17 ürün aileleri ve CPV köprüsü), `types.ts` (içe aktarma, sayfalar ve eşleştirme sözleşmesi)
+- `src/manufacturers/` üretici havuzu (Faz 8): `families.ts` (F01-F17 ürün aileleri ve CPV köprüsü), `types.ts` (sözleşme), `import.ts` (paket doğrulama, KVKK bekçisi, saf) ve `import-store.ts` (tek işlemde yazma), `projection.ts` (web sürecindeki izdüşüm, son içe aktarma kimliğiyle tazelenir), `match.ts` + `match-text.ts` + `size.ts` (saf eşleştirici), `match-input.ts` (ihaleden eşleştirme girdisi), `queries.ts` (firma sayfası), `labels.ts` (Türkçe etiketler)
 - `src/fx/` ECB kurları: çekme, ayrıştırma, `toEur`, `syncEcbRates`; `src/sources/value-eur.ts` ihalelerin `value_eur` alanını doldurur
 - `src/documents/` indirme, açma, metne çevirme
 - `src/analysis/` triage, derin analiz, Zod şemaları, alıntı doğrulama
@@ -108,7 +109,18 @@ Kaynak: kullanıcının verdiği "BOZKOR Arayüz Tasarım Dili v2" (Claude Desig
 
 ## Mevcut durum
 
-Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor (API kredisi 2 Kasım'da yüklendi; kalan 3 derin analiz ve kullanıcının örnek kontrolü bekleniyor). Faz 8 (üretici modülü) 2 Kasım'da `faz-8` dalında başladı; Faz 6 kabulü beklenirken başlaması kullanıcı kararı, çünkü 8.1 ve 8.2 LLM kullanmıyor (plan SPEC 10). Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Arayüz yenilemesi ve veri çıkışı düzeltmesi 27 Ekim'de tamam (`arayuz` dalı, `faz-6`'nın üstünde). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+Faz 0-5 tamam (18 Ekim 2026); resmi portal API'leri (Faz 5b) 19 Ekim'de TenderNed ile tamam. Faz 6 (derin analiz) kodu tamam, kabulü sürüyor (API kredisi 2 Kasım'da yüklendi; kabul turunun 10 ihalesinin hepsi analiz edildi, kalan 3'ü 3 Kasım'da 4,57 USD; kullanıcının örnek kontrolü bekleniyor). Faz 8 (üretici modülü) 2 Kasım'da `faz-8` dalında başladı; Faz 6 kabulü beklenirken başlaması kullanıcı kararı, çünkü 8.1 ve 8.2 LLM kullanmıyor (plan SPEC 10). Faz 7 (günlük özet e-postası) kullanıcı kararıyla yapılmayacak (20 Ekim). Arayüz yenilemesi ve veri çıkışı düzeltmesi 27 Ekim'de tamam (`arayuz` dalı, `faz-6`'nın üstünde). Faz 2 kullanıcı kararıyla TED'in önüne alındı.
+
+Faz 8, üretici modülü (2-3 Kasım 2026, `faz-8` dalı; plan SPEC 10):
+- 8.1: migration 0020 (`manufacturers`, `manufacturer_certifications`, `manufacturer_sources`, `manufacturer_imports`) Supabase'e uygulandı. Havuz v2.3 `pnpm manufacturers` ile yüklendi: 252 firma, 143 belge, 7.220 alan kaynağı satırı, KVKK bekçisinde 0 red, 112 inceleme kaydı; ikinci çalıştırma "değişiklik yok" dedi. `/manufacturers` (arama, kategori, aile, il, belge, ihracat, iletişim durumu) ve firma sayfası (her alanın kaynağı). Havuz dosyaları depoya girmez; testler 8 firmalık fixture kullanır.
+- 8.2: ihale sayfasında "Üreticiler" kartı, `GET /api/tenders/[id]/manufacturers`, saf eşleştirici. Kapı ürün ailesi (CPV köprüsü) ve ürün adının baş ismi; genel kelimeler tek başına aday yapmaz (yalnız "iş kıyafeti" gibi genel giysi adı ailedeki giysi kalemleriyle zayıf eşleşir), iki farklı ürün ortak bir niteleyiciyle eşleşmez, ihalenin CPV'leri lota ancak tek aile veriyorsa aile olur; productTr varken ilan metnine geçilmez. 45 gerçek ihalelik provada ilk taslak 47 eşleşmenin 23'ünde yanlış aileden aday gösteriyordu (kompresöre uçak gövdesi, şarj istasyonuna üniforma); düzeltmeden sonra 0. İkinci prova (34 ihale, 170 lot) 20 lotta yanlış adayı düşürdü (kamyon lastiğine dişli, bota iş botu). Kullanıcının 15 ihalelik kontrolü bekleniyor.
+- 63 içe aktarmayı ve sayfaları, 03 eşleştiriciyi ve kartı yazdı; her teslim bozma denemesiyle sınandı (içe aktarma 27, eşleştirici 48 deneme).
+
+Faz 8 bilinen eksikleri:
+- `pnpm db:migrate` (drizzle-kit) şu an bağlanamıyor: pg yeni sürümde `sslmode=require`'ı tam doğrulama sayıyor, Supabase'in sertifika zinciri doğrulanmıyor. 0020 uygulamanın kendi bağlantısıyla (drizzle-orm migrator) uygulandı. Kalıcı çözüm Supabase CA sertifikasıyla tam doğrulama.
+- Şema değişince açık `pnpm dev` route'larda eski şemayı tutabiliyor (3 Kasım: yeni tablo route'ta tanımsız geldi); migration sonrası dev yeniden başlatılmalı.
+- Bağlantı kopmaları Supabase havuzunda ölü oturum bırakıyor (3 Kasım 01:10'da 15 yerin 7'si); worker çalışamadı, oturumlar kapatılıp worker yeniden başlatıldı.
+- Çevrilmeden kalan productTr ("brandweer interventiepak") eşleşmiyor; havuzda armatür, tıbbi ve bilişim üreticisi yok.
 
 Arayüz yenilemesi ve veri çıkışı (27 Ekim 2026, `arayuz` dalı):
 - Kullanıcının "BOZKOR Arayüz Tasarım Dili v2"si (bkz. Arayüz): koyu menü ve üst çubuk, Panel sayfası, gelen kutusunda sağ özet paneli ve arama, Ayarlar ikiye bölündü (Kaynaklar, Ayarlar). Profil formunda resmi CPV 2008 listesinden (9.454 kod, AB Yayın Ofisi SPARQL) arama ve kod ağacı; mal kodlarının adları Türkçe (çeviri, resmi İngilizce ad yanında); okumalar route handler'larda (sunucu eylemleri sıraya girdiği için arama önizlemenin arkasında bekliyordu). İhale sayfasında değerlendirme özeti sağda, olgular solda kutu ızgarasında; kararı belirleyen olgu kırmızı, bilinmeyen sarı.

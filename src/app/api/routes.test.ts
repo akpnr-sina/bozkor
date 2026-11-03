@@ -9,14 +9,19 @@ vi.mock("@/lib/auth/session", () => ({ requireUser: vi.fn() }));
 vi.mock("@/db", () => ({ getDb: vi.fn(() => "db") }));
 vi.mock("@/matching/apply", () => ({ previewRules: vi.fn() }));
 vi.mock("@/app/(app)/tenders/[id]/progress", () => ({ tenderProgress: vi.fn() }));
+vi.mock("@/manufacturers/projection", () => ({ loadManufacturerPool: vi.fn() }));
+vi.mock("@/manufacturers/match-input", () => ({ loadMatchInput: vi.fn() }));
 
 const { requireUser } = await import("@/lib/auth/session");
 const { previewRules } = await import("@/matching/apply");
 const { tenderProgress } = await import("@/app/(app)/tenders/[id]/progress");
+const { loadManufacturerPool } = await import("@/manufacturers/projection");
+const { loadMatchInput } = await import("@/manufacturers/match-input");
 const { GET: searchRoute } = await import("./cpv/search/route");
 const { GET: treeRoute } = await import("./cpv/tree/route");
 const { POST: previewRoute } = await import("./profiles/preview/route");
 const { GET: progressRoute } = await import("./tenders/[id]/progress/route");
+const { GET: manufacturersRoute } = await import("./tenders/[id]/manufacturers/route");
 
 /** requireUser redirects to /login without a session; Next.js throws to do so. */
 const signedOut = () => vi.mocked(requireUser).mockRejectedValue(new Error("NEXT_REDIRECT"));
@@ -25,6 +30,8 @@ beforeEach(() => {
   vi.mocked(requireUser).mockReset().mockResolvedValue({ id: "u1", email: "ekip@bozkor.com" });
   vi.mocked(previewRules).mockReset();
   vi.mocked(tenderProgress).mockReset();
+  vi.mocked(loadManufacturerPool).mockReset();
+  vi.mocked(loadMatchInput).mockReset();
 });
 
 const get = (path: string) => new Request(`http://localhost${path}`);
@@ -159,5 +166,56 @@ describe("GET /api/tenders/[id]/progress", () => {
     signedOut();
     await expect(progressRoute(get(`/api/tenders/${id}/progress`), context(id))).rejects.toThrow("NEXT_REDIRECT");
     expect(tenderProgress).not.toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/tenders/[id]/manufacturers", () => {
+  const id = "4b0f3c9e-8f4e-4c2a-9d2b-1f6b2a3c4d5e";
+  const context = (value: string) => ({ params: Promise.resolve({ id: value }) });
+  const maker = {
+    id: "BZ-ADF41E38BB22", legalName: "Jeneratör A.Ş.", province: null, categories: ["COMPLEX_GENERATORS" as const], families: ["F16" as const],
+    products: ["Dizel jeneratör setleri"], materials: [], standards: [], sizeRange: null, productionMethod: null, certifications: [],
+    aqap: "unknown" as const, as9100: "unknown" as const, exports: "unknown" as const, fitLevel: "medium" as const,
+    hasEvidenceQuote: false, hasContact: true, contactState: "not_contacted" as const,
+  };
+  const input = {
+    tenderId: id,
+    hasFacts: true,
+    tenderCpv: ["31121000"],
+    lots: [{
+      lotNumber: "", nature: "goods" as const, objectType: "GOODS" as const, category: null, productTr: "dizel jeneratör", productNature: null,
+      cpv: ["31121000"], cpvNamesTr: [], textTr: null, textOriginal: null, quantityText: null, certifications: [],
+    }],
+  };
+
+  it("answers each lot's candidates from the pool, never cached", async () => {
+    vi.mocked(loadManufacturerPool).mockResolvedValue({ importId: 1, poolVersion: "2.3", manufacturers: [maker] });
+    vi.mocked(loadMatchInput).mockResolvedValue(input);
+    const response = await manufacturersRoute(get(`/api/tenders/${id}/manufacturers`), context(id));
+    expect(response.status).toBe(200);
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    const answer = await response.json();
+    expect(answer).toMatchObject({ pool: "2.3", result: { tenderId: id, poolVersion: "2.3", lots: [{ status: "matched", top: [{ manufacturerId: maker.id, rank: 1 }] }] } });
+    expect(loadMatchInput).toHaveBeenCalledWith("db", id);
+  });
+
+  it("says so before the first import of the pool", async () => {
+    vi.mocked(loadManufacturerPool).mockResolvedValue(null);
+    vi.mocked(loadMatchInput).mockResolvedValue(input);
+    const response = await manufacturersRoute(get(`/api/tenders/${id}/manufacturers`), context(id));
+    expect(await response.json()).toEqual({ pool: null });
+  });
+
+  it("refuses an id that is not a tender's or a tender that is not there, and anyone signed out", async () => {
+    const bad = await manufacturersRoute(get("/api/tenders/x/manufacturers"), context("x"));
+    expect(bad.status).toBe(400);
+    expect(loadMatchInput).not.toHaveBeenCalled();
+    vi.mocked(loadManufacturerPool).mockResolvedValue(null);
+    vi.mocked(loadMatchInput).mockResolvedValue(null);
+    const missing = await manufacturersRoute(get(`/api/tenders/${id}/manufacturers`), context(id));
+    expect(missing.status).toBe(404);
+    expect(await missing.json()).toEqual({ error: "İhale bulunamadı." });
+    signedOut();
+    await expect(manufacturersRoute(get(`/api/tenders/${id}/manufacturers`), context(id))).rejects.toThrow("NEXT_REDIRECT");
   });
 });

@@ -10,12 +10,14 @@ import { DECISION_MEANINGS, DECISION_TONE, formatDate, formatDateTime, formatMon
 import { cn } from "@/lib/utils";
 import { DecisionForm } from "./decision-form";
 import { Mark } from "./fact-grid";
+import { ManufacturersCard } from "./manufacturers-card";
 import type { MatchRow, TimelineStep } from "./tender-view";
 
 // The overview tab: on the left what is bought (the notice's text, its CPV
-// codes and lots), the timeline, why the tender matches, then the
-// assessment's detail and the facts it rests on; on the right the
-// assessment's short summary and the team's decision (SPEC section 8).
+// codes and lots), the timeline, why the tender matches, the pool's
+// manufacturers (on a click, SPEC 10), then the assessment's detail and the
+// facts it rests on; on the right the assessment's short summary and the
+// team's decision (SPEC section 8).
 
 type Props = {
   description: { text: string; original: string | null; language: string | null } | null;
@@ -43,6 +45,7 @@ export function OverviewTab(props: Props) {
         <LotsCard lots={props.lots} titlesTr={props.lotTitlesTr} descriptionsTr={props.lotDescriptionsTr} />
         <TimelineCard steps={props.timeline} now={props.now} />
         <MatchCard matches={props.matches} />
+        <ManufacturersCard tenderId={props.tenderId} />
         {props.assessment}
       </div>
       <div className="flex min-w-0 flex-col gap-[18px]">

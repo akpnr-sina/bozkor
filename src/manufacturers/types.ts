@@ -69,6 +69,8 @@ export type LotForMatch = {
 export type MatchInput = {
   tenderId: string;
   hasFacts: boolean;
+  /** The tender's main and additional CPV codes: the families of a lot whose own codes name none. */
+  tenderCpv: string[];
   lots: LotForMatch[];
 };
 
