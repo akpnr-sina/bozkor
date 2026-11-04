@@ -200,14 +200,18 @@ async function TenderDetail({ params, searchParams }: { params: PageProps<"/tend
     now,
   ).map((figure) => (figure.label === "Dokümanlar" ? { ...figure, href: tabHref(tender.id, "documents") } : figure));
 
-  const fileNames = (data.assessed?.latest.documentIds ?? []).map((documentId) => {
-    const doc = data.documents.find((d) => d.id === documentId);
-    return doc ? documentName(doc) : "";
-  });
+  const namesOf = (documentIds: readonly string[]) =>
+    documentIds.map((documentId) => {
+      const doc = data.documents.find((d) => d.id === documentId);
+      return doc ? documentName(doc) : "";
+    });
+  const fileNames = namesOf(data.assessed?.latest.documentIds ?? []);
+  // Facts taken from the deep analysis cite its files by its own numbering.
+  const deepFileNames = namesOf(data.assessed?.latest.deep?.documentIds ?? []);
   // Which facts the status rests on: the engine runs once more per known fact, so only for the tab that shows them.
   const assessment =
     tab === "overview" && data.assessed && data.policyInput
-      ? assessmentView(data.assessed, tender.details ?? null, fileNames, decidingFacts(data.policyInput, data.assessed.latest.stored))
+      ? assessmentView(data.assessed, tender.details ?? null, fileNames, decidingFacts(data.policyInput, data.assessed.latest.stored), deepFileNames)
       : null;
 
   const history = historyRows({ tender, reviews, analyses: data.analyses, deepRequests: data.deepRequests });

@@ -1,6 +1,7 @@
+import { DEEP_CHECK_PREFIX } from "@/analysis/deep-facts";
 import { evidencedFacts, type FactsQuoteChecks, type QuotedFact, type ReadFacts } from "@/analysis/facts-evidence";
 import type { FactsOutput } from "@/analysis/facts-schema";
-import { lotLabel } from "@/lib/format";
+import { formatDateTime, lotLabel } from "@/lib/format";
 import type { LatestFacts } from "@/policy/assess";
 import { PRODUCT_CATEGORIES } from "@/policy/categories";
 import { assessTender, awardFromDetails, type Gate, type LotAssessment, type PolicyInput, type TenderAssessment } from "@/policy/engine";
@@ -64,8 +65,15 @@ export const STRUCTURED_SOURCE = "ilanın yapılandırılmış alanı";
 export const UNVERIFIED_FACT = "doğrulanmadı, kararda kullanılmadı";
 export const UNVERIFIED_WHY = "Alıntı modelin okuduğu ilan metninde ve dosyalarda bulunamadı; bu olgu karar için kullanılmadı.";
 
-/** Where a quote was found, in Turkish: a part of the notice, or a file and its page. */
-export function factSourceLabel(key: string, fileNames: readonly string[]): string {
+/**
+ * Where a quote was found, in Turkish: a part of the notice, or a file and its page. A fact taken from the
+ * deep analysis (DEEP_CHECK_PREFIX) names its file by the analysis' own numbering (`deepFileNames`).
+ */
+export function factSourceLabel(key: string, fileNames: readonly string[], deepFileNames: readonly string[] = []): string {
+  if (key.startsWith(DEEP_CHECK_PREFIX)) {
+    const check = key.slice(DEEP_CHECK_PREFIX.length);
+    return `derin analiz, ${check.startsWith("notice:") ? "ilan metni" : factSourceLabel(check, deepFileNames)}`;
+  }
   const file = /^file:(\d+)(?::p(\d+))?$/.exec(key);
   if (file) {
     const name = fileNames[Number(file[1]) - 1];
@@ -234,9 +242,15 @@ function fact(input: FactInput, deciding: ReadonlySet<FactKey>): Fact {
 }
 
 /** The answer's facts in the groups the deep analysis uses too; values that decide against the tender in red, unknown ones in amber. */
-export function factGroups(stored: ReadFacts, details: NoticeDetails | null, fileNames: readonly string[], deciding: ReadonlySet<FactKey>): FactGroup[] {
+export function factGroups(
+  stored: ReadFacts,
+  details: NoticeDetails | null,
+  fileNames: readonly string[],
+  deciding: ReadonlySet<FactKey>,
+  deepFileNames: readonly string[] = [],
+): FactGroup[] {
   const { facts, quoteChecks } = stored;
-  const label = (key: string | null | undefined) => (key ? factSourceLabel(key, fileNames) : null);
+  const label = (key: string | null | undefined) => (key ? factSourceLabel(key, fileNames, deepFileNames) : null);
   const found = (key: QuotedFact) => label(quoteChecks?.facts[key]);
   const make = (input: FactInput): FactBox => ({ ...fact(input, deciding), parts: [] });
   const multiLot = facts.lots.length > 1;
@@ -506,9 +520,21 @@ export function summaryChecks(lot: Pick<LotAssessment, "gates">, facts: readonly
 
 export type AssessmentView = { groups: FactGroup[]; factCount: number; checks: CheckRow[] };
 
+/** What the page says of the facts taken from the deep analysis, or null when it gave none. */
+export function deepFactsNote(deep: LatestFacts["deep"]): string | null {
+  const count = deep ? deep.keys.length + deep.certifications : 0;
+  return deep && count ? `${count} olguyu derin analizden aldı (${formatDateTime(deep.createdAt)})` : null;
+}
+
 /** Everything the assessment cards show beyond the engine's own result. */
-export function assessmentView(result: AssessmentResult, details: NoticeDetails | null, fileNames: readonly string[], deciding: ReadonlySet<FactKey>): AssessmentView {
-  const groups = factGroups(result.latest.stored, details, fileNames, deciding);
+export function assessmentView(
+  result: AssessmentResult,
+  details: NoticeDetails | null,
+  fileNames: readonly string[],
+  deciding: ReadonlySet<FactKey>,
+  deepFileNames: readonly string[] = [],
+): AssessmentView {
+  const groups = factGroups(result.latest.stored, details, fileNames, deciding, deepFileNames);
   const facts = allFacts(groups);
   return { groups, factCount: facts.length, checks: summaryChecks(result.assessment.best, facts) };
 }

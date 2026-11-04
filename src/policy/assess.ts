@@ -1,4 +1,5 @@
 import { and, asc, eq, gt, gte, inArray, or, sql } from "drizzle-orm";
+import { applyDeepFacts, readStoredDeepFacts, type DeepFactKey } from "@/analysis/deep-facts";
 import { evidencedFacts, readStoredFacts, type ReadFacts } from "@/analysis/facts-evidence";
 import type { FactsOutput } from "@/analysis/facts-schema";
 import type { AppDb } from "@/db";
@@ -40,38 +41,57 @@ export type LatestFacts = {
   createdAt: Date;
   /** The files the facts call read, in the order of its "file:<n>" quote sources. */
   documentIds: string[];
-  /** The answer as stored, with its quote checks. */
+  /** The answer with its quote checks, and the deep analysis' facts over it (applyDeepFacts). */
   stored: ReadFacts;
   /** What the policy acts on (see evidencedFacts). */
   facts: FactsOutput;
+  /** The deep analysis' conversion whose facts are in `stored`, when it gave any (SPEC 7.2). */
+  deep: {
+    analysisId: string;
+    createdAt: Date;
+    /** The files the deep analysis read, in the order of its "file:<n>" quote checks. */
+    documentIds: string[];
+    keys: DeepFactKey[];
+    certifications: number;
+  } | null;
 };
 
-/** The latest valid facts of each tender. */
+/** The latest valid facts of each tender, with its latest deep analysis conversion over them. */
 export async function latestFacts(db: AppDb, tenderIds: readonly string[]): Promise<Map<string, LatestFacts>> {
   if (!tenderIds.length) return new Map();
-  const rows = await db
-    .selectDistinctOn([analyses.tenderId], {
-      id: analyses.id,
-      tenderId: analyses.tenderId,
-      output: analyses.output,
-      createdAt: analyses.createdAt,
-      documentIds: analyses.documentIds,
-    })
-    .from(analyses)
-    .where(and(inArray(analyses.tenderId, [...tenderIds]), eq(analyses.kind, "facts"), eq(analyses.valid, true)))
-    .orderBy(analyses.tenderId, sql`${analyses.createdAt} desc`);
+  const latestOf = (kind: "facts" | "deep_facts") =>
+    db
+      .selectDistinctOn([analyses.tenderId], {
+        id: analyses.id,
+        tenderId: analyses.tenderId,
+        output: analyses.output,
+        createdAt: analyses.createdAt,
+        documentIds: analyses.documentIds,
+      })
+      .from(analyses)
+      .where(and(inArray(analyses.tenderId, [...tenderIds]), eq(analyses.kind, kind), eq(analyses.valid, true)))
+      .orderBy(analyses.tenderId, sql`${analyses.createdAt} desc`);
+  const [rows, deepRows] = await Promise.all([latestOf("facts"), latestOf("deep_facts")]);
+  const deepOf = new Map(deepRows.map((row) => [row.tenderId, row]));
   const result = new Map<string, LatestFacts>();
   for (const row of rows) {
     const read = readStoredFacts(row.output);
-    if (read) {
-      result.set(row.tenderId, {
-        analysisId: row.id,
-        createdAt: row.createdAt,
-        documentIds: row.documentIds,
-        stored: read,
-        facts: evidencedFacts(read.facts, read.quoteChecks),
-      });
-    }
+    if (!read) continue;
+    const deepRow = deepOf.get(row.tenderId);
+    const converted = deepRow ? readStoredDeepFacts(deepRow.output) : null;
+    const applied = converted ? applyDeepFacts(read, converted) : null;
+    const stored = applied?.read ?? read;
+    result.set(row.tenderId, {
+      analysisId: row.id,
+      createdAt: row.createdAt,
+      documentIds: row.documentIds,
+      stored,
+      facts: evidencedFacts(stored.facts, stored.quoteChecks),
+      deep:
+        deepRow && applied && (applied.keys.length || applied.certifications)
+          ? { analysisId: deepRow.id, createdAt: deepRow.createdAt, documentIds: deepRow.documentIds, keys: applied.keys, certifications: applied.certifications }
+          : null,
+    });
   }
   return result;
 }

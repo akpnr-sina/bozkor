@@ -52,7 +52,7 @@ export const documentFetchStatus = pgEnum("document_fetch_status", [
   "unsupported",
 ]);
 export const matchState = pgEnum("match_state", ["new", "seen", "dismissed"]);
-export const analysisKind = pgEnum("analysis_kind", ["triage", "deep", "translation", "facts"]);
+export const analysisKind = pgEnum("analysis_kind", ["triage", "deep", "translation", "facts", "deep_facts"]);
 export const reviewDecision = pgEnum("review_decision", ["GO", "REVIEW", "NO_GO", "WATCH"]);
 
 /** One row per data source (`uk_fat`, `eu_ted`), seeded by migration. */

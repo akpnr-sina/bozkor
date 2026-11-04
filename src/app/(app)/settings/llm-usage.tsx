@@ -15,6 +15,7 @@ const KIND_LABELS: Record<AnalysisKind, string> = {
   deep: "Derin analiz",
   translation: "Çeviri",
   facts: "Olgu çıkarma",
+  deep_facts: "Derin analiz olguları",
 };
 
 const usdFormat = new Intl.NumberFormat("tr-TR", {

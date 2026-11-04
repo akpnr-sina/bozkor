@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { sources } from "@/db/schema";
 import { runFacts } from "@/analysis/facts";
 import { queueAutoDeep, runDeepRequests } from "@/analysis/deep";
+import { runDeepFacts } from "@/analysis/deep-facts";
 import { createLlmClient } from "@/analysis/llm";
 import type { RunStats } from "@/analysis/runner";
 import { runTranslation } from "@/analysis/translate";
@@ -152,6 +153,8 @@ const FETCH_BATCH = 30;
 const PROCESS_BATCH = 20;
 /** Deep analyses per run: each takes minutes (SPEC 7.2). */
 const DEEP_BATCH = 2;
+/** Deep results converted to facts in one run (SPEC 7.2); each is one small call. */
+const DEEP_FACTS_BATCH = 20;
 
 function formatFetchStats(stats: FetchStats): string {
   return (
@@ -358,6 +361,16 @@ const jobs: JobDefinition[] = [
         console.log(
           `[deep-analysis] queued=${queued} analysed=${stats.analysed} failed=${stats.failed} cost=${stats.costUsd.toFixed(4)}` +
             (stats.stoppedBy ? ` stoppedBy=${stats.stoppedBy}` : ""),
+        );
+      }
+      // The results' facts for the assessment (SPEC 7.2): converted, then those tenders assessed again at once.
+      const facts = await runDeepFacts(db, createLlmClient(), { limit: DEEP_FACTS_BATCH, log: (m) => console.warn(m) });
+      if (facts.attempted) {
+        const assessed = facts.converted.length ? await assessTenders(db, { tenderIds: facts.converted }) : null;
+        console.log(
+          `[deep-facts] converted=${facts.converted.length} invalid=${facts.invalid} apiErrors=${facts.apiErrors} cost=${facts.costUsd.toFixed(4)}` +
+            (facts.stoppedBy ? ` stoppedBy=${facts.stoppedBy}` : "") +
+            (assessed ? ` | assess ${formatAssessStats(assessed)}` : ""),
         );
       }
       if (stats.analysed + stats.failed >= DEEP_BATCH && !stats.stoppedBy) await runAgain("deep-analysis");

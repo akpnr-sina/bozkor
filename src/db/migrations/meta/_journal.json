@@ -148,6 +148,13 @@
       "when": 1793640782609,
       "tag": "0020_manufacturers",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793794392302,
+      "tag": "0021_deep_facts",
+      "breakpoints": true
     }
   ]
 }

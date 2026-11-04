@@ -65,10 +65,12 @@ export function factsSystemPrompt(prompt: string): string {
  * last written (a new notice, re-normalising, enrichment with structured
  * details) or its files last changed (documents_changed_at): anything that
  * can change what the facts stage reads. Open tenders with a current match of
- * an active profile, and every tender with a decision (the team's decisions
- * calibrate the policy). An API error is no answer, so the tender is tried
- * again, but not within an hour of an attempt made after its last change of
- * files: a new upload is read within minutes. Nearest deadline first.
+ * an active profile or a deep analysis (its facts reach the assessment too, so
+ * the files it did not read must), and every tender with a decision (the
+ * team's decisions calibrate the policy). An API error is no answer, so the
+ * tender is tried again, but not within an hour of an attempt made after its
+ * last change of files: a new upload is read within minutes. Nearest deadline
+ * first.
  */
 /** After the files last changed, the queue waits this long, so a ZIP or a portal page read over a few minutes is read once. */
 export const FILES_SETTLE_MINUTES = 5;
@@ -77,9 +79,12 @@ export const FILES_SETTLE_MINUTES = 5;
 function pendingFactsWhere(settleMinutes: number): SQL {
   return sql`(
     (
-      exists (
-        select 1 from ${profileMatches} pm join ${criteriaProfiles} cp on cp.id = pm.profile_id and cp.active
-        where pm.tender_id = ${tenders.id} and pm.unmatched_at is null
+      (
+        exists (
+          select 1 from ${profileMatches} pm join ${criteriaProfiles} cp on cp.id = pm.profile_id and cp.active
+          where pm.tender_id = ${tenders.id} and pm.unmatched_at is null
+        )
+        or exists (select 1 from ${analyses} deep where deep.tender_id = ${tenders.id} and deep.kind = 'deep')
       )
       and ${tenders.status} = 'open'
       and (${tenders.submissionDeadline} is null or ${tenders.submissionDeadline} > now())

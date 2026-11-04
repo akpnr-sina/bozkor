@@ -75,6 +75,7 @@ describe("loadLlmUsage", () => {
       { kind: "deep", calls: 1, answered: 1, invalid: 0, apiErrors: 0, costUsd: 0.5 },
       { kind: "translation", calls: 0, answered: 0, invalid: 0, apiErrors: 0, costUsd: 0 },
       { kind: "facts", calls: 0, answered: 0, invalid: 0, apiErrors: 0, costUsd: 0 },
+      { kind: "deep_facts", calls: 0, answered: 0, invalid: 0, apiErrors: 0, costUsd: 0 },
     ]);
     // Only answered calls count toward the invalid output rate.
     expect(usage.triageInvalidRate).toBe(0.5);
@@ -114,6 +115,7 @@ describe("loadLlmUsage", () => {
       ["deep", 0],
       ["translation", 0],
       ["facts", 0],
+      ["deep_facts", 0],
     ]);
   });
 });

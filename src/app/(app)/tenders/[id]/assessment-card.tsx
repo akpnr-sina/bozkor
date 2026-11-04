@@ -11,7 +11,7 @@ import { formatDateTime, formatMoney, lotLabel } from "@/lib/format";
 import { expectedScore, FINAL_STATUSES, type Gate, type GateState, type LotAssessment, type Range } from "@/policy/engine";
 import { GATE_LABELS, GATE_STATE_LABELS } from "@/policy/labels";
 import { DIMENSION_LABELS, type Dimension } from "@/policy/policy";
-import { allFacts, GATE_MARK, UNVERIFIED_FACT, UNVERIFIED_WHY, type AssessmentResult, type AssessmentView, type CheckRow, type Fact, type FactBox } from "./assessment-view";
+import { allFacts, deepFactsNote, GATE_MARK, UNVERIFIED_FACT, UNVERIFIED_WHY, type AssessmentResult, type AssessmentView, type CheckRow, type Fact, type FactBox } from "./assessment-view";
 import { Evidence, FactCell, FactGrid, FactValue, LongText, Mark, MarkLegend, MARK_WORDS } from "./fact-grid";
 
 // The qualification policy's verdict on a tender (docs/qualification-policy-v1.md),
@@ -131,6 +131,7 @@ export function AssessmentDetail({ result, fileCount }: { result: AssessmentResu
   const best = assessment.best;
   const multiLot = assessment.lots.length > 1;
   const final = FINAL_STATUSES.includes(best.status);
+  const deepNote = deepFactsNote(latest.deep);
   const scores: { label: string; value: string; note?: string }[] = [
     { label: "Fırsat uyumu", ...score(best.scores.fit) },
     { label: "Teklif hazırlığı", ...score(best.scores.readiness) },
@@ -177,7 +178,8 @@ export function AssessmentDetail({ result, fileCount }: { result: AssessmentResu
       </CardContent>
       <CardFooter className="text-xs text-ink-500">
         <p>
-          Olguları AI ilan metninden{fileCount ? ` ve ${fileCount} dosyadan` : ""} çıkardı ({formatDateTime(latest.createdAt)}); puan, kapı ve kararları kod{" "}
+          Olguları AI ilan metninden{fileCount ? ` ve ${fileCount} dosyadan` : ""} çıkardı ({formatDateTime(latest.createdAt)})
+          {deepNote ? `, ${deepNote}` : ""}; puan, kapı ve kararları kod{" "}
           {assessment.policyVersion} politikasıyla hesapladı. Doğrulanmamış alıntıya dayanan olgu karar için kullanılmaz. Karar sizindir.
         </p>
       </CardFooter>

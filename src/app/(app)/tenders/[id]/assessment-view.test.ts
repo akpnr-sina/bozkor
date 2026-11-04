@@ -4,7 +4,7 @@ import { checkFactsQuotes, evidencedFacts } from "@/analysis/facts-evidence";
 import type { FactsOutput } from "@/analysis/facts-schema";
 import { assessTender, type PolicyInput } from "@/policy/engine";
 import type { NoticeDetails } from "@/sources/types";
-import { allFacts, decidingFacts, factGroups, STRUCTURED_SOURCE, summaryChecks, type FactKey } from "./assessment-view";
+import { allFacts, decidingFacts, deepFactsNote, factGroups, factSourceLabel, STRUCTURED_SOURCE, summaryChecks, type FactKey } from "./assessment-view";
 
 const NOW = new Date("2026-10-15T09:00:00+03:00");
 /** Eleven working days ahead: a partner could still be found. */
@@ -129,6 +129,33 @@ describe("factGroups", () => {
     expect(byKey.get("installation")?.value).toBe("Lot 2: Zorunlu");
     expect(byKey.get("lot:1:product")).toMatchObject({ label: "Lot 2", value: "kafe masaları" });
     expect(byKey.get("lot:1:nature")?.scope).toBe("Lot 2");
+  });
+});
+
+describe("facts from the deep analysis", () => {
+  it("names the deep analysis and its own file as the source", () => {
+    expect(factSourceLabel("deep:file:2:p12", ["İlan eki.pdf"], ["Leidraad.docx", "Bestek.pdf"])).toBe('derin analiz, "Bestek.pdf", sayfa 12');
+    expect(factSourceLabel("deep:notice:lot-info:1", ["İlan eki.pdf"], [])).toBe("derin analiz, ilan metni");
+    expect(factSourceLabel("file:1:p3", ["İlan eki.pdf"], ["Bestek.pdf"])).toBe('"İlan eki.pdf", sayfa 3');
+  });
+
+  it("shows such a fact with that source in its group", () => {
+    const extracted = facts({ lots: [lot({ productTr: "kafe mobilyası", category: "FURNITURE_STORAGE" })] });
+    const { stored } = setup(extracted);
+    const merged = {
+      ...stored,
+      facts: { ...stored.facts, turnover: { value: "REQUIRED" as const, detail: "500.000 EUR", quote: "Mindestjahresumsatz von 500.000 EUR" } },
+      quoteChecks: { ...stored.quoteChecks, facts: { ...stored.quoteChecks.facts, turnover: "deep:file:1:p2" } },
+    };
+    const turnover = allFacts(factGroups(merged, null, [], new Set(), ["Bestek.pdf"])).find((f) => f.key === "turnover");
+    expect(turnover).toMatchObject({ value: "Zorunlu", source: 'derin analiz, "Bestek.pdf", sayfa 2', quoted: true });
+  });
+
+  it("says how many facts it gave, and nothing when it gave none", () => {
+    const deep = { analysisId: "a", createdAt: new Date("2026-11-04T09:30:00Z"), documentIds: [], keys: ["installation" as const, "turnover" as const], certifications: 1 };
+    expect(deepFactsNote(deep)).toMatch(/^3 olguyu derin analizden aldı \(.+\)$/);
+    expect(deepFactsNote({ ...deep, keys: [], certifications: 0 })).toBeNull();
+    expect(deepFactsNote(null)).toBeNull();
   });
 });
 

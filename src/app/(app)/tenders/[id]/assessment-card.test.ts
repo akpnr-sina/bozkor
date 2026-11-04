@@ -5,6 +5,7 @@ import { facts, lot } from "../../../../../tests/helpers/facts";
 import type { Analysis } from "@/db/schema";
 import { checkFactsQuotes, evidencedFacts } from "@/analysis/facts-evidence";
 import type { FactsOutput } from "@/analysis/facts-schema";
+import type { LatestFacts } from "@/policy/assess";
 import { assessTender, type PolicyInput } from "@/policy/engine";
 import { AssessmentDetail, AssessmentFacts, AssessmentSummary } from "./assessment-card";
 import { assessmentView, decidingFacts } from "./assessment-view";
@@ -23,6 +24,7 @@ function render(
   extracted: FactsOutput,
   lots: { lotNumber: string; valueEur: number | null }[] = [],
   files: { sources: Record<string, string>; names: string[] } = { sources: {}, names: [] },
+  deep: LatestFacts["deep"] = null,
 ) {
   const quoteChecks = checkFactsQuotes(extracted, { ...sources, ...files.sources });
   const evidenced = evidencedFacts(extracted, quoteChecks);
@@ -35,7 +37,7 @@ function render(
   const stored = { facts: extracted, quoteChecks, sourcesHash: "h" };
   const result = {
     assessment: assessTender(input),
-    latest: { analysisId: "a1", createdAt: REVIEWED, documentIds: [], stored, facts: evidenced },
+    latest: { analysisId: "a1", createdAt: REVIEWED, documentIds: [], stored, facts: evidenced, deep },
   };
   const view = assessmentView(result, null, files.names, decidingFacts(input, stored));
   return renderToStaticMarkup(
@@ -126,6 +128,12 @@ describe("assessment cards", () => {
     expect(html).toContain("kaynak: &quot;Technical Specification.pdf&quot;, sayfa 12");
     expect(html).not.toContain("doğrulanmadı, kararda kullanılmadı");
     expect(html).toContain("ilan metninden ve 1 dosyadan çıkardı");
+  });
+
+  it("says how many facts came from the deep analysis", () => {
+    const deep = { analysisId: "d1", createdAt: REVIEWED, documentIds: [], keys: ["installation" as const, "turnover" as const], certifications: 0 };
+    expect(render(furniture, [], undefined, deep)).toMatch(/çıkardı \([^)]+\), 2 olguyu derin analizden aldı \([^)]+\); puan, kapı ve kararları/);
+    expect(render(furniture)).not.toContain("derin analizden");
   });
 
   it("adds a lot table for tenders with several lots", () => {

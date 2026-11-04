@@ -172,6 +172,7 @@ const KIND_LABELS: Record<string, string> = {
   deep: "Derin analiz çağrısı",
   translation: "Çeviri",
   triage: "Ön değerlendirme",
+  deep_facts: "Derin analiz olguları",
 };
 
 const firstLine = (text: string | null) => text?.split("\n").find((line) => line.trim())?.trim().slice(0, 200) ?? null;
