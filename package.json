@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "worker": "tsx src/worker/index.ts",
+    "worker:supervised": "tsx src/worker/supervise.ts",
     "backfill": "tsx src/worker/backfill.ts",
     "renormalize": "tsx src/worker/renormalize.ts",
     "triage": "tsx src/worker/triage.ts",

@@ -26,6 +26,7 @@ import { TIMEZONE } from "./boss";
 import { createCreditPause, type CreditOutcome } from "./credit-pause";
 import { createTenderChanges, matchedThroughAtStart, onceADay, WRITE_MARGIN_MS } from "./incremental";
 import { watchOverdueSyncs } from "./overdue";
+import type { Watchdog } from "./watchdog";
 
 type JobDefinition = {
   name: string;
@@ -424,7 +425,8 @@ function describeError(error: unknown): string {
   return `${error.message.slice(0, 300)}${cause}`;
 }
 
-export async function registerJobs(boss: PgBoss): Promise<void> {
+/** Registers the jobs; the watchdog hears of every job a handler starts and every sync asked for again. */
+export async function registerJobs(boss: PgBoss, watchdog?: Pick<Watchdog, "started" | "requested">): Promise<void> {
   // Before this process's syncs move last_synced_at (see matchedThroughAtStart).
   tenderChanges = createTenderChanges({ log: (m) => console.warn(m), handledThrough: await matchedThroughAtStart(getDb()) });
   // The stately policy keeps it to one queued run while one is active.
@@ -449,6 +451,7 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
       await boss.schedule(job.name, job.cron, null, { tz: TIMEZONE, missed: job.catchUp ? "once" : "skip" });
     }
     await boss.work(job.name, { pollingIntervalSeconds: POLL_SECONDS }, async (batch) => {
+      watchdog?.started(job.name);
       for (const { id, data } of batch) {
         try {
           await job.handler(id, data);
@@ -465,7 +468,10 @@ export async function registerJobs(boss: PgBoss): Promise<void> {
   }
   watchOverdueSyncs({
     read: () => getDb().select({ id: sources.id, lastSyncedAt: sources.lastSyncedAt }).from(sources),
-    send: (job) => boss.send(job, {}),
+    send: (job) => {
+      watchdog?.requested(job);
+      return boss.send(job, {});
+    },
     log: (message) => console.warn(message),
   });
 }

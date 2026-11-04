@@ -25,6 +25,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 
 - `pnpm dev` web uygulaması
 - `pnpm worker` worker süreci (pg-boss)
+- `pnpm worker:supervised` worker'ı gözetici altında çalıştırır (Mac'te kullanılan yol, 4 Kasım'dan beri): bekçi (`src/worker/watchdog.ts`) uyanık geçen 20 dakikada hiçbir iş başlamazsa ya da yeniden istenen bir senkron 20 dakikada başlamazsa worker'ı 75 koduyla kapatır, gözetici (`src/worker/supervision.ts`) artan aralıkla yeniden başlatır. Durdurmak için gözeticiye SIGINT; worker onunla durur, 40 saniyede durmazsa öldürülür
 - `pnpm test` testler (Vitest; DB testleri gömülü Postgres, `tests/helpers/test-db.ts`)
 - `pnpm typecheck` route tiplerini üretir ve `tsc --noEmit` çalıştırır
 - `pnpm lint` ESLint
@@ -119,7 +120,7 @@ Faz 8, üretici modülü (2-3 Kasım 2026, `faz-8` dalı; plan SPEC 10):
 Faz 8 bilinen eksikleri:
 - `pnpm db:migrate` (drizzle-kit) şu an bağlanamıyor: pg yeni sürümde `sslmode=require`'ı tam doğrulama sayıyor, Supabase'in sertifika zinciri doğrulanmıyor. 0020 ve 0021 uygulamanın kendi bağlantısıyla (drizzle-orm migrator) uygulandı. Kalıcı çözüm Supabase CA sertifikasıyla tam doğrulama.
 - Şema değişince açık `pnpm dev` route'larda eski şemayı tutabiliyor (3 Kasım: yeni tablo route'ta tanımsız geldi); migration sonrası dev yeniden başlatılmalı.
-- Bağlantı kopmaları Supabase havuzunda ölü oturum bırakıyor (3 Kasım 01:10'da 15 yerin 7'si); worker çalışamadı, oturumlar kapatılıp worker yeniden başlatıldı.
+- Bağlantı kopmaları Supabase havuzunda ölü oturum bırakıyor (3 Kasım 01:10'da 15 yerin 7'si); worker çalışamadı, oturumlar kapatılıp worker yeniden başlatıldı. 4 Kasım'da 19:12'deki kopmanın bıraktığı 6 oturum yarım saat içinde kendiliğinden düştü. Kullanıcı kararıyla worker artık gözetici altında; takılınca kendini yeniden başlatıyor (`pnpm worker:supervised`).
 - Çevrilmeden kalan productTr ("brandweer interventiepak") eşleşmiyor; havuzda armatür, tıbbi ve bilişim üreticisi yok.
 
 Arayüz yenilemesi ve veri çıkışı (27 Ekim 2026, `arayuz` dalı):
