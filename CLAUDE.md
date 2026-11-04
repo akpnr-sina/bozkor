@@ -56,7 +56,7 @@ Kullanıcılar 2 kişilik iç ekip. Çok kiracılı (multi-tenant) değil.
 - `src/worker/` job tanımları ve zamanlama (`jobs.ts`), backfill komutu (`backfill.ts`)
 - `src/lib/time.ts` saat dilimi dönüşümleri, `src/lib/countries.ts` ülke adı ve kodu çevirisi, `src/lib/format.ts` UI'daki Türkçe etiketler ve tarih/tutar biçimleri
 - `src/lib/auth/session.ts`: Server Component'ler `getCurrentUser()` (`use cache: private`), Server Action ve Route Handler'lar her çağrıda doğrulayan `requireUser()` kullanır
-- `prompts/` versiyonlu prompt dosyaları (`facts.v5.md`, `deep.v1.md`, `deep-merge.v1.md`, `deep-facts.v1.md`)
+- `prompts/` versiyonlu prompt dosyaları (`facts.v5.md`, `deep.v1.md`, `deep-merge.v1.md`, `deep-facts.v2.md`)
 - `tests/fixtures/` gerçek API yanıtlarından kaydedilmiş örnekler
 - `tests/helpers/` test yardımcıları (PGlite ile migration uygulanmış test DB'si)
 - Birim testleri kaynağın yanında: `*.test.ts`

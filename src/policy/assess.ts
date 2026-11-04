@@ -56,6 +56,13 @@ export type LatestFacts = {
   } | null;
 };
 
+/** When a facts answer read its input (its inputUpdatedAt); the answer's time for older answers. */
+function factsInputAt(output: unknown, createdAt: Date): Date {
+  const at = output && typeof output === "object" ? (output as { inputUpdatedAt?: unknown }).inputUpdatedAt : undefined;
+  const parsed = typeof at === "string" ? new Date(at) : null;
+  return parsed && !Number.isNaN(parsed.getTime()) ? parsed : createdAt;
+}
+
 /** The latest valid facts of each tender, with its latest deep analysis conversion over them. */
 export async function latestFacts(db: AppDb, tenderIds: readonly string[]): Promise<Map<string, LatestFacts>> {
   if (!tenderIds.length) return new Map();
@@ -71,15 +78,22 @@ export async function latestFacts(db: AppDb, tenderIds: readonly string[]): Prom
       .from(analyses)
       .where(and(inArray(analyses.tenderId, [...tenderIds]), eq(analyses.kind, kind), eq(analyses.valid, true)))
       .orderBy(analyses.tenderId, sql`${analyses.createdAt} desc`);
-  const [rows, deepRows] = await Promise.all([latestOf("facts"), latestOf("deep_facts")]);
+  const [rows, deepRows, fileTimes] = await Promise.all([
+    latestOf("facts"),
+    latestOf("deep_facts"),
+    db.select({ id: tenders.id, documentsChangedAt: tenders.documentsChangedAt }).from(tenders).where(inArray(tenders.id, [...tenderIds])),
+  ]);
   const deepOf = new Map(deepRows.map((row) => [row.tenderId, row]));
+  const filesChangedAt = new Map(fileTimes.map((row) => [row.id, row.documentsChangedAt]));
   const result = new Map<string, LatestFacts>();
   for (const row of rows) {
     const read = readStoredFacts(row.output);
     if (!read) continue;
     const deepRow = deepOf.get(row.tenderId);
     const converted = deepRow ? readStoredDeepFacts(deepRow.output) : null;
-    const applied = converted ? applyDeepFacts(read, converted) : null;
+    const applied = converted
+      ? applyDeepFacts(read, converted, { factsInputAt: factsInputAt(row.output, row.createdAt), documentsChangedAt: filesChangedAt.get(row.tenderId) ?? null })
+      : null;
     const stored = applied?.read ?? read;
     result.set(row.tenderId, {
       analysisId: row.id,

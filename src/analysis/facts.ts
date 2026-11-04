@@ -84,7 +84,10 @@ function pendingFactsWhere(settleMinutes: number): SQL {
           select 1 from ${profileMatches} pm join ${criteriaProfiles} cp on cp.id = pm.profile_id and cp.active
           where pm.tender_id = ${tenders.id} and pm.unmatched_at is null
         )
-        or exists (select 1 from ${analyses} deep where deep.tender_id = ${tenders.id} and deep.kind = 'deep')
+        or exists (
+          select 1 from ${analyses} deep
+          where deep.tender_id = ${tenders.id} and deep.kind = 'deep' and deep.valid and deep.output -> 'quoteChecks' is not null
+        )
       )
       and ${tenders.status} = 'open'
       and (${tenders.submissionDeadline} is null or ${tenders.submissionDeadline} > now())

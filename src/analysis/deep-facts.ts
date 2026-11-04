@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gt, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 import type { AppDb } from "@/db";
 import { analyses, lots } from "@/db/schema";
@@ -18,7 +18,7 @@ import { completeValidated, noEmDash, recordAnalysis, runWithinBudget, schemaErr
 // excerpt (rule 5). latestFacts puts these over the facts stage's values (applyDeepFacts); the model reads no
 // document and decides nothing (rules 3 and 4).
 
-export const DEEP_FACTS_PROMPT_VERSION = "deep-facts.v1";
+export const DEEP_FACTS_PROMPT_VERSION = "deep-facts.v2";
 
 /** The tender-level facts the deep analysis has claims on; it does not ask about brand, samples or a restricted product. */
 export const DEEP_FACT_KEYS = [
@@ -41,7 +41,8 @@ export type DeepFactKey = (typeof DEEP_FACT_KEYS)[number];
 const CLAIM_PATHS: Record<DeepFactKey, (output: DeepOutput) => string[]> = {
   installation: () => ["servicesScope.installation"],
   commissioningTraining: () => ["servicesScope.training"],
-  localService: () => ["servicesScope.maintenance", "eligibility.localPresence"],
+  // Field work during the warranty is on-site service, and the analysis often writes it under installation.
+  localService: () => ["servicesScope.maintenance", "eligibility.localPresence", "servicesScope.installation"],
   warranty: () => ["commercial.warranty"],
   deliveryPattern: () => ["delivery.schedule"],
   deliveryPoints: () => ["delivery.location"],
@@ -99,19 +100,29 @@ function claimAt(output: DeepOutput, at: string): { text: string; quote: string 
 }
 
 export type OfferedClaim = { path: string; text: string; quote: string };
-export type OfferedClaims = { facts: Record<DeepFactKey, OfferedClaim[]>; certifications: OfferedClaim[] };
+export type OfferedClaims = {
+  facts: Record<DeepFactKey, OfferedClaim[]>;
+  certifications: OfferedClaim[];
+  /** Claims a fact may rest on whose quote was not found: not shown, but they may say something the shown ones do not. */
+  unverified: Record<DeepFactKey, number>;
+};
 
 /** The claims each fact may rest on whose quote was found: all the model is shown, and all it may cite. */
 export function offeredClaims(stored: Pick<StoredDeep, "output" | "quoteChecks">): OfferedClaims {
+  const verified = (at: string, claim: { quote: string }) => !!claim.quote.trim() && !!stored.quoteChecks[at];
   const offer = (paths: string[]): OfferedClaim[] =>
     paths.flatMap((at) => {
       const claim = claimAt(stored.output, at);
-      return claim && claim.quote.trim() && stored.quoteChecks[at] ? [{ path: at, ...claim }] : [];
+      return claim && verified(at, claim) ? [{ path: at, ...claim }] : [];
     });
-  return {
-    facts: Object.fromEntries(DEEP_FACT_KEYS.map((key) => [key, offer(CLAIM_PATHS[key](stored.output))])) as Record<DeepFactKey, OfferedClaim[]>,
-    certifications: offer(certificatePaths(stored.output)),
-  };
+  const unseen = (paths: string[]) =>
+    paths.filter((at) => {
+      const claim = claimAt(stored.output, at);
+      return claim && !verified(at, claim);
+    }).length;
+  const byKey = <T>(of: (paths: string[]) => T) =>
+    Object.fromEntries(DEEP_FACT_KEYS.map((key) => [key, of(CLAIM_PATHS[key](stored.output))])) as Record<DeepFactKey, T>;
+  return { facts: byKey(offer), certifications: offer(certificatePaths(stored.output)), unverified: byKey(unseen) };
 }
 
 /** The message: the tender's lots, then for each fact the verified claims it may rest on. */
@@ -164,13 +175,17 @@ function unknownOf<T extends DeepFact>(fact: T): T {
   return { ...fact, value: "UNKNOWN", ...("detail" in fact ? { detail: "" } : {}), ...("lots" in fact ? { lots: [] } : {}), from: "" };
 }
 
-/** A stated value must cite a claim it was offered for that fact; one that does not becomes unknown, a certificate is left out. */
+/**
+ * A stated value must cite a claim it was offered for that fact; one that does not becomes unknown, a
+ * certificate is left out. "Only price" needs every criterion seen: one whose quote was not found may be another.
+ */
 function keepOffered(output: DeepFactsOutput, offered: OfferedClaims): DeepFactsOutput {
   const kept = { ...output };
   for (const key of DEEP_FACT_KEYS) {
     const fact = output[key];
     const cited = offered.facts[key].some((c) => c.path === fact.from);
-    (kept as Record<DeepFactKey, DeepFact>)[key] = stated(fact) && cited ? cleanDetail(fact) : unknownOf(fact);
+    const unseenCriterion = key === "awardCriteria" && output.awardCriteria.value === "LOWEST_PRICE" && offered.unverified.awardCriteria > 0;
+    (kept as Record<DeepFactKey, DeepFact>)[key] = stated(fact) && cited && !unseenCriterion ? cleanDetail(fact) : unknownOf(fact);
   }
   kept.certifications = output.certifications.filter((c) => offered.certifications.some((o) => o.path === c.from));
   return kept;
@@ -276,7 +291,11 @@ export async function convertDeepFacts(db: AppDb, llm: LlmClient, tenderId: stri
 /** After an attempt that gave no conversion, the tender waits this long. */
 const RETRY_MS = 60 * 60 * 1000;
 
-/** Tenders whose latest deep result has no conversion yet, newest result first; an attempt after it waits an hour. */
+/**
+ * Tenders whose latest deep result has no conversion from the current prompt version yet, newest result first;
+ * a failed attempt after it waits an hour. Only the conversions and the last hour's failures are read, so
+ * failures piling up while the account has no credit cost nothing here.
+ */
 export async function pendingDeepFacts(db: AppDb, limit: number, now = new Date()): Promise<string[]> {
   const results = await db
     .selectDistinctOn([analyses.tenderId], { id: analyses.id, tenderId: analyses.tenderId, createdAt: analyses.createdAt })
@@ -284,20 +303,23 @@ export async function pendingDeepFacts(db: AppDb, limit: number, now = new Date(
     .where(and(eq(analyses.kind, "deep"), eq(analyses.valid, true), deepResult))
     .orderBy(analyses.tenderId, desc(analyses.createdAt));
   if (!results.length) return [];
-  const attempts = await db
-    .select({
-      tenderId: analyses.tenderId,
-      valid: analyses.valid,
-      createdAt: analyses.createdAt,
-      deepAnalysisId: sql<string | null>`${analyses.output} ->> 'deepAnalysisId'`,
-    })
-    .from(analyses)
-    .where(and(eq(analyses.kind, "deep_facts"), inArray(analyses.tenderId, results.map((r) => r.tenderId))));
+  const tenderIds = results.map((r) => r.tenderId);
+  const [converted, recent] = await Promise.all([
+    db
+      .select({ tenderId: analyses.tenderId, deepAnalysisId: sql<string | null>`${analyses.output} ->> 'deepAnalysisId'` })
+      .from(analyses)
+      .where(and(eq(analyses.kind, "deep_facts"), eq(analyses.valid, true), eq(analyses.promptVersion, DEEP_FACTS_PROMPT_VERSION), inArray(analyses.tenderId, tenderIds))),
+    db
+      .select({ tenderId: analyses.tenderId, createdAt: analyses.createdAt })
+      .from(analyses)
+      .where(
+        and(eq(analyses.kind, "deep_facts"), eq(analyses.valid, false), inArray(analyses.tenderId, tenderIds), gt(analyses.createdAt, new Date(now.getTime() - RETRY_MS))),
+      ),
+  ]);
   return results
     .filter((result) => {
-      const mine = attempts.filter((a) => a.tenderId === result.tenderId);
-      if (mine.some((a) => a.valid && a.deepAnalysisId === result.id)) return false;
-      return !mine.some((a) => a.createdAt > result.createdAt && now.getTime() - a.createdAt.getTime() < RETRY_MS);
+      if (converted.some((c) => c.tenderId === result.tenderId && c.deepAnalysisId === result.id)) return false;
+      return !recent.some((a) => a.tenderId === result.tenderId && a.createdAt > result.createdAt);
     })
     .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
     .slice(0, limit)
@@ -359,21 +381,44 @@ function noChecks(facts: FactsOutput): FactsQuoteChecks {
 
 export type AppliedDeepFacts = { read: ReadFacts; keys: DeepFactKey[]; certifications: number };
 
+/** When the facts stage read its input, and when the tender's files last changed: which reading saw the newer files. */
+export type FactsTimes = { factsInputAt: Date | null; documentsChangedAt: Date | null };
+
+const OBLIGATIONS = new Set<DeepFactKey>(["installation", "commissioningTraining", "localService"]);
+
 /**
  * The facts with the deep analysis' over them (SPEC 7.2, the team's decision of 4 November 2026): a value the
- * conversion states on a claim whose quote was found replaces the facts stage's, whatever that says; the deep
- * analysis read the documents whole, with the stronger model. What it does not state stays the facts stage's.
- * A certificate the facts lack, or hold unverified, is added or verified.
+ * conversion states on a claim whose quote was found replaces the facts stage's; the deep analysis read the
+ * documents whole, with the stronger model. Two exceptions. When files changed after the analysis read them and
+ * the facts stage has read them since, its verified values hold (a rewrite of the notice row alone does not
+ * count: renormalising touches every tender). And a claim on the whole tender does not widen an obligation the
+ * facts stage found, the same, for some lots only. What the analysis does not state stays the facts stage's. A
+ * certificate the facts lack is added; one they hold unverified is verified, keeping its name and level.
  */
-export function applyDeepFacts(read: ReadFacts, deep: StoredDeepFacts): AppliedDeepFacts {
+export function applyDeepFacts(read: ReadFacts, deep: StoredDeepFacts, times: FactsTimes = { factsInputAt: null, documentsChangedAt: null }): AppliedDeepFacts {
   const checks = read.quoteChecks ?? noChecks(read.facts);
+  const { factsInputAt, documentsChangedAt } = times;
+  const newerFiles =
+    !!documentsChangedAt &&
+    documentsChangedAt.getTime() > new Date(deep.inputUpdatedAt).getTime() &&
+    !!factsInputAt &&
+    factsInputAt.getTime() >= documentsChangedAt.getTime();
   const facts: FactsOutput = { ...read.facts };
   const factChecks = { ...checks.facts };
   const keys: DeepFactKey[] = [];
   for (const key of DEEP_FACT_KEYS) {
-    const { from: cited, ...value } = deep.output[key];
+    const { from: cited, ...claimed } = deep.output[key];
     const evidence = cited ? deep.evidence[cited] : undefined;
-    if (!evidence || !stated(value)) continue;
+    if (!evidence || !stated(claimed)) continue;
+    const own = read.facts[key];
+    const ownVerified = !!checks.facts[key] && stated(own);
+    if (newerFiles && ownVerified) continue;
+    let value: object = claimed;
+    if (OBLIGATIONS.has(key) && ownVerified) {
+      const mine = own as { value: string; lots: string[] };
+      const theirs = claimed as { value: string; lots: string[] };
+      if (!theirs.lots.length && mine.lots.length && mine.value === theirs.value) value = { ...theirs, lots: mine.lots };
+    }
     (facts as Record<DeepFactKey, unknown>)[key] = { ...value, quote: evidence.quote };
     factChecks[key] = DEEP_CHECK_PREFIX + evidence.check;
     keys.push(key);
@@ -387,9 +432,9 @@ export function applyDeepFacts(read: ReadFacts, deep: StoredDeepFacts): AppliedD
     if (!evidence || !key) continue;
     const same = certifications.findIndex((c) => certificateKey(c.name) === key);
     if (same >= 0 && certificationChecks[same]) continue;
-    const entry = { ...certificate, quote: evidence.quote };
-    if (same >= 0) certifications[same] = entry;
-    else certifications.push(entry);
+    // The facts stage read the notice around the certificate: its name and level stay, the analysis verifies it.
+    if (same >= 0) certifications[same] = { ...certifications[same]!, quote: evidence.quote };
+    else certifications.push({ ...certificate, quote: evidence.quote });
     certificationChecks[same >= 0 ? same : certifications.length - 1] = DEEP_CHECK_PREFIX + evidence.check;
     added++;
   }

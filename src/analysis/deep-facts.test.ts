@@ -141,7 +141,9 @@ describe("what the model is shown", () => {
     expect(offered.facts.commissioningTraining.map((c) => c.path)).toEqual(["servicesScope.training"]);
     // The warranty's quote was not found; an empty claim is no claim.
     expect(offered.facts.warranty).toEqual([]);
-    expect(offered.facts.localService).toEqual([]);
+    expect(offered.unverified.warranty).toBe(1);
+    // Field work during the warranty is often written under installation.
+    expect(offered.facts.localService.map((c) => c.path)).toEqual(["servicesScope.installation"]);
     expect(offered.facts.awardCriteria.map((c) => c.path)).toEqual(["evaluation.0", "evaluation.1"]);
     expect(offered.facts.awardCriteria[1]).toEqual({ path: "evaluation.1", text: "Teslim süresi (%30)", quote: "Lieferzeit 30 %" });
     // An item without certificates says nothing of them.
@@ -183,6 +185,16 @@ describe("what is kept of the answer", () => {
     expect(parsed.output.warranty).toEqual({ years: null, detail: "", from: "" });
     expect(parsed.output.turnover).toEqual({ value: "UNKNOWN", detail: "", from: "" });
     expect(parsed.output.certifications).toEqual([{ name: "ISO 9001", level: "BIDDER", from: "eligibility.qualityCerts.0" }]);
+  });
+
+  it("takes 'only price' only when every criterion was seen", () => {
+    const priceOnly = deepAnswer({ awardCriteria: { value: "LOWEST_PRICE", detail: "", from: "evaluation.0" } });
+    const unseen = offeredClaims({ ...storedDeep, quoteChecks: { ...storedDeep.quoteChecks, "evaluation.1": null } });
+    expect(unseen.unverified.awardCriteria).toBe(1);
+    const parsed = parseDeepFacts(priceOnly, unseen);
+    expect(parsed.ok && parsed.output.awardCriteria).toEqual({ value: "UNKNOWN", detail: "", from: "" });
+    const seen = parseDeepFacts(priceOnly, offered);
+    expect(seen.ok && seen.output.awardCriteria.value).toBe("LOWEST_PRICE");
   });
 
   it("rejects an answer that does not fit the schema", () => {
@@ -243,6 +255,33 @@ describe("over the facts stage's facts", () => {
     expect([used.installation.value, used.turnover.value, used.warranty.years]).toEqual(["REQUIRED", "REQUIRED", 1]);
   });
 
+  it("keeps a verified value read from files that changed after the analysis, not after a rewrite of the notice row alone", () => {
+    // The analysis read its input on 19 October at noon.
+    const filesLater = applyDeepFacts(notice, converted, { factsInputAt: new Date("2026-10-27T09:00:00Z"), documentsChangedAt: new Date("2026-10-26T17:00:00Z") });
+    expect(filesLater.read.facts.installation.value).toBe("NONE");
+    expect(filesLater.keys).toEqual(["turnover"]);
+    // Facts read again only because the notice row was rewritten (renormalising): the files are those the analysis read.
+    const rowLater = applyDeepFacts(notice, converted, { factsInputAt: new Date("2026-11-02T11:00:00Z"), documentsChangedAt: new Date("2026-10-19T11:00:00Z") });
+    expect(rowLater.read.facts.installation.value).toBe("REQUIRED");
+    // Files changed, but the facts stage has not read them yet.
+    const unread = applyDeepFacts(notice, converted, { factsInputAt: new Date("2026-10-18T17:00:00Z"), documentsChangedAt: new Date("2026-10-26T17:00:00Z") });
+    expect(unread.read.facts.installation.value).toBe("REQUIRED");
+  });
+
+  it("does not widen to the whole tender an obligation the facts stage found, the same, for some lots only", () => {
+    const lots = [lot({ lotNumber: "LOT-0001", productTr: "jeneratör", category: "COMPLEX_GENERATORS" }), lot({ lotNumber: "LOT-0002", productTr: "pano", category: "ELECTRICAL_LIGHTING" })];
+    const lotTwo = facts({ lots, installation: { value: "REQUIRED", detail: "Lot 2 montaj içeriyor", quote: "Lot 2 includes installation", lots: ["LOT-0002"] } });
+    expect(applyDeepFacts(read(lotTwo, { installation: "description" }), converted).read.facts.installation).toEqual({
+      value: "REQUIRED",
+      detail: "Sahada kurulum",
+      lots: ["LOT-0002"],
+      quote: INSTALL,
+    });
+    // A different value is the analysis' own, for the whole tender.
+    const none = facts({ lots, installation: { value: "MINOR", detail: "", quote: "Lot 2 assembly", lots: ["LOT-0002"] } });
+    expect(applyDeepFacts(read(none, { installation: "description" }), converted).read.facts.installation).toMatchObject({ value: "REQUIRED", lots: [] });
+  });
+
   it("adds a certificate the facts lack and verifies one they hold unverified, without doubling one they hold", () => {
     const withCertificates = facts({
       lots: [generatorLot],
@@ -261,6 +300,13 @@ describe("over the facts stage's facts", () => {
     const added = applyDeepFacts(read(facts({ lots: [generatorLot] })), converted);
     expect(added.read.facts.certifications.map((c) => c.name)).toEqual(["ISO 9001", "ISO 8528"]);
     expect(added.certifications).toBe(2);
+  });
+
+  it("keeps the name and level of a certificate it verifies", () => {
+    const bidder = facts({ lots: [generatorLot], certifications: [{ name: "ISO 8528", level: "MANUFACTURER", quote: "not in the notice" }] });
+    const applied = applyDeepFacts(read(bidder, {}, [null]), converted);
+    expect(applied.read.facts.certifications[0]).toEqual({ name: "ISO 8528", level: "MANUFACTURER", quote: "Netzersatzanlage 60 kVA nach ISO 8528, CE" });
+    expect(applied.read.quoteChecks!.certifications[0]).toBe(`${DEEP_CHECK_PREFIX}file:1:p2`);
   });
 
   it("counts only the analysis' facts when the facts stage's answer has no checks", () => {
@@ -350,6 +396,23 @@ describe("the conversion run", () => {
     expect(await pendingDeepFacts(db, 10, new Date(Date.now() + 2 * MINUTE))).toEqual([tenderId]);
   });
 
+  it("converts again a result converted by an older prompt version", async () => {
+    const { db } = testDb;
+    const tenderId = await insertTender(db);
+    const result = await deepResult(tenderId, new Date(Date.now() - 120 * MINUTE));
+    await db.insert(analyses).values({
+      tenderId,
+      kind: "deep_facts",
+      model: "claude-haiku-5-5",
+      promptVersion: "deep-facts.v1",
+      valid: true,
+      output: { output: installs(), deepAnalysisId: result, inputUpdatedAt: storedDeep.inputUpdatedAt, evidence: {} },
+      // Ten minutes ago: a conversion that worked is no failed attempt to wait after.
+      createdAt: new Date(Date.now() - 10 * MINUTE),
+    });
+    expect(await pendingDeepFacts(db, 10)).toEqual([tenderId]);
+  });
+
   it("puts the analysis' facts over the facts stage's and changes the assessment", async () => {
     const { db } = testDb;
     const tenderId = await insertTender(db, { status: "open", contractNature: "goods", buyerCountry: "NL", valueEur: 80_000 });
@@ -375,6 +438,9 @@ describe("the conversion run", () => {
     const { db } = testDb;
     const tenderId = await insertTender(db, { status: "open", documentsChangedAt: new Date(Date.now() - 10 * MINUTE) });
     await storeFacts(tenderId, facts({ lots: [generatorLot] }), new Date(Date.now() - 60 * MINUTE));
+    expect(await pendingFacts(db, 10)).not.toContain(tenderId);
+    // A failed analysis is no analysis.
+    await db.insert(analyses).values({ tenderId, kind: "deep", model: "claude-sonnet-5-5", promptVersion: "deep.v1", valid: false, output: null, error: "API hatası" });
     expect(await pendingFacts(db, 10)).not.toContain(tenderId);
     await deepResult(tenderId, new Date(Date.now() - 30 * MINUTE));
     expect(await pendingFacts(db, 10)).toContain(tenderId);

@@ -364,14 +364,19 @@ const jobs: JobDefinition[] = [
         );
       }
       // The results' facts for the assessment (SPEC 7.2): converted, then those tenders assessed again at once.
-      const facts = await runDeepFacts(db, createLlmClient(), { limit: DEEP_FACTS_BATCH, log: (m) => console.warn(m) });
-      if (facts.attempted) {
-        const assessed = facts.converted.length ? await assessTenders(db, { tenderIds: facts.converted }) : null;
-        console.log(
-          `[deep-facts] converted=${facts.converted.length} invalid=${facts.invalid} apiErrors=${facts.apiErrors} cost=${facts.costUsd.toFixed(4)}` +
-            (facts.stoppedBy ? ` stoppedBy=${facts.stoppedBy}` : "") +
-            (assessed ? ` | assess ${formatAssessStats(assessed)}` : ""),
-        );
+      // Without credit this waits like the other automatic jobs.
+      const limits = creditPause.limits(DEEP_FACTS_BATCH, 2);
+      if (limits) {
+        const facts = await runDeepFacts(db, createLlmClient(), { limit: limits.limit, concurrency: limits.concurrency, log: (m) => console.warn(m) });
+        noteCredit("deep-facts", facts);
+        if (facts.attempted) {
+          const assessed = facts.converted.length ? await assessTenders(db, { tenderIds: facts.converted }) : null;
+          console.log(
+            `[deep-facts] converted=${facts.converted.length} invalid=${facts.invalid} apiErrors=${facts.apiErrors} cost=${facts.costUsd.toFixed(4)}` +
+              (facts.stoppedBy ? ` stoppedBy=${facts.stoppedBy}` : "") +
+              (assessed ? ` | assess ${formatAssessStats(assessed)}` : ""),
+          );
+        }
       }
       if (stats.analysed + stats.failed >= DEEP_BATCH && !stats.stoppedBy) await runAgain("deep-analysis");
     },
